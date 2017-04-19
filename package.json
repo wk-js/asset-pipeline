@@ -1,0 +1,17 @@
+{
+  "name": "asset-pipeline",
+  "version": "0.0.1",
+  "description": "Asset pipeline",
+  "main": "lib/index.js",
+  "dependencies": {
+    "filelist": "^0.0.6",
+    "fs-extra": "^2.1.2",
+    "minimatch": "^3.0.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
