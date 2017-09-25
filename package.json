@@ -1,6 +1,6 @@
 {
   "name": "asset-pipeline",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Asset pipeline",
   "main": "lib/index.js",
   "dependencies": {
