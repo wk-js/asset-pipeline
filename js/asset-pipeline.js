@@ -16,6 +16,7 @@ class AssetPipeline {
         this.prefix = '';
         this.asset_key = 'no_key';
         this.asset_host = null;
+        this.forceResolve = false;
         this.data = {};
         this.tree = new tree_1.Tree(this);
         this.manager = new manager_1.Manager(this);
@@ -45,7 +46,7 @@ class AssetPipeline {
         return this.tree.getUrl(path, fromPath);
     }
     resolve(force) {
-        force = this.manifest.forceUpdate ? this.manifest.forceUpdate : force;
+        force = this.forceResolve ? this.forceResolve : force;
         if (force || !this.manifest.fileExists()) {
             console.log('[AssetPipeline] Fetch directories');
             this.directory.fetch();

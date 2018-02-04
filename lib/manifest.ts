@@ -12,8 +12,6 @@ export class Manifest {
     ASSETS: {} as { [key:string]: AssetItem }
   }
 
-  forceUpdate: boolean = false
-
   constructor(public pipeline: AssetPipeline) {}
 
   get manifest_path() {

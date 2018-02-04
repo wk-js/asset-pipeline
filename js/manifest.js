@@ -15,7 +15,6 @@ class Manifest {
             DIST_PATH: this.pipeline.dst_path,
             ASSETS: {}
         };
-        this.forceUpdate = false;
     }
     get manifest_path() {
         return `tmp/manifest-${this.pipeline.asset_key}.json`;

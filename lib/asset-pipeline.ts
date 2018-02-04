@@ -52,6 +52,8 @@ export class AssetPipeline {
   asset_key:  string | number = 'no_key'
   asset_host: string | null   = null
 
+  forceResolve: boolean = false
+
   data: any = {}
 
   tree     = new Tree( this )
@@ -90,7 +92,7 @@ export class AssetPipeline {
   }
 
   resolve(force?:boolean) {
-    force = this.manifest.forceUpdate ? this.manifest.forceUpdate : force
+    force = this.forceResolve ? this.forceResolve : force
 
     if (force || !this.manifest.fileExists()) {
       console.log( '[AssetPipeline] Fetch directories' )

@@ -34,6 +34,7 @@ export declare class AssetPipeline {
     prefix: string;
     asset_key: string | number;
     asset_host: string | null;
+    forceResolve: boolean;
     data: any;
     tree: Tree;
     manager: Manager;

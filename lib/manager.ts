@@ -2,6 +2,7 @@ import { fetch, copy, remove, move } from "wkt/js/api/file/utils";
 import { AssetPipeline } from "./asset-pipeline";
 import { relative } from "path";
 import { reduce } from "when";
+import { symlink, fetchDirs } from "./utils";
 
 export class Manager {
 
@@ -38,7 +39,7 @@ export class Manager {
   }
 
   process() {
-    return reduce<any>(['move', 'copy', 'symlink'], (reduction: any, value:string) => {
+    return reduce(['move', 'copy', 'symlink'], (reduction:null, value:string) => {
       return this.apply( value )
     }, null)
   }
@@ -52,8 +53,13 @@ export class Manager {
       return item.action === 'ignore'
     }).map(item => this.pipeline.fromLoadPath(item.glob))
 
-    const ios = fetch( validGlobs, ignoredGlobs )
-    .map(( file ) => {
+    const ios = (
+      type === 'symlink' ?
+      fetchDirs( validGlobs, ignoredGlobs )
+      :
+      fetch( validGlobs, ignoredGlobs )
+    )
+    .map(( file:string ) => {
       file = relative( this.pipeline.absolute_load_path, file )
 
       let input  = this.pipeline.fromLoadPath( file )
@@ -70,6 +76,8 @@ export class Manager {
         return copy( io[0], io[1] )
       } else if (type === 'move') {
         return move( io[0], io[1] )
+      } else if (type === 'symlink') {
+        return symlink( io[0], io[1] )
       }
     }, null)
   }

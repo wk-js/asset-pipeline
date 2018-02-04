@@ -1,12 +1,11 @@
 const { AssetPipeline } = require( '../js/asset-pipeline' )
 const AP = new AssetPipeline
 
-AP.root_path            = process.cwd() + '/../starter-vue'
-AP.cacheable            = true
-AP.cacheType            = 'version'
-AP.manifest.forceUpdate = false
-AP.asset_host           = 'http://localhost:3000'
-AP.data.locale          = 'fr'
+AP.root_path    = process.cwd() + '/../starter-vue'
+AP.cacheable    = true
+AP.forceResolve = false
+AP.asset_host   = 'http://localhost:3000'
+AP.data.locale  = 'fr'
 
 AP.addEntry( 'scripts/index.js'       , 'main.js' )
 AP.addEntry( 'scripts/vendor/index.js', 'vendor.js' )

@@ -10,7 +10,6 @@ export declare class Manifest {
             [key: string]: AssetItem;
         };
     };
-    forceUpdate: boolean;
     constructor(pipeline: AssetPipeline);
     readonly manifest_path: string;
     fileExists(): boolean;
