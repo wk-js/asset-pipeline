@@ -6,6 +6,7 @@ const minimatch = require('minimatch')
 const url       = require('url')
 const FileList  = require('filelist').FileList
 const guid      = require('./utils/guid').guid
+const AssetMove = require('./move')
 
 const path      = require('path')
 const join      = path.join
@@ -55,8 +56,7 @@ class AssetPipeline {
 
     this.PENDING = {
       OPTIONS: {},
-      LIST: new FileList,
-      MOVE: []
+      LIST: new FileList
     }
 
     this.CACHE = null
@@ -73,6 +73,7 @@ class AssetPipeline {
 
     this.setParameters( parameters )
 
+    this.move = new AssetMove(this)
   }
 
   get ABSOLUTE_LOAD_PATH() {
@@ -237,58 +238,15 @@ class AssetPipeline {
     this.PENDING.LIST.exclude( join(this.ABSOLUTE_LOAD_PATH, input) )
   }
 
-
-  /**
-   * Add a file for a symlink
-   *
-   * @param {String} input
-   * @param {String} output
-   *
-   * @memberOf AssetPipeline
-   */
-  symlink( input, output ) {
-    this._copyOrSymlink( 'symlink', input, output )
+  copy() {
+    console.log('[Deprecated] copy()')
+    this.move.copy.apply(this.move, arguments)
   }
 
-
-  /**
-   * Add a file for a copy
-   *
-   * @param {String} input
-   * @param {String} output
-   *
-   * @memberOf AssetPipeline
-   */
-  copy( input, output ) {
-    this._copyOrSymlink( 'copy', input, output )
+  symlink() {
+    console.log('[Deprecated] symlink()')
+    this.move.symlink.apply(this.move, arguments)
   }
-
-
-  /**
-   * Add a file for a copy/symlink
-   *
-   * @param {String} tyype
-   * @param {String} input
-   * @param {String} output
-   *
-   * @memberOf AssetPipeline
-   */
-  _copyOrSymlink( type, input, output ) {
-    input  = _cleanPath( input )
-
-    if (typeof output !== 'string') {
-      output = input
-    } else {
-      output = _cleanPath( output )
-    }
-
-    this.PENDING.MOVE.push({
-      from: join( this.ABSOLUTE_LOAD_PATH, input ),
-      to:   join( this.ABSOLUTE_DST_PATH, output ),
-      type: type
-    })
-  }
-
 
   /**
    * Resolve pending list
@@ -333,19 +291,7 @@ class AssetPipeline {
       this._resolve( items[k].input, items[k].options )
     }
 
-  }
-
-
-  /**
-   * Copy of symlink files
-   *
-   * @memberOf AssetPipeline
-   */
-  proceedMove() {
-    // Proceed move
-    this.PENDING.MOVE.forEach(( item ) => {
-      this._move(item)
-    })
+    this.move.process()
   }
 
   /**
@@ -376,47 +322,6 @@ class AssetPipeline {
     if (isDirty) this._updateManifest()
 
   }
-
-
-  _move( item ) {
-    let from = item.from
-    let to   = item.to
-
-    const moveOperation = item.type === 'symlink' ? 'ensureSymlink' : 'copy'
-
-    const move = function(from, to) {
-      if (!fs.existsSync(from)) {
-        console.log( `"${from}" does not exit.` )
-        return
-      }
-
-      if (!(path.extname(from) && path.extname(to))) {
-        if (path.extname(from)) from = path.dirname(from)
-        if (path.extname(to))   to   = path.dirname(to)
-      }
-
-      fs[moveOperation](from, to, (err)=>{
-        if (err) console.log( err )
-      })
-    }
-
-    const FL = new FileList
-    FL.include( from )
-    FL.forEach((filename) => {
-
-      const itm = this.CACHE[relative(this.ABSOLUTE_LOAD_PATH, filename)]
-
-      if (!itm) return
-
-      from = filename
-      to   = join( this.ABSOLUTE_DST_PATH, itm.cache || itm.output )
-
-      move(from, to)
-
-    })
-
-  }
-
 
   /**
    * Add an asset
