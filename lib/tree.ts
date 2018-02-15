@@ -142,6 +142,10 @@ export class Tree {
     return output
   }
 
+  /**
+   * @param {string} path - Path required
+   * @param {string?} fromPath - File which request the path (must be relative to ABSOLUTE_LOAD_PATH)
+   */
   getPath(path:string, fromPath?:string) {
     if (!fromPath) fromPath = this._tree.path
 
@@ -158,8 +162,12 @@ export class Tree {
     return output
   }
 
+  /**
+   * @param {string} path - Path required
+   * @param {string?} fromPath - File which request the path (must be relative to ABSOLUTE_LOAD_PATH)
+   */
   getUrl( path:string, fromPath?:string ) {
-    path = this.getPath( path )
+    path = this.getPath( path, fromPath )
 
     if (this.pipeline.asset_host) {
       const url = new URL( path, this.pipeline.asset_host )

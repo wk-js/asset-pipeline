@@ -22,7 +22,15 @@ export declare class Tree {
     update(): void;
     resolve(path: string): TreeInterface;
     buildPath(path: string): string;
+    /**
+     * @param {string} path - Path required
+     * @param {string?} fromPath - File which request the path (must be relative to ABSOLUTE_LOAD_PATH)
+     */
     getPath(path: string, fromPath?: string): string;
+    /**
+     * @param {string} path - Path required
+     * @param {string?} fromPath - File which request the path (must be relative to ABSOLUTE_LOAD_PATH)
+     */
     getUrl(path: string, fromPath?: string): string;
     view(): string;
 }

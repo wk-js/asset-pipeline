@@ -118,9 +118,9 @@ export class FilePipeline {
       output          = format(pathObject)
     }
 
-    // Add baseDir
-    if ("baseDir" in rules && typeof rules.baseDir === 'string') {
-      output = join( this.pipeline.dst_path, rules.baseDir, output )
+    // Add base_dir
+    if ("base_dir" in rules && typeof rules.base_dir === 'string') {
+      output = join( this.pipeline.dst_path, rules.base_dir, output )
       output = relative( this.pipeline.dst_path, output )
     }
 

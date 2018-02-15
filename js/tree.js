@@ -107,6 +107,10 @@ class Tree {
         output = output + suffix;
         return output;
     }
+    /**
+     * @param {string} path - Path required
+     * @param {string?} fromPath - File which request the path (must be relative to ABSOLUTE_LOAD_PATH)
+     */
     getPath(path, fromPath) {
         if (!fromPath)
             fromPath = this._tree.path;
@@ -116,8 +120,12 @@ class Tree {
         const output = path_1.relative(path_1.join(this.pipeline.absolute_dst_path, fromTree.path), path_1.join(this.pipeline.absolute_dst_path, path));
         return output;
     }
+    /**
+     * @param {string} path - Path required
+     * @param {string?} fromPath - File which request the path (must be relative to ABSOLUTE_LOAD_PATH)
+     */
     getUrl(path, fromPath) {
-        path = this.getPath(path);
+        path = this.getPath(path, fromPath);
         if (this.pipeline.asset_host) {
             const url = new url_1.URL(path, this.pipeline.asset_host);
             path = url.href;

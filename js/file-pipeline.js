@@ -97,9 +97,9 @@ class FilePipeline {
             pathObject.base = rules.rename;
             output = path_1.format(pathObject);
         }
-        // Add baseDir
-        if ("baseDir" in rules && typeof rules.baseDir === 'string') {
-            output = path_1.join(this.pipeline.dst_path, rules.baseDir, output);
+        // Add base_dir
+        if ("base_dir" in rules && typeof rules.base_dir === 'string') {
+            output = path_1.join(this.pipeline.dst_path, rules.base_dir, output);
             output = path_1.relative(this.pipeline.dst_path, output);
         }
         // Replace dir path if needed

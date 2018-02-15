@@ -14,7 +14,7 @@ export interface GlobItem {
     cache?: boolean;
     keep_path?: boolean;
     rename?: string;
-    baseDir?: string;
+    base_dir?: string;
     data?: any;
     alternatives?: AlternativeOutputs;
 }
