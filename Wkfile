@@ -1,3 +1,0 @@
-namespace('test', function() {
-  wk.load('./test/asset-pipeline.js')
-})

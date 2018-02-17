@@ -3,10 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 }
 Object.defineProperty(exports, "__esModule", { value: true });
-const utils_1 = require("wkt/js/api/file/utils");
+const fs_1 = require("./utils/fs");
 const path_1 = require("path");
 const minimatch_1 = __importDefault(require("minimatch"));
 const cache_1 = require("./cache");
+const string_1 = require("lol/utils/string");
 class FilePipeline {
     constructor(pipeline) {
         this.pipeline = pipeline;
@@ -16,14 +17,15 @@ class FilePipeline {
         return this.pipeline.manifest.manifest;
     }
     add(glob, parameters) {
-        glob = this.pipeline.fromLoadPath(path_1.normalize(glob));
+        glob = path_1.normalize(glob);
         parameters = Object.assign({
             glob: glob
         }, parameters || {});
+        parameters.glob = glob;
         this._globs.push(parameters);
     }
     ignore(glob) {
-        glob = this.pipeline.fromLoadPath(path_1.normalize(glob));
+        glob = path_1.normalize(glob);
         const parameters = {
             glob: glob,
             ignore: true
@@ -35,14 +37,14 @@ class FilePipeline {
         const ignores = [];
         this._globs.forEach((item) => {
             if ("ignore" in item && item.ignore) {
-                ignores.push(item.glob);
+                ignores.push(this.pipeline.fromLoadPath(item.glob));
             }
             else {
-                globs.push(item.glob);
+                globs.push(this.pipeline.fromLoadPath(item.glob));
             }
         });
         let input;
-        utils_1.fetch(globs, ignores)
+        fs_1.fetch(globs, ignores)
             .map((file) => {
             return this.pipeline.relativeToLoadPath(file);
         })
@@ -59,12 +61,13 @@ class FilePipeline {
         let rules = {};
         for (let i = 0, ilen = this._globs.length, item, relativeGlob; i < ilen; i++) {
             item = this._globs[i];
-            relativeGlob = this.pipeline.relativeToLoadPath(item.glob);
-            if (file === relativeGlob) {
-                rules = item;
-                break;
-            }
-            else if (minimatch_1.default(file, relativeGlob)) {
+            // if (file === item.glob) {
+            //   rules = item
+            //   break;
+            // } else if (minimatch(file, item.glob)) {
+            //   rules = Object.assign(rules, item)
+            // }
+            if (file === item.glob || minimatch_1.default(file, item.glob)) {
                 rules = Object.assign(rules, item);
             }
         }
@@ -94,8 +97,8 @@ class FilePipeline {
         // Rename output basename
         if ("rename" in rules && typeof rules.rename === 'string') {
             pathObject = path_1.parse(output);
-            pathObject.base = rules.rename;
-            output = path_1.format(pathObject);
+            output = path_1.join(path_1.dirname(output), rules.rename);
+            output = string_1.template2(output, pathObject);
         }
         // Add base_dir
         if ("base_dir" in rules && typeof rules.base_dir === 'string') {

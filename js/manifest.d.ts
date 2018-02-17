@@ -1,4 +1,6 @@
+/// <reference types="when" />
 import { AssetPipeline, AssetItem } from "./asset-pipeline";
+import when from 'when';
 export declare class Manifest {
     pipeline: AssetPipeline;
     manifest: {
@@ -13,8 +15,8 @@ export declare class Manifest {
     constructor(pipeline: AssetPipeline);
     readonly manifest_path: string;
     fileExists(): boolean;
-    createFile(): any;
-    updateFile(): any;
-    readFile(): any;
-    deleteFile(): any;
+    createFile(): when.Promise<{}>;
+    updateFile(): when.Promise<{}>;
+    readFile(): when.Promise<{}> | when.Promise<void>;
+    deleteFile(): when.Promise<boolean>;
 }

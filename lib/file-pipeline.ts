@@ -1,8 +1,9 @@
 import { AssetPipeline, GlobItem, AlternativeOutputs, AssetItem } from "./asset-pipeline";
-import { fetch } from 'wkt/js/api/file/utils';
+import { fetch } from './utils/fs';
 import { join, normalize, relative, basename, extname, dirname, parse, format } from "path";
 import minimatch from 'minimatch';
 import { hashCache, versionCache } from "./cache";
+import { template2 } from "lol/utils/string";
 
 export class FilePipeline {
 
@@ -14,18 +15,19 @@ export class FilePipeline {
     return this.pipeline.manifest.manifest
   }
 
-  add(glob:string, parameters:GlobItem) {
-    glob = this.pipeline.fromLoadPath(normalize(glob))
+  add(glob:string, parameters?:GlobItem) {
+    glob = normalize(glob)
 
     parameters = Object.assign({
       glob: glob
     }, parameters || {})
+    parameters.glob = glob
 
     this._globs.push( parameters )
   }
 
   ignore(glob:string) {
-    glob = this.pipeline.fromLoadPath(normalize(glob))
+    glob = normalize(glob)
 
     const parameters = {
       glob: glob,
@@ -41,9 +43,9 @@ export class FilePipeline {
 
     this._globs.forEach((item) => {
       if ("ignore" in item && item.ignore) {
-        ignores.push( item.glob )
+        ignores.push( this.pipeline.fromLoadPath(item.glob) )
       } else {
-        globs.push( item.glob )
+        globs.push( this.pipeline.fromLoadPath(item.glob) )
       }
     })
 
@@ -55,7 +57,7 @@ export class FilePipeline {
       return this.pipeline.relativeToLoadPath( file )
     })
 
-    .forEach(( input ) => {
+    .forEach(( input:string ) => {
       this.manifest.ASSETS[input] = {
         input:  input,
         output: input,
@@ -71,11 +73,15 @@ export class FilePipeline {
 
     for (let i = 0, ilen = this._globs.length, item, relativeGlob; i < ilen; i++) {
       item = this._globs[i]
-      relativeGlob = this.pipeline.relativeToLoadPath(item.glob)
-      if (file === relativeGlob) {
-        rules = item
-        break;
-      } else if (minimatch(file, relativeGlob)) {
+
+      // if (file === item.glob) {
+      //   rules = item
+      //   break;
+      // } else if (minimatch(file, item.glob)) {
+      //   rules = Object.assign(rules, item)
+      // }
+
+      if (file === item.glob || minimatch(file, item.glob)) {
         rules = Object.assign(rules, item)
       }
     }
@@ -113,9 +119,9 @@ export class FilePipeline {
 
     // Rename output basename
     if ("rename" in rules && typeof rules.rename === 'string') {
-      pathObject      = parse(output)
-      pathObject.base = rules.rename
-      output          = format(pathObject)
+      pathObject = parse(output)
+      output     = join( dirname( output ), rules.rename )
+      output     = template2( output, pathObject )
     }
 
     // Add base_dir

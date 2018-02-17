@@ -12,7 +12,7 @@ export declare class FilePipeline {
             [key: string]: AssetItem;
         };
     };
-    add(glob: string, parameters: GlobItem): void;
+    add(glob: string, parameters?: GlobItem): void;
     ignore(glob: string): void;
     fetch(): void;
     getRules(file: string): {};

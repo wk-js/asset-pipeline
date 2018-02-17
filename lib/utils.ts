@@ -1,5 +1,5 @@
 import { FileList } from "filelist";
-import { isDirectory, ensureDir } from "wkt/js/api/file/utils";
+import { isDirectory, ensureDir } from "./utils/fs";
 import fs from "fs";
 import { promise } from "when";
 import { join, dirname } from "path";

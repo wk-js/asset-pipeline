@@ -6,21 +6,23 @@ const manager_1 = require("./manager");
 const file_pipeline_1 = require("./file-pipeline");
 const directory_pipeline_1 = require("./directory-pipeline");
 const manifest_1 = require("./manifest");
+const renderer_1 = require("./renderer");
 class AssetPipeline {
     constructor() {
         this.load_path = './app';
         this.dst_path = './public';
         this.root_path = process.cwd();
         this.cacheable = false;
-        this.cacheType = 'hash';
         this.prefix = '';
         this.asset_key = 'no_key';
         this.asset_host = null;
-        this.forceResolve = false;
+        this.force_resolve = false;
+        this.save_manifest = true;
         this.data = {};
         this.tree = new tree_1.Tree(this);
         this.manager = new manager_1.Manager(this);
         this.manifest = new manifest_1.Manifest(this);
+        this.renderer = new renderer_1.Renderer(this);
         this.file = new file_pipeline_1.FilePipeline(this);
         this.directory = new directory_pipeline_1.DirectoryPipeline(this);
     }
@@ -46,7 +48,7 @@ class AssetPipeline {
         return this.tree.getUrl(path, fromPath);
     }
     resolve(force) {
-        force = this.forceResolve ? this.forceResolve : force;
+        force = this.force_resolve ? this.force_resolve : force;
         if (force || !this.manifest.fileExists()) {
             console.log('[AssetPipeline] Fetch directories');
             this.directory.fetch();
@@ -62,8 +64,14 @@ class AssetPipeline {
             return this.manifest.readFile();
         }
     }
+    render() {
+        return this.renderer.render().then(() => {
+            return this.renderer.edit();
+        });
+    }
     addEntry(input, output, parameters) {
         parameters = Object.assign({
+            glob: '',
             rename: output,
             keep_path: false
         }, parameters || {});

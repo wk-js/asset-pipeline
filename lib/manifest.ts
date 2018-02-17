@@ -1,6 +1,8 @@
 import { AssetPipeline, AssetItem } from "./asset-pipeline";
-import { writeFile, isFile, readFile, remove } from "wkt/js/api/file/utils";
+import { writeFile, isFile, readFile, remove } from "./utils/fs";
 import when from 'when';
+
+const DEFAULT_PROMISE = when(true)
 
 export class Manifest {
 
@@ -19,7 +21,7 @@ export class Manifest {
   }
 
   fileExists() {
-    return isFile(this.manifest_path)
+    return this.pipeline.save_manifest && isFile(this.manifest_path)
   }
 
   createFile() {
@@ -28,7 +30,11 @@ export class Manifest {
     this.manifest.LOAD_PATH = this.pipeline.load_path
     this.manifest.DIST_PATH = this.pipeline.dst_path
 
-    return writeFile( JSON.stringify(this.manifest, null, 2), this.manifest_path )
+    if (this.pipeline.save_manifest) {
+      return writeFile( JSON.stringify(this.manifest, null, 2), this.manifest_path )
+    }
+
+    return DEFAULT_PROMISE
   }
 
   updateFile() {
@@ -42,7 +48,11 @@ export class Manifest {
       })
     }
 
-    return this.createFile()
+    if (this.pipeline.save_manifest) {
+      return this.createFile()
+    }
+
+    return DEFAULT_PROMISE
   }
 
   deleteFile() {
@@ -50,7 +60,7 @@ export class Manifest {
       return remove(this.manifest_path).then(() => true)
     }
 
-    return when( true )
+    return DEFAULT_PROMISE 
   }
 
 }

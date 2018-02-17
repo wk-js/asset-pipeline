@@ -4,8 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 }
 Object.defineProperty(exports, "__esModule", { value: true });
 const filelist_1 = require("filelist");
-const utils_1 = require("wkt/js/api/file/utils");
-const fs_1 = __importDefault(require("fs"));
+const fs_1 = require("./utils/fs");
+const fs_2 = __importDefault(require("fs"));
 const when_1 = require("when");
 const path_1 = require("path");
 function fetchDirs(include, exclude) {
@@ -15,14 +15,14 @@ function fetchDirs(include, exclude) {
     includes.forEach((inc) => FL.include(inc));
     excludes.forEach((exc) => FL.exclude(exc));
     const files = FL.toArray().filter(function (file) {
-        return utils_1.isDirectory(file);
+        return fs_1.isDirectory(file);
     });
     return files;
 }
 exports.fetchDirs = fetchDirs;
 function isSymbolicLink(path) {
     try {
-        const stats = fs_1.default.statSync(path);
+        const stats = fs_2.default.statSync(path);
         if (!stats.isSymbolicLink())
             throw 'Not a symbolic link';
     }
@@ -35,9 +35,9 @@ exports.isSymbolicLink = isSymbolicLink;
 function symlink(fromPath, toPath) {
     if (isSymbolicLink(toPath))
         return when_1.promise((resolve) => resolve({}));
-    return utils_1.ensureDir(path_1.dirname(toPath)).then(function () {
+    return fs_1.ensureDir(path_1.dirname(toPath)).then(function () {
         return when_1.promise(function (resolve, reject) {
-            fs_1.default.symlink(path_1.join(process.cwd(), fromPath), path_1.join(process.cwd(), toPath), function (err) {
+            fs_2.default.symlink(path_1.join(process.cwd(), fromPath), path_1.join(process.cwd(), toPath), function (err) {
                 if (err) {
                     reject(err);
                     return;

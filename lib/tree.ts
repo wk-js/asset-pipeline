@@ -1,4 +1,4 @@
-import { isFile } from "wkt/js/api/file/utils";
+import { isFile } from "./utils/fs";
 import { AssetPipeline, AssetItem, AlternativeOutputs } from "./asset-pipeline";
 import { normalize, dirname, extname, relative, join } from "path";
 import { URL } from "url";

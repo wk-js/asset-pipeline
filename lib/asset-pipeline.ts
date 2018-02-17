@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { guid } from 'lol/utils/guid';
 import { join, normalize, relative, basename, extname, dirname, parse, format } from "path";
-import { fetch, isDirectory, isFile } from 'wkt/js/api/file/utils';
+import { fetch, isDirectory, isFile } from './utils/fs';
 import minimatch from 'minimatch';
 import { generateHash, hashCache, versionCache } from "./cache";
 import { template2 } from "lol/utils/string";
@@ -12,6 +12,7 @@ import { Manager } from "./manager";
 import { FilePipeline } from "./file-pipeline";
 import { DirectoryPipeline } from "./directory-pipeline";
 import { Manifest } from "./manifest";
+import { Renderer } from "./renderer";
 
 export interface AlternativeOutputs {
   condition: string,
@@ -19,15 +20,17 @@ export interface AlternativeOutputs {
 }
 
 export interface GlobItem {
-  glob:                 string,
-  ignore?:               boolean,
-  files?:                string[],
-  cache?:                boolean,
-  keep_path?:            boolean,
-  rename?:               string,
-  base_dir?:             string,
+  glob:       string,
+  ignore?:    boolean,
+  files?:     string[],
+  cache?:     boolean,
+  keep_path?: boolean,
+  rename?:    string,
+  base_dir?:  string,
+  template?:  object|boolean,
+  edit?:      (value: Buffer | string) => Buffer | string,
 
-  data?:          any
+  data?: any
   alternatives?: AlternativeOutputs
 }
 
@@ -46,19 +49,20 @@ export class AssetPipeline {
   root_path: string = process.cwd()
 
   cacheable: boolean = false
-  cacheType: string  = 'hash'
 
   prefix:     string          = ''
   asset_key:  string | number = 'no_key'
   asset_host: string | null   = null
 
-  forceResolve: boolean = false
+  force_resolve: boolean = false
+  save_manifest: boolean = true
 
   data: any = {}
 
   tree     = new Tree( this )
   manager  = new Manager( this )
   manifest = new Manifest( this )
+  renderer = new Renderer( this   )
 
   file      = new FilePipeline( this )
   directory = new DirectoryPipeline( this )
@@ -92,7 +96,7 @@ export class AssetPipeline {
   }
 
   resolve(force?:boolean) {
-    force = this.forceResolve ? this.forceResolve : force
+    force = this.force_resolve ? this.force_resolve : force
 
     if (force || !this.manifest.fileExists()) {
       console.log( '[AssetPipeline] Fetch directories' )
@@ -111,19 +115,26 @@ export class AssetPipeline {
     }
   }
 
+  render() {
+    return this.renderer.render().then(() => {
+      return this.renderer.edit()
+    })
+  }
+
   addEntry(input:string, output:string, parameters?:GlobItem) {
     parameters = Object.assign({
+      glob: '',
       rename: output,
       keep_path: false
-    }, parameters || {}) as any
+    }, parameters || {})
     this.file.add( input, parameters as GlobItem )
   }
 
-  addFile(glob:string, parameters:GlobItem) {
+  addFile(glob:string, parameters?:GlobItem) {
     this.file.add( glob, parameters )
   }
 
-  addDirectory(glob:string, parameters:GlobItem) {
+  addDirectory(glob:string, parameters?:GlobItem) {
     this.directory.add( glob, parameters )
   }
 

@@ -1,4 +1,4 @@
-import { fetch, copy, remove, move } from "wkt/js/api/file/utils";
+import { fetch, copy, remove, move } from "./utils/fs";
 import { AssetPipeline } from "./asset-pipeline";
 import { relative } from "path";
 import { reduce } from "when";
