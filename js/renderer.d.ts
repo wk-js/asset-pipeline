@@ -17,5 +17,5 @@ export declare class Renderer {
      * @param {Object} options
      * @param {Object} data
      */
-    static render(src: string, options: TemplateOptions, data: object): any;
+    static render(src: string, options: TemplateOptions, data: object): string;
 }

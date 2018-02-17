@@ -7,9 +7,7 @@
     "filelist": "0.0.6",
     "lodash.template": "4.4.0",
     "lol": "github:makemepulse/lol.js#0.0.9",
-    "minimatch": "3.0.3"
-  },
-  "devDependencies": {
+    "minimatch": "3.0.3",
     "@types/lodash.template": "4.4.3",
     "@types/minimatch": "3.0.3",
     "@types/node": "9.4.0",
