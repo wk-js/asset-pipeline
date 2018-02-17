@@ -40,6 +40,7 @@ export declare class AssetPipeline {
     asset_host: string | null;
     force_resolve: boolean;
     save_manifest: boolean;
+    verbose: boolean;
     data: any;
     tree: Tree;
     manager: Manager;
@@ -63,4 +64,5 @@ export declare class AssetPipeline {
     ignoreDirectory(glob: string): void;
     getFileRules(file: string): {};
     getDirectoryRules(directory: string): AssetItemRules;
+    log(...args: any[]): void;
 }

@@ -56,6 +56,7 @@ export class AssetPipeline {
 
   force_resolve: boolean = false
   save_manifest: boolean = true
+  verbose: boolean = false
 
   data: any = {}
 
@@ -99,18 +100,18 @@ export class AssetPipeline {
     force = this.force_resolve ? this.force_resolve : force
 
     if (force || !this.manifest.fileExists()) {
-      console.log( '[AssetPipeline] Fetch directories' )
+      this.log( '[AssetPipeline] Fetch directories' )
       this.directory.fetch()
       this.tree.update()
 
-      console.log( '[AssetPipeline] Fetch files' )
+      this.log( '[AssetPipeline] Fetch files' )
       this.file.fetch()
       this.tree.update()
 
-      console.log( '[AssetPipeline] Update manifest' )
+      this.log( '[AssetPipeline] Update manifest' )
       return this.manifest.updateFile()
     } else {
-      console.log( '[AssetPipeline] Read manifest' )
+      this.log( '[AssetPipeline] Read manifest' )
       return this.manifest.readFile()
     }
   }
@@ -152,6 +153,10 @@ export class AssetPipeline {
 
   getDirectoryRules( directory:string ) {
     return this.directory.getRules( directory )
+  }
+
+  log(...args:any[]) {
+    if (this.verbose) console.log.apply(null, args)
   }
 
 }
