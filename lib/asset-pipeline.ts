@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { guid } from 'lol/utils/guid';
 import { join, normalize, relative, basename, extname, dirname, parse, format } from "path";
-import { fetch, isDirectory, isFile } from './utils/fs';
+import { fetch, isDirectory, isFile, EditFileCallback } from './utils/fs';
 import minimatch from 'minimatch';
 import { generateHash, hashCache, versionCache } from "./cache";
 import { template2 } from "lol/utils/string";
@@ -19,7 +19,7 @@ export interface AlternativeOutputs {
   outputs: any[]
 }
 
-export interface GlobItem {
+export interface AssetItemRules {
   glob:       string,
   ignore?:    boolean,
   files?:     string[],
@@ -28,7 +28,7 @@ export interface GlobItem {
   rename?:    string,
   base_dir?:  string,
   template?:  object|boolean,
-  edit?:      (value: Buffer | string) => Buffer | string,
+  edit?:      EditFileCallback,
 
   data?: any
   alternatives?: AlternativeOutputs
@@ -121,20 +121,20 @@ export class AssetPipeline {
     })
   }
 
-  addEntry(input:string, output:string, parameters?:GlobItem) {
+  addEntry(input:string, output:string, parameters?:AssetItemRules) {
     parameters = Object.assign({
       glob: '',
       rename: output,
       keep_path: false
     }, parameters || {})
-    this.file.add( input, parameters as GlobItem )
+    this.file.add( input, parameters as AssetItemRules )
   }
 
-  addFile(glob:string, parameters?:GlobItem) {
+  addFile(glob:string, parameters?:AssetItemRules) {
     this.file.add( glob, parameters )
   }
 
-  addDirectory(glob:string, parameters?:GlobItem) {
+  addDirectory(glob:string, parameters?:AssetItemRules) {
     this.directory.add( glob, parameters )
   }
 
@@ -144,6 +144,14 @@ export class AssetPipeline {
 
   ignoreDirectory(glob:string) {
     this.directory.ignore( glob )
+  }
+
+  getFileRules( file:string ) {
+    return this.file.getRules( file )
+  }
+
+  getDirectoryRules( directory:string ) {
+    return this.directory.getRules( directory )
   }
 
 }

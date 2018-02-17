@@ -2,16 +2,26 @@ import { AssetPipeline, AssetItem } from "./asset-pipeline";
 import { writeFile, isFile, readFile, remove } from "./utils/fs";
 import when from 'when';
 
-const DEFAULT_PROMISE = when(true)
+const DEFAULT_PROMISE = when(false)
+
+export interface ManifestFile {
+  asset_key: string | number;
+  date: Date;
+  load_path: string;
+  dst_path: string;
+  assets: {
+      [key: string]: AssetItem;
+  };
+}
 
 export class Manifest {
 
-  manifest = {
-    ASSET_KEY: this.pipeline.asset_key,
-    DATE: new Date,
-    LOAD_PATH: this.pipeline.load_path,
-    DIST_PATH: this.pipeline.dst_path,
-    ASSETS: {} as { [key:string]: AssetItem }
+  manifest:ManifestFile = {
+    asset_key: this.pipeline.asset_key,
+    date: new Date,
+    load_path: this.pipeline.load_path,
+    dst_path: this.pipeline.dst_path,
+    assets: {} as { [key:string]: AssetItem }
   }
 
   constructor(public pipeline: AssetPipeline) {}
@@ -25,13 +35,14 @@ export class Manifest {
   }
 
   createFile() {
-    this.manifest.ASSET_KEY = this.pipeline.asset_key
-    this.manifest.DATE      = new Date
-    this.manifest.LOAD_PATH = this.pipeline.load_path
-    this.manifest.DIST_PATH = this.pipeline.dst_path
+    this.manifest.asset_key = this.pipeline.asset_key
+    this.manifest.date      = new Date
+    this.manifest.load_path = this.pipeline.load_path
+    this.manifest.dst_path  = this.pipeline.dst_path
 
     if (this.pipeline.save_manifest) {
       return writeFile( JSON.stringify(this.manifest, null, 2), this.manifest_path )
+      .then(() => true)
     }
 
     return DEFAULT_PROMISE
@@ -45,6 +56,7 @@ export class Manifest {
     if (isFile(this.manifest_path)) {
       return readFile( this.manifest_path ).then((content:Buffer) => {
         this.manifest = JSON.parse( content.toString('utf-8') )
+        return true
       })
     }
 

@@ -1,4 +1,5 @@
-import { AssetPipeline, AssetItem } from "./asset-pipeline";
+import { AssetPipeline } from "./asset-pipeline";
+import { ManifestFile } from "./manifest";
 export interface TreeInterface {
     path: string;
     files: string[];
@@ -10,15 +11,7 @@ export declare class Tree {
     pipeline: AssetPipeline;
     _tree: TreeInterface;
     constructor(pipeline: AssetPipeline);
-    readonly manifest: {
-        ASSET_KEY: string | number;
-        DATE: Date;
-        LOAD_PATH: string;
-        DIST_PATH: string;
-        ASSETS: {
-            [key: string]: AssetItem;
-        };
-    };
+    readonly manifest: ManifestFile;
     update(): void;
     resolve(path: string): TreeInterface;
     buildPath(path: string): string;

@@ -89,5 +89,11 @@ class AssetPipeline {
     ignoreDirectory(glob) {
         this.directory.ignore(glob);
     }
+    getFileRules(file) {
+        return this.file.getRules(file);
+    }
+    getDirectoryRules(directory) {
+        return this.directory.getRules(directory);
+    }
 }
 exports.AssetPipeline = AssetPipeline;

@@ -2,6 +2,7 @@ import { isFile } from "./utils/fs";
 import { AssetPipeline, AssetItem, AlternativeOutputs } from "./asset-pipeline";
 import { normalize, dirname, extname, relative, join } from "path";
 import { URL } from "url";
+import { ManifestFile } from "./manifest";
 
 /**
  * Clean path
@@ -59,7 +60,7 @@ export class Tree {
       subdirectories: {}
     } as TreeInterface
 
-    const keys = Object.keys(this.manifest.ASSETS).map((key) => {
+    const keys = Object.keys(this.manifest.assets).map((key) => {
       return this.buildPath( key )
     })
     let currDir = tree
@@ -117,8 +118,8 @@ export class Tree {
 
     let output = path
 
-    if (this.manifest.ASSETS[output]) {
-      const item    = this.manifest.ASSETS[output]
+    if (this.manifest.assets[output]) {
+      const item    = this.manifest.assets[output]
       output = this.pipeline.cacheable ? item.cache : item.output
 
       if ("alternatives" in item && typeof item.alternatives) {

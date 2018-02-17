@@ -11,25 +11,25 @@ const utils_1 = require("./utils");
 const file_pipeline_1 = require("./file-pipeline");
 class DirectoryPipeline extends file_pipeline_1.FilePipeline {
     fetch() {
-        const globs = this._globs.map((item) => {
+        const globs = this.rules.map((item) => {
             return this.pipeline.fromLoadPath(item.glob);
         });
         array_1.unique(utils_1.fetchDirs(globs))
             .map((input) => {
             input = this.pipeline.relativeToLoadPath(input);
-            this.manifest.ASSETS[input] = {
+            this.manifest.assets[input] = {
                 input: input,
                 output: input,
                 cache: input
             };
             this.resolve(input);
-            return this.manifest.ASSETS[input];
+            return this.manifest.assets[input];
         })
             .forEach((item) => {
             const subdirs = fs_1.fetch(this.pipeline.fromLoadPath(item.input) + '/**/*').map((input) => {
                 input = path_1.dirname(input);
                 input = this.pipeline.relativeToLoadPath(input);
-                this.manifest.ASSETS[input] = {
+                this.manifest.assets[input] = {
                     input: input,
                     output: input,
                     cache: input
@@ -40,8 +40,8 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
     }
     getRules(dir) {
         let rules = { glob: dir, cache: false };
-        for (let i = 0, ilen = this._globs.length, item, relativeGlob; i < ilen; i++) {
-            item = this._globs[i];
+        for (let i = 0, ilen = this.rules.length, item, relativeGlob; i < ilen; i++) {
+            item = this.rules[i];
             // if (dir === item.glob) {
             //   rules = item
             //   break;

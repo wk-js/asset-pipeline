@@ -41,7 +41,7 @@ class Tree {
             files: [],
             subdirectories: {}
         };
-        const keys = Object.keys(this.manifest.ASSETS).map((key) => {
+        const keys = Object.keys(this.manifest.assets).map((key) => {
             return this.buildPath(key);
         });
         let currDir = tree;
@@ -88,8 +88,8 @@ class Tree {
             path = path.split(extra[0])[0];
         }
         let output = path;
-        if (this.manifest.ASSETS[output]) {
-            const item = this.manifest.ASSETS[output];
+        if (this.manifest.assets[output]) {
+            const item = this.manifest.assets[output];
             output = this.pipeline.cacheable ? item.cache : item.output;
             if ("alternatives" in item && typeof item.alternatives) {
                 const alts = item.alternatives;

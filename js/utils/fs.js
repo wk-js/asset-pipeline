@@ -39,6 +39,16 @@ function isDirectory(path) {
     return true;
 }
 exports.isDirectory = isDirectory;
+function exists(path) {
+    try {
+        fs.statSync(path);
+    }
+    catch (e) {
+        return false;
+    }
+    return true;
+}
+exports.exists = exists;
 function copy(fromFile, toFile) {
     return when_1.promise(function (resolve, reject) {
         let fileValid = fromFile !== toFile;
@@ -50,14 +60,14 @@ function copy(fromFile, toFile) {
         ensureDir(path_1.dirname(toFile)).then(function () {
             const rs = fs.createReadStream(fromFile);
             const ws = fs.createWriteStream(toFile);
-            ws.on('error', function () {
-                reject.apply(null, arguments);
+            ws.on('error', function (error) {
+                reject(error);
             });
-            rs.on('error', function () {
-                reject.apply(null, arguments);
+            rs.on('error', function (error) {
+                reject(error);
             });
             rs.on('end', function () {
-                resolve.apply(null, arguments);
+                resolve(true);
             });
             rs.pipe(ws, { end: true });
         });
@@ -73,7 +83,7 @@ function remove(file) {
                 reject(err);
                 return;
             }
-            resolve({});
+            resolve(true);
         });
     });
 }
@@ -84,7 +94,8 @@ function move(fromFile, toFile) {
         function () { return remove(fromFile); }
     ], function (res, action) {
         return action();
-    }, null);
+    }, null)
+        .then(() => true);
 }
 exports.move = move;
 function rename(fromFile, toFile) {
@@ -140,23 +151,24 @@ function fetchDirs(include, exclude) {
 }
 exports.fetchDirs = fetchDirs;
 function writeFile(content, file) {
-    ensureDir(path_1.dirname(file));
-    return when_1.promise(function (resolve, reject) {
-        fs.writeFile(file, content, function (err) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve({});
+    return ensureDir(path_1.dirname(file)).then(function () {
+        return when_1.promise(function (resolve, reject) {
+            fs.writeFile(file, content, function (err) {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(true);
+            });
         });
     });
 }
 exports.writeFile = writeFile;
-function readFile(file) {
+function readFile(file, options) {
     if (!isFile(file))
         throw 'This is not a file.';
     return when_1.promise(function (resolve, reject) {
-        fs.readFile(file, function (err, data) {
+        fs.readFile(file, options, function (err, data) {
             if (err) {
                 reject(err);
                 return;

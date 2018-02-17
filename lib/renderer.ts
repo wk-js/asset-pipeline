@@ -1,9 +1,9 @@
-import { AssetPipeline, GlobItem } from "./asset-pipeline";
+import { AssetPipeline, AssetItemRules } from "./asset-pipeline";
 import template from 'lodash.template';
 import { createReadStream } from "fs";
 import { MemoryStream } from "./utils/memory-stream";
 import { guid } from "lol/utils/guid";
-import { writeFile, editFile } from "./utils/fs";
+import { writeFile, editFile, EditFileCallback } from "./utils/fs";
 import { promise, reduce } from "when";
 import { TemplateOptions } from "lodash";
 import { relative } from "path";
@@ -16,30 +16,30 @@ export class Renderer {
 
    edit() {
     const inputs = this._fetch().filter((file) => {
-      return typeof (file[2] as GlobItem).edit === 'function'
+      return typeof (file[2] as AssetItemRules).edit === 'function'
     })
 
     return reduce(inputs, (reduction:any, input:any[]) => {
-      return editFile( input[1], (input[2] as GlobItem).edit as ((value: string | Buffer) => string | Buffer) )
+      return editFile( input[1], (input[2] as AssetItemRules).edit as EditFileCallback )
     }, null)
   }
 
   render() {
     const inputs = this._fetch().filter((template) => {
-      return !!(template[2] as GlobItem).template
+      return !!(template[2] as AssetItemRules).template
     })
 
     return reduce(inputs, (reduction:any, input:any[]) => {
       if (typeof input[1].template === 'object') {
-        return this._render( input[0], input[1], input[2] )
+        return this._render( input[1], input[2] )
       }
-      return this._render( input[0], input[1] )
+      return this._render( input[1] )
     }, null)
   }
 
-  private _render( input:string, output:string, data?:object ) { 
+  private _render( output:string, data?:object ) { 
     return promise((resolve) => {
-      const rs = createReadStream(input, { encoding: 'utf-8' })
+      const rs = createReadStream(output, { encoding: 'utf-8' })
       const ws = new MemoryStream(guid())
 
       rs.on('data', ( chunk ) => {
@@ -64,13 +64,13 @@ export class Renderer {
   }
 
   private _fetch() {
-    return Object.keys(this.pipeline.manifest.manifest.ASSETS)
+    return Object.keys(this.pipeline.manifest.manifest.assets)
 
     .map((input) => {
       return [
         relative( process.cwd(), this.pipeline.fromLoadPath( input ) ),
         relative( process.cwd(), this.pipeline.fromDstPath(this.pipeline.tree.getPath( input )) ),
-        this.pipeline.file.getRules( input )
+        this.pipeline.getFileRules( input )
       ]
     })
   }

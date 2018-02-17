@@ -11,7 +11,7 @@ const string_1 = require("lol/utils/string");
 class FilePipeline {
     constructor(pipeline) {
         this.pipeline = pipeline;
-        this._globs = [];
+        this.rules = [];
     }
     get manifest() {
         return this.pipeline.manifest.manifest;
@@ -22,7 +22,7 @@ class FilePipeline {
             glob: glob
         }, parameters || {});
         parameters.glob = glob;
-        this._globs.push(parameters);
+        this.rules.push(parameters);
     }
     ignore(glob) {
         glob = path_1.normalize(glob);
@@ -30,12 +30,12 @@ class FilePipeline {
             glob: glob,
             ignore: true
         };
-        this._globs.push(parameters);
+        this.rules.push(parameters);
     }
     fetch() {
         const globs = [];
         const ignores = [];
-        this._globs.forEach((item) => {
+        this.rules.forEach((item) => {
             if ("ignore" in item && item.ignore) {
                 ignores.push(this.pipeline.fromLoadPath(item.glob));
             }
@@ -49,7 +49,7 @@ class FilePipeline {
             return this.pipeline.relativeToLoadPath(file);
         })
             .forEach((input) => {
-            this.manifest.ASSETS[input] = {
+            this.manifest.assets[input] = {
                 input: input,
                 output: input,
                 cache: input
@@ -59,8 +59,8 @@ class FilePipeline {
     }
     getRules(file) {
         let rules = {};
-        for (let i = 0, ilen = this._globs.length, item, relativeGlob; i < ilen; i++) {
-            item = this._globs[i];
+        for (let i = 0, ilen = this.rules.length, item, relativeGlob; i < ilen; i++) {
+            item = this.rules[i];
             // if (file === item.glob) {
             //   rules = item
             //   break;
@@ -77,7 +77,7 @@ class FilePipeline {
         let rules = this.getRules(file);
         this.resolveOutput(file, rules);
         if ("alternatives" in rules && rules.alternatives) {
-            const item = this.manifest.ASSETS[file];
+            const item = this.manifest.assets[file];
             item.alternatives = {
                 condition: rules.alternatives.condition,
                 outputs: []
@@ -115,8 +115,8 @@ class FilePipeline {
                 this.pipeline.cacheable && rules.cache) {
             cache = cache_1.hashCache(output, this.pipeline.asset_key);
         }
-        if (isAlternative && "alternatives" in this.manifest.ASSETS[file]) {
-            const alts = this.manifest.ASSETS[file].alternatives;
+        if (isAlternative && "alternatives" in this.manifest.assets[file]) {
+            const alts = this.manifest.assets[file].alternatives;
             alts.outputs.push({
                 data: rules.data,
                 output: output,
@@ -124,8 +124,8 @@ class FilePipeline {
             });
         }
         else {
-            this.manifest.ASSETS[file].output = output;
-            this.manifest.ASSETS[file].cache = cache;
+            this.manifest.assets[file].output = output;
+            this.manifest.assets[file].cache = cache;
         }
     }
 }

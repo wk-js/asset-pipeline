@@ -5,16 +5,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("./utils/fs");
 const when_1 = __importDefault(require("when"));
-const DEFAULT_PROMISE = when_1.default(true);
+const DEFAULT_PROMISE = when_1.default(false);
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;
         this.manifest = {
-            ASSET_KEY: this.pipeline.asset_key,
-            DATE: new Date,
-            LOAD_PATH: this.pipeline.load_path,
-            DIST_PATH: this.pipeline.dst_path,
-            ASSETS: {}
+            asset_key: this.pipeline.asset_key,
+            date: new Date,
+            load_path: this.pipeline.load_path,
+            dst_path: this.pipeline.dst_path,
+            assets: {}
         };
     }
     get manifest_path() {
@@ -24,12 +24,13 @@ class Manifest {
         return this.pipeline.save_manifest && fs_1.isFile(this.manifest_path);
     }
     createFile() {
-        this.manifest.ASSET_KEY = this.pipeline.asset_key;
-        this.manifest.DATE = new Date;
-        this.manifest.LOAD_PATH = this.pipeline.load_path;
-        this.manifest.DIST_PATH = this.pipeline.dst_path;
+        this.manifest.asset_key = this.pipeline.asset_key;
+        this.manifest.date = new Date;
+        this.manifest.load_path = this.pipeline.load_path;
+        this.manifest.dst_path = this.pipeline.dst_path;
         if (this.pipeline.save_manifest) {
-            return fs_1.writeFile(JSON.stringify(this.manifest, null, 2), this.manifest_path);
+            return fs_1.writeFile(JSON.stringify(this.manifest, null, 2), this.manifest_path)
+                .then(() => true);
         }
         return DEFAULT_PROMISE;
     }
@@ -40,6 +41,7 @@ class Manifest {
         if (fs_1.isFile(this.manifest_path)) {
             return fs_1.readFile(this.manifest_path).then((content) => {
                 this.manifest = JSON.parse(content.toString('utf-8'));
+                return true;
             });
         }
         if (this.pipeline.save_manifest) {

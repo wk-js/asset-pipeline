@@ -1,4 +1,4 @@
-import { AssetPipeline, GlobItem, AssetItem } from "./asset-pipeline";
+import { AssetPipeline, AssetItemRules, AssetItem } from "./asset-pipeline";
 import { normalize, dirname, basename, parse, format, join, relative } from "path";
 import { readdir } from "fs";
 import { fetch } from "./utils/fs";
@@ -11,7 +11,7 @@ import { FilePipeline } from "./file-pipeline";
 export class DirectoryPipeline extends FilePipeline {
 
   fetch() {
-    const globs = this._globs.map((item) => {
+    const globs = this.rules.map((item) => {
       return this.pipeline.fromLoadPath( item.glob )
     })
 
@@ -20,7 +20,7 @@ export class DirectoryPipeline extends FilePipeline {
     .map((input) =>{
       input = this.pipeline.relativeToLoadPath( input )
 
-      this.manifest.ASSETS[input] = {
+      this.manifest.assets[input] = {
         input:  input,
         output: input,
         cache:  input
@@ -28,7 +28,7 @@ export class DirectoryPipeline extends FilePipeline {
 
       this.resolve( input )
 
-      return this.manifest.ASSETS[input]
+      return this.manifest.assets[input]
     })
 
     .forEach((item) => {
@@ -36,7 +36,7 @@ export class DirectoryPipeline extends FilePipeline {
         input = dirname( input )
         input = this.pipeline.relativeToLoadPath( input )
 
-        this.manifest.ASSETS[input] = {
+        this.manifest.assets[input] = {
           input:  input,
           output: input,
           cache:  input
@@ -50,10 +50,10 @@ export class DirectoryPipeline extends FilePipeline {
   }
 
   getRules(dir:string) {
-    let rules: GlobItem = { glob: dir, cache: false }
+    let rules: AssetItemRules = { glob: dir, cache: false }
 
-    for (let i = 0, ilen = this._globs.length, item, relativeGlob; i < ilen; i++) {
-      item = this._globs[i]
+    for (let i = 0, ilen = this.rules.length, item, relativeGlob; i < ilen; i++) {
+      item = this.rules[i]
 
       // if (dir === item.glob) {
       //   rules = item

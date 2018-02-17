@@ -30,8 +30,18 @@ export function isDirectory(path:string) {
 
 }
 
+export function exists(path:string) {
+  try {
+    fs.statSync( path )
+  } catch(e) {
+    return false
+  }
+
+  return true
+}
+
 export function copy(fromFile:string, toFile:string) {
-  return promise(function(resolve:Function, reject:Function) {
+  return promise<boolean>(function(resolve:Function, reject:Function) {
 
     let fileValid = fromFile !== toFile
     if (!fileValid) throw `Cannot copy '${fromFile}' to the same path`
@@ -43,14 +53,14 @@ export function copy(fromFile:string, toFile:string) {
       const rs = fs.createReadStream( fromFile )
       const ws = fs.createWriteStream( toFile  )
 
-      ws.on('error', function() {
-        reject.apply(null, arguments)
+      ws.on('error', function(error:Error) {
+        reject(error)
       })
-      rs.on('error', function() {
-        reject.apply(null, arguments)
+      rs.on('error', function(error:Error) {
+        reject(error)
       })
       rs.on('end', function() {
-        resolve.apply(null, arguments)
+        resolve(true)
       })
 
       rs.pipe( ws, { end: true })
@@ -60,7 +70,7 @@ export function copy(fromFile:string, toFile:string) {
 }
 
 export function remove(file:string) {
-  return promise(function(resolve:Function, reject:Function) {
+  return promise<boolean>(function(resolve:Function, reject:Function) {
 
     if (!isFile(file)) throw 'Cannot be removed. This is not a file.'
 
@@ -70,7 +80,7 @@ export function remove(file:string) {
         return
       }
 
-      resolve({})
+      resolve(true)
     })
 
   })
@@ -83,6 +93,7 @@ export function move(fromFile:string, toFile:string) {
   ], function(res:null, action:Function) {
     return action()
   }, null)
+  .then(() => true)
 }
 
 export function rename(fromFile:string, toFile:string) {
@@ -96,7 +107,7 @@ export function ensureDir(path:string) {
 
   const dirs = path.split( '/' )
 
-  return reduce(dirs, function(res:string, d:string) {
+  return reduce<string>(dirs, function(res:string, d:string) {
     if (d === '.') return res
 
     res += '/' + d
@@ -152,25 +163,25 @@ export function fetchDirs(include:string|string[], exclude?:string|string[]) {
 }
 
 export function writeFile(content:string | Buffer, file:string) {
-  ensureDir(dirname(file))
+  return ensureDir(dirname(file)).then(function() {
+    return promise<boolean>(function(resolve:Function, reject:Function) {
+      fs.writeFile(file, content, function(err:Error) {
+        if (err) {
+          reject(err)
+          return
+        }
 
-  return promise(function(resolve:Function, reject:Function) {
-    fs.writeFile(file, content, function(err:Error) {
-      if (err) {
-        reject(err)
-        return
-      }
-
-      resolve({})
+        resolve(true)
+      })
     })
   })
 }
 
-export function readFile(file:string) {
+export function readFile(file:string, options?: { encoding?: string | null; flag?: string; } | string | undefined | null) {
   if (!isFile(file)) throw 'This is not a file.'
 
   return promise<Buffer>(function(resolve:Function, reject:Function) {
-    fs.readFile(file, function(err:Error, data:Buffer) {
+    fs.readFile(file, options, function(err:Error, data:string | Buffer) {
       if (err) {
         reject(err)
         return
@@ -179,9 +190,11 @@ export function readFile(file:string) {
       resolve(data)
     })
   })
-}
+} 
 
-export function editFile(file:string, callback:(value: string | Buffer) => string | Buffer) {
+export type EditFileCallback = (value: string | Buffer) => string | Buffer
+
+export function editFile(file:string, callback:EditFileCallback) {
   return readFile(file).then(callback).then(function(content:string | Buffer) {
     return writeFile(content, file)
   })

@@ -5,9 +5,9 @@ export declare class Renderer {
     pipeline: AssetPipeline;
     options: TemplateOptions;
     constructor(pipeline: AssetPipeline);
-    edit(): When.Promise<{} | null>;
+    edit(): When.Promise<boolean | null>;
     render(): When.Promise<{} | null>;
-    private _render(input, output, data?);
+    private _render(output, data?);
     private _renderSource(src, data?);
     private _fetch();
     /**

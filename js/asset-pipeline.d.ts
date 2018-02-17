@@ -1,5 +1,5 @@
-/// <reference types="node" />
 /// <reference types="when" />
+import { EditFileCallback } from './utils/fs';
 import { Tree } from "./tree";
 import { Manager } from "./manager";
 import { FilePipeline } from "./file-pipeline";
@@ -10,7 +10,7 @@ export interface AlternativeOutputs {
     condition: string;
     outputs: any[];
 }
-export interface GlobItem {
+export interface AssetItemRules {
     glob: string;
     ignore?: boolean;
     files?: string[];
@@ -19,7 +19,7 @@ export interface GlobItem {
     rename?: string;
     base_dir?: string;
     template?: object | boolean;
-    edit?: (value: Buffer | string) => Buffer | string;
+    edit?: EditFileCallback;
     data?: any;
     alternatives?: AlternativeOutputs;
 }
@@ -54,11 +54,13 @@ export declare class AssetPipeline {
     relativeToLoadPath(path: string): string;
     getPath(path: string, fromPath?: string): string;
     getUrl(path: string, fromPath?: string): string;
-    resolve(force?: boolean): When.Promise<{}> | When.Promise<void>;
-    render(): When.Promise<{} | null>;
-    addEntry(input: string, output: string, parameters?: GlobItem): void;
-    addFile(glob: string, parameters?: GlobItem): void;
-    addDirectory(glob: string, parameters?: GlobItem): void;
+    resolve(force?: boolean): When.Promise<boolean>;
+    render(): When.Promise<boolean | null>;
+    addEntry(input: string, output: string, parameters?: AssetItemRules): void;
+    addFile(glob: string, parameters?: AssetItemRules): void;
+    addDirectory(glob: string, parameters?: AssetItemRules): void;
     ignoreFile(glob: string): void;
     ignoreDirectory(glob: string): void;
+    getFileRules(file: string): {};
+    getDirectoryRules(directory: string): AssetItemRules;
 }

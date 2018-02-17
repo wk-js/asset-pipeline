@@ -29,14 +29,14 @@ class Renderer {
         });
         return when_1.reduce(inputs, (reduction, input) => {
             if (typeof input[1].template === 'object') {
-                return this._render(input[0], input[1], input[2]);
+                return this._render(input[1], input[2]);
             }
-            return this._render(input[0], input[1]);
+            return this._render(input[1]);
         }, null);
     }
-    _render(input, output, data) {
+    _render(output, data) {
         return when_1.promise((resolve) => {
-            const rs = fs_1.createReadStream(input, { encoding: 'utf-8' });
+            const rs = fs_1.createReadStream(output, { encoding: 'utf-8' });
             const ws = new memory_stream_1.MemoryStream(guid_1.guid());
             rs.on('data', (chunk) => {
                 chunk = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : chunk;
@@ -56,12 +56,12 @@ class Renderer {
         return Renderer.render(src, this.options, data);
     }
     _fetch() {
-        return Object.keys(this.pipeline.manifest.manifest.ASSETS)
+        return Object.keys(this.pipeline.manifest.manifest.assets)
             .map((input) => {
             return [
                 path_1.relative(process.cwd(), this.pipeline.fromLoadPath(input)),
                 path_1.relative(process.cwd(), this.pipeline.fromDstPath(this.pipeline.tree.getPath(input))),
-                this.pipeline.file.getRules(input)
+                this.pipeline.getFileRules(input)
             ];
         });
     }

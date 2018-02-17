@@ -1,22 +1,23 @@
 /// <reference types="when" />
 import { AssetPipeline, AssetItem } from "./asset-pipeline";
 import when from 'when';
+export interface ManifestFile {
+    asset_key: string | number;
+    date: Date;
+    load_path: string;
+    dst_path: string;
+    assets: {
+        [key: string]: AssetItem;
+    };
+}
 export declare class Manifest {
     pipeline: AssetPipeline;
-    manifest: {
-        ASSET_KEY: string | number;
-        DATE: Date;
-        LOAD_PATH: string;
-        DIST_PATH: string;
-        ASSETS: {
-            [key: string]: AssetItem;
-        };
-    };
+    manifest: ManifestFile;
     constructor(pipeline: AssetPipeline);
     readonly manifest_path: string;
     fileExists(): boolean;
-    createFile(): when.Promise<{}>;
-    updateFile(): when.Promise<{}>;
-    readFile(): when.Promise<{}> | when.Promise<void>;
+    createFile(): when.Promise<boolean>;
+    updateFile(): when.Promise<boolean>;
+    readFile(): when.Promise<boolean>;
     deleteFile(): when.Promise<boolean>;
 }
