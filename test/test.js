@@ -1,11 +1,13 @@
 const { AssetPipeline } = require( '../js/asset-pipeline' )
 const AP = new AssetPipeline
 
-AP.root_path    = process.cwd() + '/../starter-vue'
-AP.cacheable    = true
-AP.forceResolve = false
-AP.asset_host   = 'http://localhost:3000'
-AP.data.locale  = 'fr'
+AP.root_path     = process.cwd() + '/../starter-vue'
+AP.cacheable     = true
+AP.cache_type    = 'version'
+AP.force_resolve = true
+AP.verbose       = true
+AP.asset_host    = 'http://localhost:3000'
+AP.data.locale   = 'fr'
 
 AP.addEntry( 'scripts/index.js'       , 'main.js' )
 AP.addEntry( 'scripts/vendor/index.js', 'vendor.js' )
@@ -42,7 +44,7 @@ AP.addDirectory( 'assets/**/*', {
 AP.resolve().then(() => {
 
   console.log(
-    AP.manifest.manifest.ASSETS
+    AP.manifest.manifest.assets
     // AP.getPath( 'scripts/index.js#iefix', 'views/index.html.ejs' )
     // AP.getPath( 'assets/fonts' )
     // AP.getPath( 'scripts/index.js' )

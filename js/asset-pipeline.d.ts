@@ -35,6 +35,7 @@ export declare class AssetPipeline {
     dst_path: string;
     root_path: string;
     cacheable: boolean;
+    cache_type: string;
     prefix: string;
     asset_key: string | number;
     asset_host: string | null;

@@ -3,7 +3,6 @@ import { guid } from 'lol/utils/guid';
 import { join, normalize, relative, basename, extname, dirname, parse, format } from "path";
 import { fetch, isDirectory, isFile, EditFileCallback } from './utils/fs';
 import minimatch from 'minimatch';
-import { generateHash, hashCache, versionCache } from "./cache";
 import { template2 } from "lol/utils/string";
 import { URL } from "url";
 import { deflat } from "lol/utils/object";
@@ -49,6 +48,7 @@ export class AssetPipeline {
   root_path: string = process.cwd()
 
   cacheable: boolean = false
+  cache_type: string = 'hash'
 
   prefix:     string          = ''
   asset_key:  string | number = 'no_key'
@@ -97,7 +97,7 @@ export class AssetPipeline {
   }
 
   resolve(force?:boolean) {
-    force = this.force_resolve ? this.force_resolve : force
+    force = force ? force : this.force_resolve
 
     if (force || !this.manifest.fileExists()) {
       this.log( '[AssetPipeline] Fetch directories' )

@@ -3,6 +3,7 @@ import { ManifestFile } from "./manifest";
 export declare class FilePipeline {
     pipeline: AssetPipeline;
     rules: AssetItemRules[];
+    type: string;
     constructor(pipeline: AssetPipeline);
     readonly manifest: ManifestFile;
     add(glob: string, parameters?: AssetItemRules): void;

@@ -9,6 +9,7 @@ import { ManifestFile } from "./manifest";
 export class FilePipeline {
 
   rules: AssetItemRules[] = []
+  type: string = 'file'
 
   constructor(public pipeline:AssetPipeline) {}
 
@@ -143,7 +144,13 @@ export class FilePipeline {
       ||
       this.pipeline.cacheable && rules.cache
     ) {
-      cache = hashCache(output, this.pipeline.asset_key)
+      if (this.pipeline.cache_type === 'hash') {
+        cache = hashCache(output, this.pipeline.asset_key)
+      } else if (this.pipeline.cache_type === 'version' && this.type === 'file') {
+        cache = versionCache(output, this.pipeline.asset_key)
+      } else {
+        cache = output
+      }
     }
 
     if (isAlternative && "alternatives" in this.manifest.assets[file]) {

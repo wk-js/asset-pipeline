@@ -4,11 +4,12 @@ import { readdir } from "fs";
 import { fetch } from "./utils/fs";
 import { unique } from "lol/utils/array";
 import minimatch from "minimatch";
-import { hashCache } from "./cache";
 import { fetchDirs } from "./utils";
 import { FilePipeline } from "./file-pipeline";
 
 export class DirectoryPipeline extends FilePipeline {
+
+  type: string = 'directory'
 
   fetch() {
     const globs = this.rules.map((item) => {

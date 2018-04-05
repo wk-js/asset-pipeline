@@ -10,6 +10,10 @@ const minimatch_1 = __importDefault(require("minimatch"));
 const utils_1 = require("./utils");
 const file_pipeline_1 = require("./file-pipeline");
 class DirectoryPipeline extends file_pipeline_1.FilePipeline {
+    constructor() {
+        super(...arguments);
+        this.type = 'directory';
+    }
     fetch() {
         const globs = this.rules.map((item) => {
             return this.pipeline.fromLoadPath(item.glob);

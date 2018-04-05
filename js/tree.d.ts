@@ -25,5 +25,7 @@ export declare class Tree {
      * @param {string?} fromPath - File which request the path (must be relative to ABSOLUTE_LOAD_PATH)
      */
     getUrl(path: string, fromPath?: string): string;
+    getFilePath(path: string, fromPath?: string): string;
+    getFileUrl(path: string, fromPath?: string): string;
     view(): string;
 }

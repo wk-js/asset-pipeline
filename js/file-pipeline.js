@@ -12,6 +12,7 @@ class FilePipeline {
     constructor(pipeline) {
         this.pipeline = pipeline;
         this.rules = [];
+        this.type = 'file';
     }
     get manifest() {
         return this.pipeline.manifest.manifest;
@@ -113,7 +114,15 @@ class FilePipeline {
         if ((this.pipeline.cacheable && !("cache" in rules))
             ||
                 this.pipeline.cacheable && rules.cache) {
-            cache = cache_1.hashCache(output, this.pipeline.asset_key);
+            if (this.pipeline.cache_type === 'hash') {
+                cache = cache_1.hashCache(output, this.pipeline.asset_key);
+            }
+            else if (this.pipeline.cache_type === 'version' && this.type === 'file') {
+                cache = cache_1.versionCache(output, this.pipeline.asset_key);
+            }
+            else {
+                cache = output;
+            }
         }
         if (isAlternative && "alternatives" in this.manifest.assets[file]) {
             const alts = this.manifest.assets[file].alternatives;

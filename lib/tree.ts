@@ -28,6 +28,13 @@ function _toUnixPath(pth:string) {
   return pth
 }
 
+/**
+ * Remove extras
+ */
+function removeSearch( pth:string ) {
+  return pth.split(/\?|\#/)[0]
+}
+
 
 export interface TreeInterface {
   path: string,
@@ -119,7 +126,7 @@ export class Tree {
     let output = path
 
     if (this.manifest.assets[output]) {
-      const item    = this.manifest.assets[output]
+      const item = this.manifest.assets[output]
       output = this.pipeline.cacheable ? item.cache : item.output
 
       if ("alternatives" in item && typeof item.alternatives) {
@@ -176,6 +183,15 @@ export class Tree {
     }
 
     return path
+  }
+
+  getFilePath( path:string, fromPath?:string ) {
+    path = this.getPath( path, fromPath )
+    return removeSearch( path )
+  }
+
+  getFileUrl( path:string, fromPath?:string ) {
+    return this.getUrl( path, fromPath )
   }
 
   view() {

@@ -13,6 +13,7 @@ class AssetPipeline {
         this.dst_path = './public';
         this.root_path = process.cwd();
         this.cacheable = false;
+        this.cache_type = 'hash';
         this.prefix = '';
         this.asset_key = 'no_key';
         this.asset_host = null;
@@ -49,7 +50,7 @@ class AssetPipeline {
         return this.tree.getUrl(path, fromPath);
     }
     resolve(force) {
-        force = this.force_resolve ? this.force_resolve : force;
+        force = force ? force : this.force_resolve;
         if (force || !this.manifest.fileExists()) {
             this.log('[AssetPipeline] Fetch directories');
             this.directory.fetch();

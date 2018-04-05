@@ -22,6 +22,12 @@ function _toUnixPath(pth) {
     }
     return pth;
 }
+/**
+ * Remove extras
+ */
+function removeSearch(pth) {
+    return pth.split(/\?|\#/)[0];
+}
 class Tree {
     constructor(pipeline) {
         this.pipeline = pipeline;
@@ -131,6 +137,13 @@ class Tree {
             path = url.href;
         }
         return path;
+    }
+    getFilePath(path, fromPath) {
+        path = this.getPath(path, fromPath);
+        return removeSearch(path);
+    }
+    getFileUrl(path, fromPath) {
+        return this.getUrl(path, fromPath);
     }
     view() {
         function ptree(tree, tab) {
