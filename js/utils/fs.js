@@ -106,11 +106,13 @@ function ensureDir(path) {
     path = path_1.normalize(path);
     if (isDirectory(path))
         return when_2.default(path);
-    const dirs = path.split('/');
+    const dirs = path.split(/\\|\//);
+    const initial = path_1.isAbsolute(path) ? dirs.shift() : '.';
+    const slash = process.platform == 'win32' ? '\\' : '/';
     return when_1.reduce(dirs, function (res, d) {
         if (d === '.')
             return res;
-        res += '/' + d;
+        res += slash + d;
         if (!isDirectory(res)) {
             return when_1.promise(function (resolve, reject) {
                 fs.mkdir(res, function (err) {
@@ -123,7 +125,7 @@ function ensureDir(path) {
             });
         }
         return res;
-    }, '.');
+    }, initial);
 }
 exports.ensureDir = ensureDir;
 function fetch(include, exclude) {

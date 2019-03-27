@@ -2,7 +2,7 @@ import * as fs from "fs";
 import { promise, all, reduce } from "when";
 import when from "when";
 import { FileList } from "filelist";
-import { normalize, dirname } from "path";
+import { normalize, dirname, isAbsolute } from "path";
 
 export function isFile(path:string) {
 
@@ -105,12 +105,14 @@ export function ensureDir(path:string) {
 
   if (isDirectory(path)) return when(path)
 
-  const dirs = path.split( '/' )
+  const dirs = path.split(/\\|\//)
+  const initial = isAbsolute(path) ? dirs.shift() as string : '.'
+  const slash = process.platform == 'win32' ? '\\' : '/'
 
   return reduce<string>(dirs, function(res:string, d:string) {
     if (d === '.') return res
 
-    res += '/' + d
+    res += slash + d
 
     if (!isDirectory(res)) {
       return promise<string>(function(resolve:Function, reject:Function) {
@@ -126,7 +128,7 @@ export function ensureDir(path:string) {
     }
 
     return res
-  }, '.')
+  }, initial)
 
 }
 
