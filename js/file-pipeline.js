@@ -90,14 +90,14 @@ class FilePipeline {
         }
     }
     resolveOutput(file, rules, isAlternative = false) {
-        let output = file;
-        const pathObject = path_1.parse(output);
+        let output = file, pathObject;
         // Remove path and keep basename only
         if ("keep_path" in rules && !rules.keep_path) {
             output = path_1.basename(output);
         }
         // Rename output basename
         if ("rename" in rules && typeof rules.rename === 'string') {
+            pathObject = path_1.parse(output);
             output = path_1.join(path_1.dirname(output), rules.rename);
             output = string_1.template2(output, pathObject);
         }
@@ -107,6 +107,7 @@ class FilePipeline {
             output = path_1.relative(this.pipeline.dst_path, output);
         }
         // Replace dir path if needed
+        pathObject = path_1.parse(output);
         pathObject.dir = this.pipeline.getPath(pathObject.dir);
         output = path_1.format(pathObject);
         if ("resolve" in rules && typeof rules.resolve === 'function') {
