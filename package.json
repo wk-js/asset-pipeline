@@ -1,6 +1,6 @@
 {
   "name": "asset-pipeline",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Asset pipeline",
   "main": "js/asset-pipeline.js",
   "dependencies": {
