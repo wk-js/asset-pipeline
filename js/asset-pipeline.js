@@ -99,7 +99,7 @@ class AssetPipeline {
     }
     log(...args) {
         if (this.verbose)
-            console.log.apply(null, args);
+            console.log(...args);
     }
 }
 exports.AssetPipeline = AssetPipeline;

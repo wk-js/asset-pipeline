@@ -55,6 +55,11 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
             if (dir === item.glob || minimatch_1.default(dir, item.glob)) {
                 rules = Object.assign(rules, item);
             }
+            else if (minimatch_1.default(dir, item.glob + '/**') && typeof item.rename === 'string') {
+                rules = Object.assign(rules, Object.assign({}, item, {
+                    rename: rules.glob.replace(item.glob, item.rename)
+                }));
+            }
         }
         return rules;
     }
