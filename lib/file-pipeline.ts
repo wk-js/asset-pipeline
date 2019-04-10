@@ -133,9 +133,12 @@ export class FilePipeline {
     }
 
     // Replace dir path if needed
-    pathObject     = parse(output)
     pathObject.dir = this.pipeline.getPath( pathObject.dir )
     output         = format( pathObject )
+
+    if ("resolve" in rules && typeof rules.resolve === 'function') {
+      output = rules.resolve(output, file, rules, isAlternative)
+    }
 
     let cache = output
 
