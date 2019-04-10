@@ -65,6 +65,10 @@ export class DirectoryPipeline extends FilePipeline {
 
       if (dir === item.glob || minimatch(dir, item.glob)) {
         rules = Object.assign(rules, item)
+      } else if (minimatch(dir, item.glob + '/**') && typeof item.rename === 'string') {
+        rules = Object.assign(rules, Object.assign({}, item, {
+          rename: rules.glob.replace(item.glob, item.rename)
+        }))
       }
     }
 
