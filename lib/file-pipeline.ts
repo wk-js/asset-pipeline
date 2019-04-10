@@ -111,8 +111,9 @@ export class FilePipeline {
     }
   }
 
-  resolveOutput(file:string, rules:AssetItemRules, isAlternative?:boolean) {
-    let output = file, pathObject
+  resolveOutput(file:string, rules:AssetItemRules, isAlternative:boolean = false) {
+    let output = file
+    const pathObject = parse(output)
 
     // Remove path and keep basename only
     if ("keep_path" in rules && !rules.keep_path) {
@@ -121,9 +122,8 @@ export class FilePipeline {
 
     // Rename output basename
     if ("rename" in rules && typeof rules.rename === 'string') {
-      pathObject = parse(output)
-      output     = join( dirname( output ), rules.rename )
-      output     = template2( output, pathObject )
+      output = join( dirname( output ), rules.rename )
+      output = template2( output, pathObject )
     }
 
     // Add base_dir
