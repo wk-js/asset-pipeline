@@ -20,6 +20,7 @@ export interface AssetItemRules {
     base_dir?: string;
     template?: object | boolean;
     edit?: EditFileCallback;
+    resolve?: (output: string, file: string, rules: AssetItemRules, isAlternative: boolean) => string;
     data?: any;
     alternatives?: AlternativeOutputs;
 }
