@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import { promise, all, reduce } from "when";
+import * as Fs from "fs";
+import { promise, reduce } from "when";
 import when from "when";
 import { FileList } from "filelist";
 import { normalize, dirname, isAbsolute } from "path";
@@ -7,7 +7,7 @@ import { normalize, dirname, isAbsolute } from "path";
 export function isFile(path:string) {
 
   try {
-    const stat = fs.statSync( path )
+    const stat = Fs.statSync( path )
     if (!stat.isFile()) throw 'Not a file'
   } catch(e) {
     return false
@@ -20,7 +20,7 @@ export function isFile(path:string) {
 export function isDirectory(path:string) {
 
   try {
-    const stat = fs.statSync( path )
+    const stat = Fs.statSync( path )
     if (!stat.isDirectory()) throw 'Not a file'
   } catch(e) {
     return false
@@ -32,7 +32,7 @@ export function isDirectory(path:string) {
 
 export function exists(path:string) {
   try {
-    fs.statSync( path )
+    Fs.statSync( path )
   } catch(e) {
     return false
   }
@@ -50,8 +50,8 @@ export function copy(fromFile:string, toFile:string) {
     if (!fileValid) throw `'${fromFile}' is not a file`
 
     ensureDir(dirname( toFile )).then(function() {
-      const rs = fs.createReadStream( fromFile )
-      const ws = fs.createWriteStream( toFile  )
+      const rs = Fs.createReadStream( fromFile )
+      const ws = Fs.createWriteStream( toFile  )
 
       ws.on('error', function(error:Error) {
         reject(error)
@@ -74,7 +74,7 @@ export function remove(file:string) {
 
     if (!isFile(file)) throw 'Cannot be removed. This is not a file.'
 
-    fs.unlink(file, function(err) {
+    Fs.unlink(file, function(err) {
       if (err) {
         reject(err)
         return
@@ -87,13 +87,8 @@ export function remove(file:string) {
 }
 
 export function move(fromFile:string, toFile:string) {
-  return reduce([
-    function() { return copy(fromFile, toFile) },
-    function() { return remove(fromFile)       }
-  ], function(res:null, action:Function) {
-    return action()
-  }, null)
-  .then(() => true)
+  return copy(fromFile, toFile)
+  .then(() => remove(fromFile))
 }
 
 export function rename(fromFile:string, toFile:string) {
@@ -116,7 +111,7 @@ export function ensureDir(path:string) {
 
     if (!isDirectory(res)) {
       return promise<string>(function(resolve:Function, reject:Function) {
-        fs.mkdir(res, function(err) {
+        Fs.mkdir(res, function(err) {
           if (err && err.code !== 'EEXIST') {
             reject(err)
             return
@@ -167,7 +162,7 @@ export function fetchDirs(include:string|string[], exclude?:string|string[]) {
 export function writeFile(content:string | Buffer, file:string) {
   return ensureDir(dirname(file)).then(function() {
     return promise<boolean>(function(resolve:Function, reject:Function) {
-      fs.writeFile(file, content, function(err:Error) {
+      Fs.writeFile(file, content, function(err:Error) {
         if (err) {
           reject(err)
           return
@@ -183,7 +178,7 @@ export function readFile(file:string, options?: { encoding?: string | null; flag
   if (!isFile(file)) throw 'This is not a file.'
 
   return promise<Buffer>(function(resolve:Function, reject:Function) {
-    fs.readFile(file, options, function(err:Error, data:string | Buffer) {
+    Fs.readFile(file, options, function(err:Error, data:string | Buffer) {
       if (err) {
         reject(err)
         return

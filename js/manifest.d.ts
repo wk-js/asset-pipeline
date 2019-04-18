@@ -1,4 +1,3 @@
-/// <reference types="when" />
 import { AssetPipeline, AssetItem } from "./asset-pipeline";
 import when from 'when';
 export interface ManifestFile {

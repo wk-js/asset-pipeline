@@ -1,11 +1,10 @@
 import { AssetPipeline, AssetItemRules } from "./asset-pipeline";
-import { ManifestFile } from "./manifest";
 export declare class FilePipeline {
     pipeline: AssetPipeline;
     rules: AssetItemRules[];
     type: string;
     constructor(pipeline: AssetPipeline);
-    readonly manifest: ManifestFile;
+    readonly manifest: import("./manifest").ManifestFile;
     add(glob: string, parameters?: AssetItemRules): void;
     ignore(glob: string): void;
     fetch(): void;

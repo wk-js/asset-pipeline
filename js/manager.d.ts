@@ -8,6 +8,6 @@ export declare class Manager {
     copy(glob: string): void;
     symlink(glob: string): void;
     ignore(glob: string): void;
-    process(): When.Promise<any>;
+    process(): When.Promise<null>;
     apply(type: string): When.Promise<any>;
 }

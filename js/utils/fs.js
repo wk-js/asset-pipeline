@@ -5,19 +5,19 @@ var __importStar = (this && this.__importStar) || function (mod) {
     if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
     result["default"] = mod;
     return result;
-}
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
-}
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs = __importStar(require("fs"));
+const Fs = __importStar(require("fs"));
 const when_1 = require("when");
 const when_2 = __importDefault(require("when"));
 const filelist_1 = require("filelist");
 const path_1 = require("path");
 function isFile(path) {
     try {
-        const stat = fs.statSync(path);
+        const stat = Fs.statSync(path);
         if (!stat.isFile())
             throw 'Not a file';
     }
@@ -29,7 +29,7 @@ function isFile(path) {
 exports.isFile = isFile;
 function isDirectory(path) {
     try {
-        const stat = fs.statSync(path);
+        const stat = Fs.statSync(path);
         if (!stat.isDirectory())
             throw 'Not a file';
     }
@@ -41,7 +41,7 @@ function isDirectory(path) {
 exports.isDirectory = isDirectory;
 function exists(path) {
     try {
-        fs.statSync(path);
+        Fs.statSync(path);
     }
     catch (e) {
         return false;
@@ -58,8 +58,8 @@ function copy(fromFile, toFile) {
         if (!fileValid)
             throw `'${fromFile}' is not a file`;
         ensureDir(path_1.dirname(toFile)).then(function () {
-            const rs = fs.createReadStream(fromFile);
-            const ws = fs.createWriteStream(toFile);
+            const rs = Fs.createReadStream(fromFile);
+            const ws = Fs.createWriteStream(toFile);
             ws.on('error', function (error) {
                 reject(error);
             });
@@ -78,7 +78,7 @@ function remove(file) {
     return when_1.promise(function (resolve, reject) {
         if (!isFile(file))
             throw 'Cannot be removed. This is not a file.';
-        fs.unlink(file, function (err) {
+        Fs.unlink(file, function (err) {
             if (err) {
                 reject(err);
                 return;
@@ -89,13 +89,8 @@ function remove(file) {
 }
 exports.remove = remove;
 function move(fromFile, toFile) {
-    return when_1.reduce([
-        function () { return copy(fromFile, toFile); },
-        function () { return remove(fromFile); }
-    ], function (res, action) {
-        return action();
-    }, null)
-        .then(() => true);
+    return copy(fromFile, toFile)
+        .then(() => remove(fromFile));
 }
 exports.move = move;
 function rename(fromFile, toFile) {
@@ -115,7 +110,7 @@ function ensureDir(path) {
         res += slash + d;
         if (!isDirectory(res)) {
             return when_1.promise(function (resolve, reject) {
-                fs.mkdir(res, function (err) {
+                Fs.mkdir(res, function (err) {
                     if (err && err.code !== 'EEXIST') {
                         reject(err);
                         return;
@@ -155,7 +150,7 @@ exports.fetchDirs = fetchDirs;
 function writeFile(content, file) {
     return ensureDir(path_1.dirname(file)).then(function () {
         return when_1.promise(function (resolve, reject) {
-            fs.writeFile(file, content, function (err) {
+            Fs.writeFile(file, content, function (err) {
                 if (err) {
                     reject(err);
                     return;
@@ -170,7 +165,7 @@ function readFile(file, options) {
     if (!isFile(file))
         throw 'This is not a file.';
     return when_1.promise(function (resolve, reject) {
-        fs.readFile(file, options, function (err, data) {
+        Fs.readFile(file, options, function (err, data) {
             if (err) {
                 reject(err);
                 return;

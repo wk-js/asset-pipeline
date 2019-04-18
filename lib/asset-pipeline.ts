@@ -1,11 +1,5 @@
-import { createHash } from "crypto";
-import { guid } from 'lol/utils/guid';
-import { join, normalize, relative, basename, extname, dirname, parse, format } from "path";
-import { fetch, isDirectory, isFile, EditFileCallback } from './utils/fs';
-import minimatch from 'minimatch';
-import { template2 } from "lol/utils/string";
-import { URL } from "url";
-import { deflat } from "lol/utils/object";
+import { join, relative } from "path";
+import { EditFileCallback } from './utils/fs';
 import { Tree } from "./tree";
 import { Manager } from "./manager";
 import { FilePipeline } from "./file-pipeline";
@@ -64,7 +58,7 @@ export class AssetPipeline {
   tree     = new Tree( this )
   manager  = new Manager( this )
   manifest = new Manifest( this )
-  renderer = new Renderer( this   )
+  renderer = new Renderer( this )
 
   file      = new FilePipeline( this )
   directory = new DirectoryPipeline( this )

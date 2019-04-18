@@ -7,9 +7,9 @@ export declare class Renderer {
     constructor(pipeline: AssetPipeline);
     edit(): When.Promise<boolean | null>;
     render(): When.Promise<{} | null>;
-    private _render(output, data?);
-    private _renderSource(src, data?);
-    private _fetch();
+    private _render;
+    private _renderSource;
+    private _fetch;
     /**
      * Render
      *

@@ -1,4 +1,3 @@
-/// <reference types="when" />
 /// <reference types="node" />
 import when from "when";
 export declare function isFile(path: string): boolean;

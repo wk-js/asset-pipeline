@@ -4,8 +4,7 @@
   "description": "Asset pipeline",
   "main": "js/asset-pipeline.js",
   "scripts": {
-    "start": "tsc --watch",
-    "compile": "tsc",
+    "tsc": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -16,7 +15,7 @@
   "dependencies": {
     "filelist": "0.0.6",
     "lodash.template": "4.4.0",
-    "lol": "github:makemepulse/lol.js#1.0.5",
+    "lol": "github:makemepulse/lol.js#latest",
     "minimatch": "3.0.3",
     "when": "3.7.8"
   },

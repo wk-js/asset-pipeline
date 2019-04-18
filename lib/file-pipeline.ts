@@ -1,10 +1,9 @@
-import { AssetPipeline, AssetItemRules, AlternativeOutputs, AssetItem } from "./asset-pipeline";
+import { AssetPipeline, AssetItemRules, AlternativeOutputs } from "./asset-pipeline";
 import { fetch } from './utils/fs';
-import { join, normalize, relative, basename, extname, dirname, parse, format } from "path";
+import { join, normalize, relative, basename, dirname, parse, format } from "path";
 import minimatch from 'minimatch';
 import { hashCache, versionCache } from "./cache";
 import { template2 } from "lol/utils/string";
-import { ManifestFile } from "./manifest";
 
 export class FilePipeline {
 
