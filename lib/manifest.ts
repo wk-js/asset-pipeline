@@ -9,9 +9,7 @@ export interface ManifestFile {
   date: Date;
   load_path: string;
   dst_path: string;
-  assets: {
-      [key: string]: AssetItem;
-  };
+  assets: Record<string, AssetItem>
 }
 
 export class Manifest {

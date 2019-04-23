@@ -1,4 +1,4 @@
-import { AssetPipeline, AlternativeOutputs } from "./asset-pipeline";
+import { AssetPipeline } from "./asset-pipeline";
 import { normalize, extname, relative, join } from "path";
 import { URL } from "url";
 /**
@@ -125,19 +125,6 @@ export class Tree {
     if (this.manifest.assets[output]) {
       const item = this.manifest.assets[output]
       output = this.pipeline.cacheable ? item.cache : item.output
-
-      if ("alternatives" in item && typeof item.alternatives) {
-        const alts = item.alternatives as AlternativeOutputs
-
-        alts.outputs.forEach((alt) => {
-          var asset_data = this.pipeline.data
-          var data       = alt.data
-
-          if (eval(alts.condition)) {
-            output = this.pipeline.cacheable ? alt.cache : alt.output
-          }
-        })
-      }
     }
 
     output = _cleanPath( this.pipeline.prefix + output )

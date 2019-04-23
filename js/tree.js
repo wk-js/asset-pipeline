@@ -97,16 +97,6 @@ class Tree {
         if (this.manifest.assets[output]) {
             const item = this.manifest.assets[output];
             output = this.pipeline.cacheable ? item.cache : item.output;
-            if ("alternatives" in item && typeof item.alternatives) {
-                const alts = item.alternatives;
-                alts.outputs.forEach((alt) => {
-                    var asset_data = this.pipeline.data;
-                    var data = alt.data;
-                    if (eval(alts.condition)) {
-                        output = this.pipeline.cacheable ? alt.cache : alt.output;
-                    }
-                });
-            }
         }
         output = _cleanPath(this.pipeline.prefix + output);
         output = process.platform === 'win32' ? _toUnixPath(output) : output;

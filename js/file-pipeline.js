@@ -127,18 +127,8 @@ class FilePipeline {
                 cache = output;
             }
         }
-        if (isAlternative && "alternatives" in this.manifest.assets[file]) {
-            const alts = this.manifest.assets[file].alternatives;
-            alts.outputs.push({
-                data: rules.data,
-                output: output,
-                cache: cache
-            });
-        }
-        else {
-            this.manifest.assets[file].output = output;
-            this.manifest.assets[file].cache = cache;
-        }
+        this.manifest.assets[file].output = output;
+        this.manifest.assets[file].cache = cache;
     }
 }
 exports.FilePipeline = FilePipeline;
