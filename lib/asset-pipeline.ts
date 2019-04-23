@@ -12,8 +12,7 @@ export interface AlternativeOutputs {
   outputs: any[]
 }
 
-export interface AssetItemRules {
-  glob:       string,
+export interface Rules {
   ignore?:    boolean,
   files?:     string[],
   cache?:     boolean,
@@ -22,10 +21,12 @@ export interface AssetItemRules {
   base_dir?:  string,
   template?:  object|boolean,
   edit?:      EditFileCallback,
-  resolve?: (output: string, file: string, rules: AssetItemRules, isAlternative: boolean) => string,
-
+  resolve?: (output: string, file: string, rules: AssetItemRules) => string,
   data?: any
-  alternatives?: AlternativeOutputs
+}
+
+export interface AssetItemRules extends Rules {
+  glob: string
 }
 
 export interface AssetItem {
@@ -33,7 +34,6 @@ export interface AssetItem {
   output: string,
   cache:  string,
   data?:  any,
-  alternatives?: AlternativeOutputs
 }
 
 export class AssetPipeline {
@@ -111,26 +111,24 @@ export class AssetPipeline {
     }
   }
 
-  render() {
-    return this.renderer.render().then(() => {
-      return this.renderer.edit()
-    })
+  async render() {
+    await this.renderer.render()
+    return this.renderer.edit()
   }
 
-  addEntry(input:string, output:string, parameters?:AssetItemRules) {
+  addEntry(input:string, output:string, parameters:Rules = {}) {
     parameters = Object.assign({
-      glob: '',
       rename: output,
       keep_path: false
-    }, parameters || {})
-    this.file.add( input, parameters as AssetItemRules )
+    }, parameters)
+    this.file.add( input, parameters )
   }
 
-  addFile(glob:string, parameters?:AssetItemRules) {
+  addFile(glob:string, parameters?:Rules) {
     this.file.add( glob, parameters )
   }
 
-  addDirectory(glob:string, parameters?:AssetItemRules) {
+  addDirectory(glob:string, parameters?:Rules) {
     this.directory.add( glob, parameters )
   }
 

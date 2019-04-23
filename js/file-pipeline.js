@@ -17,13 +17,13 @@ class FilePipeline {
     get manifest() {
         return this.pipeline.manifest.manifest;
     }
-    add(glob, parameters) {
+    add(glob, parameters = {}) {
         glob = path_1.normalize(glob);
-        parameters = Object.assign({
+        const params = parameters = Object.assign({
             glob: glob
-        }, parameters || {});
-        parameters.glob = glob;
-        this.rules.push(parameters);
+        }, parameters);
+        params.glob = glob;
+        this.rules.push(params);
     }
     ignore(glob) {
         glob = path_1.normalize(glob);
@@ -77,19 +77,8 @@ class FilePipeline {
     resolve(file) {
         let rules = this.getRules(file);
         this.resolveOutput(file, rules);
-        if ("alternatives" in rules && rules.alternatives) {
-            const item = this.manifest.assets[file];
-            item.alternatives = {
-                condition: rules.alternatives.condition,
-                outputs: []
-            };
-            rules.alternatives.outputs.forEach((alt) => {
-                rules = Object.assign(rules, alt);
-                this.resolveOutput(file, rules, true);
-            });
-        }
     }
-    resolveOutput(file, rules, isAlternative = false) {
+    resolveOutput(file, rules) {
         let output = file, pathObject;
         // Remove path and keep basename only
         if ("keep_path" in rules && !rules.keep_path) {
@@ -111,7 +100,7 @@ class FilePipeline {
         pathObject.dir = this.pipeline.getPath(pathObject.dir);
         output = path_1.format(pathObject);
         if ("resolve" in rules && typeof rules.resolve === 'function') {
-            output = rules.resolve(output, file, rules, isAlternative);
+            output = rules.resolve(output, file, rules);
         }
         let cache = output;
         if ((this.pipeline.cacheable && !("cache" in rules))

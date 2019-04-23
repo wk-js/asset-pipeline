@@ -1,4 +1,4 @@
-import { AssetPipeline, AssetItemRules, AlternativeOutputs } from "./asset-pipeline";
+import { AssetPipeline, AssetItemRules, AlternativeOutputs, Rules } from "./asset-pipeline";
 import { fetch } from './utils/fs';
 import { join, normalize, relative, basename, dirname, parse, format } from "path";
 import minimatch from 'minimatch';
@@ -16,15 +16,15 @@ export class FilePipeline {
     return this.pipeline.manifest.manifest
   }
 
-  add(glob:string, parameters?:AssetItemRules) {
+  add(glob:string, parameters:Rules = {}) {
     glob = normalize(glob)
 
-    parameters = Object.assign({
+    const params: AssetItemRules = parameters = Object.assign({
       glob: glob
-    }, parameters || {})
-    parameters.glob = glob
+    }, parameters)
+    params.glob = glob
 
-    this.rules.push( parameters )
+    this.rules.push( params )
   }
 
   ignore(glob:string) {
@@ -94,23 +94,9 @@ export class FilePipeline {
     let rules = this.getRules( file ) as AssetItemRules
 
     this.resolveOutput( file, rules )
-
-    if ("alternatives" in rules && rules.alternatives) {
-      const item = this.manifest.assets[file]
-
-      item.alternatives = {
-        condition: rules.alternatives.condition,
-        outputs: []
-      }
-
-      rules.alternatives.outputs.forEach((alt) => {
-        rules = Object.assign(rules, alt)
-        this.resolveOutput( file, rules, true )
-      })
-    }
   }
 
-  resolveOutput(file:string, rules:AssetItemRules, isAlternative:boolean = false) {
+  resolveOutput(file:string, rules:AssetItemRules) {
     let output = file, pathObject
 
     // Remove path and keep basename only
@@ -137,7 +123,7 @@ export class FilePipeline {
     output         = format( pathObject )
 
     if ("resolve" in rules && typeof rules.resolve === 'function') {
-      output = rules.resolve(output, file, rules, isAlternative)
+      output = rules.resolve(output, file, rules)
     }
 
     let cache = output
