@@ -208,7 +208,7 @@ exports.readFile = readFile;
 function editFile(file, callback) {
     return __awaiter(this, void 0, void 0, function* () {
         const content = yield readFile(file);
-        const modified = callback(content);
+        const modified = yield callback(content);
         return writeFile(modified, file);
     });
 }

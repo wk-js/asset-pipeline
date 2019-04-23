@@ -95,7 +95,6 @@ describe("Directory", () => {
     const AP = await setup(async (AP) => {
       AP.addFile("others/**/*", {
         resolve(output, file, rules) {
-          const Path = require('path')
           return Path.join('world', basename(output))
         }
       })

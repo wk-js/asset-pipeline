@@ -16,5 +16,5 @@ export declare function readFile(file: string, options?: {
     encoding?: string | null;
     flag?: string;
 } | string | undefined | null): Promise<string | Buffer>;
-export declare type EditFileCallback = (value: string | Buffer) => string | Buffer;
+export declare type EditFileCallback = (value: string | Buffer) => string | Buffer | Promise<string | Buffer>;
 export declare function editFile(file: string, callback: EditFileCallback): Promise<boolean>;

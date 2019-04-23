@@ -212,10 +212,10 @@ export function readFile(file:string, options?: { encoding?: string | null; flag
   })
 } 
 
-export type EditFileCallback = (value: string | Buffer) => string | Buffer
+export type EditFileCallback = (value: string | Buffer) => string | Buffer | Promise<string | Buffer>
 
 export async function editFile(file:string, callback:EditFileCallback) {
   const content = await readFile(file)
-  const modified = callback(content)
+  const modified = await callback(content)
   return writeFile(modified, file)
 }
