@@ -56,7 +56,6 @@
   },
 
   "include": [
-    "./lib/**/*",
-    "./node_modules/lol/lol.d.ts"
+    "./lib/**/*"
   ]
 }
