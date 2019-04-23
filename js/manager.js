@@ -64,6 +64,12 @@ class Manager {
                 file = path_1.relative(this.pipeline.absolute_load_path, file);
                 let input = this.pipeline.fromLoadPath(file);
                 let output = this.pipeline.fromDstPath(this.pipeline.tree.getPath(file));
+                // Apply directory change
+                const inputDir = path_1.dirname(file);
+                const outputDir = this.pipeline.tree.getPath(path_1.dirname(file));
+                if (outputDir != inputDir) {
+                    output = path_1.join(this.pipeline.fromDstPath(outputDir), path_1.basename(output));
+                }
                 input = path_1.relative(process.cwd(), input);
                 output = path_1.relative(process.cwd(), output);
                 return [input, output.split('?')[0]];

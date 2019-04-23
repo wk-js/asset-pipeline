@@ -1,6 +1,6 @@
 import { fetch, copy, move } from "./utils/fs";
 import { AssetPipeline } from "./asset-pipeline";
-import { relative } from "path";
+import { relative, dirname, join, basename } from "path";
 import { symlink, fetchDirs } from "./utils";
 
 export class Manager {
@@ -64,6 +64,13 @@ export class Manager {
 
       let input  = this.pipeline.fromLoadPath( file )
       let output = this.pipeline.fromDstPath( this.pipeline.tree.getPath( file ) )
+
+      // Apply directory change
+      const inputDir  = dirname(file)
+      const outputDir = this.pipeline.tree.getPath(dirname(file))
+      if (outputDir != inputDir) {
+        output = join( this.pipeline.fromDstPath( outputDir ), basename(output) )
+      }
 
       input  = relative( process.cwd(), input )
       output = relative( process.cwd(), output )

@@ -1,7 +1,7 @@
 import "mocha";
 import { AssetPipeline } from "../js/asset-pipeline";
 import { writeFile, ensureDir, remove, removeDir, fetch, isDirectory } from "../js/utils/fs";
-import Path from "path";
+import Path, { basename } from "path";
 import * as assert from "assert";
 
 const LOAD_PATH = 'tmp/test-units'
@@ -42,7 +42,7 @@ afterEach(async () => {
   if (isDirectory(DST_PATH)) await removeDir(DST_PATH)
 })
 
-describe("Add file", () => {
+describe("Directory", () => {
 
   it("Add directory", async () => {
     const AP = await setup(async (AP) => {
@@ -77,8 +77,7 @@ describe("Add file", () => {
 
   it("Copy renamed directory", async () => {
     const AP = await setup(async (AP) => {
-      AP.addDirectory("others", { glob: "others", rename: "hello" })
-      AP.addFile("others/**/*") // You need to add files into the manifest
+      AP.addDirectory("others", { rename: "hello" })
       AP.manager.copy("others/**/*") // Need wildcards
     })
 
@@ -89,6 +88,27 @@ describe("Add file", () => {
       'tmp/test-units-dist/hello/file4.txt',
       'tmp/test-units-dist/hello/file5.txt',
       'tmp/test-units-dist/hello/file6.txt',
+    ])
+  })
+
+  it("Use resolve() method", async () => {
+    const AP = await setup(async (AP) => {
+      AP.addFile("others/**/*", {
+        resolve(output, file, rules) {
+          const Path = require('path')
+          return Path.join('world', basename(output))
+        }
+      })
+      AP.manager.copy("others/**/*") // Need wildcards
+    })
+
+    await AP.manager.process()
+
+    const files = fetch(DST_PATH + '/**/*')
+    assert.deepEqual(files, [
+      'tmp/test-units-dist/world/file4.txt',
+      'tmp/test-units-dist/world/file5.txt',
+      'tmp/test-units-dist/world/file6.txt',
     ])
   })
 
