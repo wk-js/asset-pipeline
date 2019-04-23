@@ -1,7 +1,6 @@
-import { fetch, copy, remove, move } from "./utils/fs";
+import { fetch, copy, move } from "./utils/fs";
 import { AssetPipeline } from "./asset-pipeline";
 import { relative } from "path";
-import { reduce } from "when";
 import { symlink, fetchDirs } from "./utils";
 
 export class Manager {
@@ -38,13 +37,14 @@ export class Manager {
     })
   }
 
-  process() {
-    return reduce(['move', 'copy', 'symlink'], (reduction:null, value:string) => {
-      return this.apply( value )
-    }, null)
+  async process() {
+    const types = ['move', 'copy', 'symlink']
+    for (let i = 0; i < types.length; i++) {
+      await this.apply( types[i] )
+    }
   }
 
-  apply(type:string) {
+  async apply(type:string) {
     const validGlobs = this.globs.filter((item) => {
       return item.action === type
     }).map(item => this.pipeline.fromLoadPath(item.glob))
@@ -71,15 +71,17 @@ export class Manager {
       return [ input, output.split('?')[0] ]
     })
 
-    return reduce<any>( ios, (arr:null, io:string[]) => {
+    for (let i = 0; i < ios.length; i++) {
+      const io = ios[i];
+
       if (type === 'copy') {
-        return copy( io[0], io[1] )
+        await copy( io[0], io[1] )
       } else if (type === 'move') {
-        return move( io[0], io[1] )
+        await move( io[0], io[1] )
       } else if (type === 'symlink') {
-        return symlink( io[0], io[1] )
+        await symlink( io[0], io[1] )
       }
-    }, null)
+    }
   }
 
 }

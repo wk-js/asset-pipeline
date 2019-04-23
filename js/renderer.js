@@ -1,4 +1,12 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -8,7 +16,6 @@ const fs_1 = require("fs");
 const memory_stream_1 = require("./utils/memory-stream");
 const guid_1 = require("lol/utils/guid");
 const fs_2 = require("./utils/fs");
-const when_1 = require("when");
 const path_1 = require("path");
 class Renderer {
     constructor(pipeline) {
@@ -16,26 +23,31 @@ class Renderer {
         this.options = {};
     }
     edit() {
-        const inputs = this._fetch().filter((file) => {
-            return typeof file[2].edit === 'function';
+        return __awaiter(this, void 0, void 0, function* () {
+            const inputs = this._fetch().filter((file) => {
+                return typeof file[2].edit === 'function';
+            });
+            for (let i = 0; i < inputs.length; i++) {
+                yield fs_2.editFile(inputs[i][1], inputs[i][2].edit);
+            }
         });
-        return when_1.reduce(inputs, (reduction, input) => {
-            return fs_2.editFile(input[1], input[2].edit);
-        }, null);
     }
     render() {
-        const inputs = this._fetch().filter((template) => {
-            return !!template[2].template;
-        });
-        return when_1.reduce(inputs, (reduction, input) => {
-            if (typeof input[1].template === 'object') {
-                return this._render(input[1], input[2]);
+        return __awaiter(this, void 0, void 0, function* () {
+            const inputs = this._fetch().filter((template) => {
+                return !!template[2].template;
+            });
+            for (let i = 0; i < inputs.length; i++) {
+                const input = inputs[i];
+                if (typeof input[1].template === 'object') {
+                    yield this._render(input[1], input[2]);
+                }
+                yield this._render(input[1]);
             }
-            return this._render(input[1]);
-        }, null);
+        });
     }
     _render(output, data) {
-        return when_1.promise((resolve) => {
+        return new Promise((resolve) => {
             const rs = fs_1.createReadStream(output, { encoding: 'utf-8' });
             const ws = new memory_stream_1.MemoryStream(guid_1.guid());
             rs.on('data', (chunk) => {

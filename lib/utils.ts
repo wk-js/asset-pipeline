@@ -1,8 +1,8 @@
 import { FileList } from "filelist";
 import { isDirectory, ensureDir } from "./utils/fs";
 import fs from "fs";
-import { promise } from "when";
 import { join, dirname } from "path";
+import { promiseResolved } from "./utils/promise";
 
 export function fetchDirs(include:string|string[], exclude?:string|string[]) {
   const FL = new FileList
@@ -33,10 +33,10 @@ export function isSymbolicLink(path:string) {
 
 export function symlink(fromPath:string, toPath:string) {
 
-  if (isSymbolicLink(toPath)) return promise((resolve) => resolve({}))
+  if (isSymbolicLink(toPath)) return promiseResolved<any>({})
 
   return ensureDir(dirname(toPath)).then(function() {
-    return promise(function(resolve, reject) {
+    return new Promise<any>(function(resolve, reject) {
       fs.symlink(join(process.cwd(), fromPath), join(process.cwd(), toPath), function(err) {
         if (err) {
           reject( err )

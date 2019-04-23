@@ -1,11 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("./utils/fs");
-const when_1 = __importDefault(require("when"));
-const DEFAULT_PROMISE = when_1.default(false);
+const promise_1 = require("./utils/promise");
+const DEFAULT_PROMISE = promise_1.promiseResolved(false);
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;

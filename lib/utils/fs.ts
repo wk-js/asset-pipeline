@@ -1,8 +1,6 @@
 import * as Fs from "fs";
-import { promise, reduce } from "when";
-import when from "when";
 import { FileList } from "filelist";
-import { normalize, dirname, isAbsolute } from "path";
+import { normalize, dirname, isAbsolute, join } from "path";
 
 export function isFile(path:string) {
 
@@ -41,7 +39,7 @@ export function exists(path:string) {
 }
 
 export function copy(fromFile:string, toFile:string) {
-  return promise<boolean>(function(resolve:Function, reject:Function) {
+  return new Promise<boolean>(function(resolve:Function, reject:Function) {
 
     let fileValid = fromFile !== toFile
     if (!fileValid) throw `Cannot copy '${fromFile}' to the same path`
@@ -69,12 +67,14 @@ export function copy(fromFile:string, toFile:string) {
   })
 }
 
-export function remove(file:string) {
-  return promise<boolean>(function(resolve:Function, reject:Function) {
+export function remove(path:string) {
+  if (isDirectory(path)) return removeDir(path)
 
-    if (!isFile(file)) throw 'Cannot be removed. This is not a file.'
+  return new Promise<boolean>((resolve: Function, reject: Function) => {
 
-    Fs.unlink(file, function(err) {
+    if (!isFile(path)) throw 'Cannot be removed. This is not a file.'
+
+    Fs.unlink(path, function(err) {
       if (err) {
         reject(err)
         return
@@ -86,45 +86,67 @@ export function remove(file:string) {
   })
 }
 
-export function move(fromFile:string, toFile:string) {
-  return copy(fromFile, toFile)
-  .then(() => remove(fromFile))
+export async function removeDir(dir: string) {
+  const files = fetch(join(dir, '**/*'))
+
+  for (let i = 0; i < files.length; i++) {
+    await remove(files[i])
+  }
+
+  const dirs = fetchDirs(join(dir, '**/*')).reverse()
+
+  for (let j = 0; j < dirs.length; j++) {
+    Fs.rmdirSync(dirs[j])
+  }
+
+  Fs.rmdirSync(dir)
+
+  return true
+}
+
+export function mkdir(dir: string) {
+  return new Promise<boolean>(function(resolve:Function, reject:Function) {
+    Fs.mkdir(dir, function(err) {
+      if (err && err.code !== 'EEXIST') {
+        reject(err)
+        return
+      }
+
+      resolve(true)
+    })
+  })
+}
+
+export async function move(fromFile:string, toFile:string) {
+  await copy(fromFile, toFile)
+  return remove(fromFile)
 }
 
 export function rename(fromFile:string, toFile:string) {
   return move(fromFile, toFile)
 }
 
-export function ensureDir(path:string) {
+export async function ensureDir(path:string) {
   path = normalize(path)
 
-  if (isDirectory(path)) return when(path)
+  if (isDirectory(path)) return new Promise<boolean>((resolve) => resolve(true))
 
   const dirs = path.split(/\\|\//)
   const initial = isAbsolute(path) ? dirs.shift() as string : '.'
   const slash = process.platform == 'win32' ? '\\' : '/'
 
-  return reduce<string>(dirs, function(res:string, d:string) {
-    if (d === '.') return res
+  let res = initial
+  let d = ''
+
+  for (let i = 0; i < dirs.length; i++) {
+    d = dirs[i];
+
+    if (d === '.') continue
 
     res += slash + d
 
-    if (!isDirectory(res)) {
-      return promise<string>(function(resolve:Function, reject:Function) {
-        Fs.mkdir(res, function(err) {
-          if (err && err.code !== 'EEXIST') {
-            reject(err)
-            return
-          }
-
-          resolve(res)
-        })
-      })
-    }
-
-    return res
-  }, initial)
-
+    if (!isDirectory(res)) await mkdir(res)
+  }
 }
 
 export function fetch(include:string|string[], exclude?:string|string[]) {
@@ -159,25 +181,26 @@ export function fetchDirs(include:string|string[], exclude?:string|string[]) {
   return files
 }
 
-export function writeFile(content:string | Buffer, file:string) {
-  return ensureDir(dirname(file)).then(function() {
-    return promise<boolean>(function(resolve:Function, reject:Function) {
-      Fs.writeFile(file, content, function(err:Error) {
-        if (err) {
-          reject(err)
-          return
-        }
+export async function writeFile(content:string | Buffer, file:string) {
+  await ensureDir(dirname(file))
 
-        resolve(true)
-      })
+  return new Promise<boolean>((resolve, reject) => {
+    Fs.writeFile(file, content, function(err:Error) {
+      if (err) {
+        reject(err)
+        return
+      }
+
+      resolve(true)
     })
   })
+
 }
 
 export function readFile(file:string, options?: { encoding?: string | null; flag?: string; } | string | undefined | null) {
   if (!isFile(file)) throw 'This is not a file.'
 
-  return promise<Buffer>(function(resolve:Function, reject:Function) {
+  return new Promise<string|Buffer>((resolve:Function, reject:Function) => {
     Fs.readFile(file, options, function(err:Error, data:string | Buffer) {
       if (err) {
         reject(err)
@@ -191,8 +214,8 @@ export function readFile(file:string, options?: { encoding?: string | null; flag
 
 export type EditFileCallback = (value: string | Buffer) => string | Buffer
 
-export function editFile(file:string, callback:EditFileCallback) {
-  return readFile(file).then(callback).then(function(content:string | Buffer) {
-    return writeFile(content, file)
-  })
+export async function editFile(file:string, callback:EditFileCallback) {
+  const content = await readFile(file)
+  const modified = callback(content)
+  return writeFile(modified, file)
 }

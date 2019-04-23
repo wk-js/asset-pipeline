@@ -1,6 +1,4 @@
-'use strict'
-
-import { join, normalize, relative, basename, extname, dirname, parse, format } from "path";
+import { join, parse } from "path";
 import { createHash } from "crypto";
 
 export function hashCache(path:string, asset_key:string | number) {

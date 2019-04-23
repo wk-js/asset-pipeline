@@ -1,4 +1,12 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -6,13 +14,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     result["default"] = mod;
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const Fs = __importStar(require("fs"));
-const when_1 = require("when");
-const when_2 = __importDefault(require("when"));
 const filelist_1 = require("filelist");
 const path_1 = require("path");
 function isFile(path) {
@@ -50,7 +53,7 @@ function exists(path) {
 }
 exports.exists = exists;
 function copy(fromFile, toFile) {
-    return when_1.promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
         let fileValid = fromFile !== toFile;
         if (!fileValid)
             throw `Cannot copy '${fromFile}' to the same path`;
@@ -74,11 +77,13 @@ function copy(fromFile, toFile) {
     });
 }
 exports.copy = copy;
-function remove(file) {
-    return when_1.promise(function (resolve, reject) {
-        if (!isFile(file))
+function remove(path) {
+    if (isDirectory(path))
+        return removeDir(path);
+    return new Promise((resolve, reject) => {
+        if (!isFile(path))
             throw 'Cannot be removed. This is not a file.';
-        Fs.unlink(file, function (err) {
+        Fs.unlink(path, function (err) {
             if (err) {
                 reject(err);
                 return;
@@ -88,9 +93,38 @@ function remove(file) {
     });
 }
 exports.remove = remove;
+function removeDir(dir) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const files = fetch(path_1.join(dir, '**/*'));
+        for (let i = 0; i < files.length; i++) {
+            yield remove(files[i]);
+        }
+        const dirs = fetchDirs(path_1.join(dir, '**/*')).reverse();
+        for (let j = 0; j < dirs.length; j++) {
+            Fs.rmdirSync(dirs[j]);
+        }
+        Fs.rmdirSync(dir);
+        return true;
+    });
+}
+exports.removeDir = removeDir;
+function mkdir(dir) {
+    return new Promise(function (resolve, reject) {
+        Fs.mkdir(dir, function (err) {
+            if (err && err.code !== 'EEXIST') {
+                reject(err);
+                return;
+            }
+            resolve(true);
+        });
+    });
+}
+exports.mkdir = mkdir;
 function move(fromFile, toFile) {
-    return copy(fromFile, toFile)
-        .then(() => remove(fromFile));
+    return __awaiter(this, void 0, void 0, function* () {
+        yield copy(fromFile, toFile);
+        return remove(fromFile);
+    });
 }
 exports.move = move;
 function rename(fromFile, toFile) {
@@ -98,29 +132,24 @@ function rename(fromFile, toFile) {
 }
 exports.rename = rename;
 function ensureDir(path) {
-    path = path_1.normalize(path);
-    if (isDirectory(path))
-        return when_2.default(path);
-    const dirs = path.split(/\\|\//);
-    const initial = path_1.isAbsolute(path) ? dirs.shift() : '.';
-    const slash = process.platform == 'win32' ? '\\' : '/';
-    return when_1.reduce(dirs, function (res, d) {
-        if (d === '.')
-            return res;
-        res += slash + d;
-        if (!isDirectory(res)) {
-            return when_1.promise(function (resolve, reject) {
-                Fs.mkdir(res, function (err) {
-                    if (err && err.code !== 'EEXIST') {
-                        reject(err);
-                        return;
-                    }
-                    resolve(res);
-                });
-            });
+    return __awaiter(this, void 0, void 0, function* () {
+        path = path_1.normalize(path);
+        if (isDirectory(path))
+            return new Promise((resolve) => resolve(true));
+        const dirs = path.split(/\\|\//);
+        const initial = path_1.isAbsolute(path) ? dirs.shift() : '.';
+        const slash = process.platform == 'win32' ? '\\' : '/';
+        let res = initial;
+        let d = '';
+        for (let i = 0; i < dirs.length; i++) {
+            d = dirs[i];
+            if (d === '.')
+                continue;
+            res += slash + d;
+            if (!isDirectory(res))
+                yield mkdir(res);
         }
-        return res;
-    }, initial);
+    });
 }
 exports.ensureDir = ensureDir;
 function fetch(include, exclude) {
@@ -148,8 +177,9 @@ function fetchDirs(include, exclude) {
 }
 exports.fetchDirs = fetchDirs;
 function writeFile(content, file) {
-    return ensureDir(path_1.dirname(file)).then(function () {
-        return when_1.promise(function (resolve, reject) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield ensureDir(path_1.dirname(file));
+        return new Promise((resolve, reject) => {
             Fs.writeFile(file, content, function (err) {
                 if (err) {
                     reject(err);
@@ -164,7 +194,7 @@ exports.writeFile = writeFile;
 function readFile(file, options) {
     if (!isFile(file))
         throw 'This is not a file.';
-    return when_1.promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
         Fs.readFile(file, options, function (err, data) {
             if (err) {
                 reject(err);
@@ -176,8 +206,10 @@ function readFile(file, options) {
 }
 exports.readFile = readFile;
 function editFile(file, callback) {
-    return readFile(file).then(callback).then(function (content) {
-        return writeFile(content, file);
+    return __awaiter(this, void 0, void 0, function* () {
+        const content = yield readFile(file);
+        const modified = callback(content);
+        return writeFile(modified, file);
     });
 }
 exports.editFile = editFile;

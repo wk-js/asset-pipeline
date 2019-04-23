@@ -1,8 +1,8 @@
 import { AssetPipeline, AssetItem } from "./asset-pipeline";
 import { writeFile, isFile, readFile, remove } from "./utils/fs";
-import when from 'when';
+import { promiseResolved } from "./utils/promise";
 
-const DEFAULT_PROMISE = when(false)
+const DEFAULT_PROMISE = promiseResolved(false)
 
 export interface ManifestFile {
   asset_key: string | number;
@@ -54,7 +54,7 @@ export class Manifest {
 
   readFile() {
     if (isFile(this.manifest_path)) {
-      return readFile( this.manifest_path ).then((content:Buffer) => {
+      return readFile( this.manifest_path ).then((content) => {
         this.manifest = JSON.parse( content.toString('utf-8') )
         return true
       })

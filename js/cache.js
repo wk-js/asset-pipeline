@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
 const crypto_1 = require("crypto");

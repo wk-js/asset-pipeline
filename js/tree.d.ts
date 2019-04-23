@@ -1,5 +1,4 @@
 import { AssetPipeline } from "./asset-pipeline";
-import { ManifestFile } from "./manifest";
 export interface TreeInterface {
     path: string;
     files: string[];
@@ -11,7 +10,7 @@ export declare class Tree {
     pipeline: AssetPipeline;
     _tree: TreeInterface;
     constructor(pipeline: AssetPipeline);
-    readonly manifest: ManifestFile;
+    readonly manifest: import("./manifest").ManifestFile;
     update(): void;
     resolve(path: string): TreeInterface;
     buildPath(path: string): string;

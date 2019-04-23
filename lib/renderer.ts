@@ -4,7 +4,6 @@ import { createReadStream } from "fs";
 import { MemoryStream } from "./utils/memory-stream";
 import { guid } from "lol/utils/guid";
 import { writeFile, editFile, EditFileCallback } from "./utils/fs";
-import { promise, reduce } from "when";
 import { TemplateOptions } from "lodash";
 import { relative } from "path";
 
@@ -14,31 +13,32 @@ export class Renderer {
 
   constructor(public pipeline:AssetPipeline) {}
 
-   edit() {
+   async edit() {
     const inputs = this._fetch().filter((file) => {
       return typeof (file[2] as AssetItemRules).edit === 'function'
     })
 
-    return reduce(inputs, (reduction:any, input:any[]) => {
-      return editFile( input[1], (input[2] as AssetItemRules).edit as EditFileCallback )
-    }, null)
+    for (let i = 0; i < inputs.length; i++) {
+      await editFile( inputs[i][1] as string, (inputs[i][2] as AssetItemRules).edit as EditFileCallback )
+    }
   }
 
-  render() {
+  async render() {
     const inputs = this._fetch().filter((template) => {
       return !!(template[2] as AssetItemRules).template
     })
 
-    return reduce(inputs, (reduction:any, input:any[]) => {
+    for (let i = 0; i < inputs.length; i++) {
+      const input = inputs[i] as any[];
       if (typeof input[1].template === 'object') {
-        return this._render( input[1], input[2] )
+        await this._render( input[1], input[2] )
       }
-      return this._render( input[1] )
-    }, null)
+      await this._render( input[1] )
+    }
   }
 
   private _render( output:string, data?:object ) { 
-    return promise((resolve) => {
+    return new Promise((resolve) => {
       const rs = createReadStream(output, { encoding: 'utf-8' })
       const ws = new MemoryStream(guid())
 

@@ -1,6 +1,5 @@
-import { AssetPipeline, AssetItemRules, AssetItem } from "./asset-pipeline";
-import { normalize, dirname, basename, parse, format, join, relative } from "path";
-import { readdir } from "fs";
+import { AssetItemRules } from "./asset-pipeline";
+import { dirname } from "path";
 import { fetch } from "./utils/fs";
 import { unique } from "lol/utils/array";
 import minimatch from "minimatch";

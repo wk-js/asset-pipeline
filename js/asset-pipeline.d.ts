@@ -1,4 +1,3 @@
-/// <reference types="when" />
 import { EditFileCallback } from './utils/fs';
 import { Tree } from "./tree";
 import { Manager } from "./manager";
@@ -57,8 +56,8 @@ export declare class AssetPipeline {
     relativeToLoadPath(path: string): string;
     getPath(path: string, fromPath?: string): string;
     getUrl(path: string, fromPath?: string): string;
-    resolve(force?: boolean): When.Promise<boolean>;
-    render(): When.Promise<boolean | null>;
+    resolve(force?: boolean): Promise<boolean>;
+    render(): Promise<void>;
     addEntry(input: string, output: string, parameters?: AssetItemRules): void;
     addFile(glob: string, parameters?: AssetItemRules): void;
     addDirectory(glob: string, parameters?: AssetItemRules): void;

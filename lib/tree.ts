@@ -1,9 +1,6 @@
-import { isFile } from "./utils/fs";
-import { AssetPipeline, AssetItem, AlternativeOutputs } from "./asset-pipeline";
-import { normalize, dirname, extname, relative, join } from "path";
+import { AssetPipeline, AlternativeOutputs } from "./asset-pipeline";
+import { normalize, extname, relative, join } from "path";
 import { URL } from "url";
-import { ManifestFile } from "./manifest";
-
 /**
  * Clean path
  */
