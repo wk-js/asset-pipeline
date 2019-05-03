@@ -213,3 +213,16 @@ function editFile(file, callback) {
     });
 }
 exports.editFile = editFile;
+function appendFile(content, file) {
+    return new Promise((resolve, reject) => {
+        Fs.appendFile(file, content, (err) => {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(true);
+            }
+        });
+    });
+}
+exports.appendFile = appendFile;

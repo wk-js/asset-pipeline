@@ -219,3 +219,15 @@ export async function editFile(file:string, callback:EditFileCallback) {
   const modified = await callback(content)
   return writeFile(modified, file)
 }
+
+export function appendFile(content:string | Buffer, file: string) {
+  return new Promise((resolve, reject) => {
+    Fs.appendFile(file, content, (err) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(true)
+      }
+    })
+  })
+}

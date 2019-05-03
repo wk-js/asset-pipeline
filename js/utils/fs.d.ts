@@ -18,3 +18,4 @@ export declare function readFile(file: string, options?: {
 } | string | undefined | null): Promise<string | Buffer>;
 export declare type EditFileCallback = (value: string | Buffer) => string | Buffer | Promise<string | Buffer>;
 export declare function editFile(file: string, callback: EditFileCallback): Promise<boolean>;
+export declare function appendFile(content: string | Buffer, file: string): Promise<{}>;
