@@ -1,6 +1,8 @@
 import * as Fs from "fs";
 import { FileList } from "filelist";
 import { normalize, dirname, isAbsolute, join } from "path";
+import { promiseResolved, promise } from "./promise";
+import { spawn, spawnSync } from "child_process";
 
 export function isFile(path:string) {
 
@@ -229,5 +231,69 @@ export function appendFile(content:string | Buffer, file: string) {
         resolve(true)
       }
     })
+  })
+}
+
+export function isSymbolicLink(path:string) {
+  try {
+    const stats = Fs.statSync( path )
+    if (!stats.isSymbolicLink()) throw 'Not a symbolic link'
+  } catch(e) {
+    return false
+  }
+
+  return true
+}
+
+export async function symlink(fromPath:string, toPath:string) {
+  if (!isAbsolute(fromPath)) fromPath = join(process.cwd(), fromPath)
+  if (!isAbsolute(toPath)) toPath = join(process.cwd(), toPath)
+
+  if (isSymbolicLink(toPath) || exists(toPath)) {
+    throw `Cannot create a symbolic link at ${toPath}`;
+  }
+
+  await ensureDir(dirname(toPath))
+
+  return promise<boolean>((resolve, reject) => {
+    Fs.symlink(fromPath, toPath, function(err) {
+      if (err) {
+        reject( err )
+        return
+      }
+
+      resolve(true)
+    })
+  })
+}
+
+type ShellType = 'cmd' | 'bash' | 'powershell' | 'zsh'
+
+export async function symlink2(fromPath: string, toPath: string, shell: ShellType = process.platform ? 'cmd' : 'bash') {
+  if (exists(toPath)) throw `Cannot create a symbolic link at ${toPath}`;
+
+  let command = ''
+
+  if (!isAbsolute(fromPath)) fromPath = join(process.cwd(), fromPath)
+  if (!isAbsolute(toPath)) toPath = join(process.cwd(), toPath)
+
+  await ensureDir(dirname(toPath))
+
+  if (process.platform == 'win32') {
+    command = `mklink /D "${toPath}" "${fromPath}"`
+  } else {
+    command = `ln -s ${fromPath} ${toPath}`
+  }
+
+  return promise<boolean>((resolve, reject) => {
+    const cmd = command.split(' ')
+    const cli = cmd.shift() as string
+    const ps  = spawnSync(cli, cmd, { shell: shell })
+
+    if (ps.error) {
+      reject(ps.error)
+    } else {
+      resolve(true)
+    }
   })
 }

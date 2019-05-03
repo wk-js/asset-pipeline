@@ -19,3 +19,8 @@ export declare function readFile(file: string, options?: {
 export declare type EditFileCallback = (value: string | Buffer) => string | Buffer | Promise<string | Buffer>;
 export declare function editFile(file: string, callback: EditFileCallback): Promise<boolean>;
 export declare function appendFile(content: string | Buffer, file: string): Promise<{}>;
+export declare function isSymbolicLink(path: string): boolean;
+export declare function symlink(fromPath: string, toPath: string): Promise<boolean>;
+declare type ShellType = 'cmd' | 'bash' | 'powershell' | 'zsh';
+export declare function symlink2(fromPath: string, toPath: string, shell?: ShellType): Promise<boolean>;
+export {};

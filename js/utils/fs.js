@@ -18,6 +18,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Fs = __importStar(require("fs"));
 const filelist_1 = require("filelist");
 const path_1 = require("path");
+const promise_1 = require("./promise");
+const child_process_1 = require("child_process");
 function isFile(path) {
     try {
         const stat = Fs.statSync(path);
@@ -226,3 +228,67 @@ function appendFile(content, file) {
     });
 }
 exports.appendFile = appendFile;
+function isSymbolicLink(path) {
+    try {
+        const stats = Fs.statSync(path);
+        if (!stats.isSymbolicLink())
+            throw 'Not a symbolic link';
+    }
+    catch (e) {
+        return false;
+    }
+    return true;
+}
+exports.isSymbolicLink = isSymbolicLink;
+function symlink(fromPath, toPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!path_1.isAbsolute(fromPath))
+            fromPath = path_1.join(process.cwd(), fromPath);
+        if (!path_1.isAbsolute(toPath))
+            toPath = path_1.join(process.cwd(), toPath);
+        if (isSymbolicLink(toPath) || exists(toPath)) {
+            throw `Cannot create a symbolic link at ${toPath}`;
+        }
+        yield ensureDir(path_1.dirname(toPath));
+        return promise_1.promise((resolve, reject) => {
+            Fs.symlink(fromPath, toPath, function (err) {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(true);
+            });
+        });
+    });
+}
+exports.symlink = symlink;
+function symlink2(fromPath, toPath, shell = process.platform ? 'cmd' : 'bash') {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (exists(toPath))
+            throw `Cannot create a symbolic link at ${toPath}`;
+        let command = '';
+        if (!path_1.isAbsolute(fromPath))
+            fromPath = path_1.join(process.cwd(), fromPath);
+        if (!path_1.isAbsolute(toPath))
+            toPath = path_1.join(process.cwd(), toPath);
+        yield ensureDir(path_1.dirname(toPath));
+        if (process.platform == 'win32') {
+            command = `mklink /D "${toPath}" "${fromPath}"`;
+        }
+        else {
+            command = `ln -s ${fromPath} ${toPath}`;
+        }
+        return promise_1.promise((resolve, reject) => {
+            const cmd = command.split(' ');
+            const cli = cmd.shift();
+            const ps = child_process_1.spawnSync(cli, cmd, { shell: shell });
+            if (ps.error) {
+                reject(ps.error);
+            }
+            else {
+                resolve(true);
+            }
+        });
+    });
+}
+exports.symlink2 = symlink2;
