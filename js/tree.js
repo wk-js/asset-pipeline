@@ -36,6 +36,7 @@ class Tree {
             files: [],
             subdirectories: {}
         };
+        this._usedPaths = [];
     }
     get manifest() {
         return this.pipeline.manifest.manifest;
@@ -114,6 +115,7 @@ class Tree {
         path = this.buildPath(path);
         const fromTree = this.resolve(fromPath);
         const output = path_1.relative(path_1.join(this.pipeline.absolute_dst_path, fromTree.path), path_1.join(this.pipeline.absolute_dst_path, path));
+        this.used(path);
         return output;
     }
     /**
@@ -134,6 +136,14 @@ class Tree {
     }
     getFileUrl(path, fromPath) {
         return this.getUrl(path, fromPath);
+    }
+    used(path) {
+        if (this._usedPaths.indexOf(path) == -1) {
+            this._usedPaths.push(path);
+        }
+    }
+    isUsed(path) {
+        return this._usedPaths.indexOf(path) == -1;
     }
     view() {
         function ptree(tree, tab) {

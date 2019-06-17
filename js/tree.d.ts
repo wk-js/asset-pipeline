@@ -9,6 +9,7 @@ export interface TreeInterface {
 export declare class Tree {
     pipeline: AssetPipeline;
     _tree: TreeInterface;
+    _usedPaths: string[];
     constructor(pipeline: AssetPipeline);
     readonly manifest: import("./manifest").ManifestFile;
     update(): void;
@@ -26,5 +27,7 @@ export declare class Tree {
     getUrl(path: string, fromPath?: string): string;
     getFilePath(path: string, fromPath?: string): string;
     getFileUrl(path: string, fromPath?: string): string;
+    used(path: string): void;
+    isUsed(path: string): boolean;
     view(): string;
 }

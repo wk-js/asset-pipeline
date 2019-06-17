@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("./utils/fs");
 const promise_1 = require("./utils/promise");
+const object_1 = require("lol/utils/object");
 const DEFAULT_PROMISE = promise_1.promiseResolved(false);
 class Manifest {
     constructor(pipeline) {
@@ -51,6 +52,16 @@ class Manifest {
             return fs_1.remove(this.manifest_path).then(() => true);
         }
         return DEFAULT_PROMISE;
+    }
+    getUsedAssets() {
+        const manifest = object_1.clone(this.manifest);
+        manifest.assets = {};
+        Object.keys(this.manifest.assets).forEach((path) => {
+            if (this.pipeline.tree.isUsed(path)) {
+                manifest.assets[path] = this.manifest.assets[path];
+            }
+        });
+        return manifest;
     }
 }
 exports.Manifest = Manifest;

@@ -49,6 +49,8 @@ export class Tree {
     subdirectories: {}
   }
 
+  _usedPaths: string[] = []
+
   constructor(public pipeline:AssetPipeline) {}
 
   get manifest() {
@@ -151,6 +153,8 @@ export class Tree {
       join(this.pipeline.absolute_dst_path, path),
     )
 
+    this.used( path )
+
     return output
   }
 
@@ -176,6 +180,16 @@ export class Tree {
 
   getFileUrl( path:string, fromPath?:string ) {
     return this.getUrl( path, fromPath )
+  }
+
+  used(path: string) {
+    if (this._usedPaths.indexOf(path) == -1) {
+      this._usedPaths.push( path )
+    }
+  }
+
+  isUsed(path: string) {
+    return this._usedPaths.indexOf(path) == -1
   }
 
   view() {

@@ -16,4 +16,5 @@ export declare class Manifest {
     updateFile(): Promise<boolean>;
     readFile(): Promise<boolean>;
     deleteFile(): Promise<boolean>;
+    getUsedAssets(): ManifestFile;
 }

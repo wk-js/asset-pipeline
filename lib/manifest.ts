@@ -1,6 +1,7 @@
 import { AssetPipeline, AssetItem } from "./asset-pipeline";
 import { writeFile, isFile, readFile, remove } from "./utils/fs";
 import { promiseResolved } from "./utils/promise";
+import { clone } from "lol/utils/object";
 
 const DEFAULT_PROMISE = promiseResolved(false)
 
@@ -71,6 +72,19 @@ export class Manifest {
     }
 
     return DEFAULT_PROMISE 
+  }
+
+  getUsedAssets() {
+    const manifest: ManifestFile = clone(this.manifest)
+    manifest.assets = {}
+
+    Object.keys(this.manifest.assets).forEach((path) => {
+      if (this.pipeline.tree.isUsed(path)) {
+        manifest.assets[path] = this.manifest.assets[path]
+      }
+    })
+
+    return manifest
   }
 
 }
