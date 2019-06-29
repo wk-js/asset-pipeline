@@ -163,7 +163,8 @@ export class PathResolver {
   }
 
   getFileUrl(path: string, fromPath?: string) {
-    return this.getUrl(path, fromPath)
+    path = this.getUrl(path, fromPath)
+    return remove_search(path)
   }
 
   getSourceFilePath(path: string, fromPath?: string) {

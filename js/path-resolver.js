@@ -121,7 +121,8 @@ class PathResolver {
         return path_2.remove_search(path);
     }
     getFileUrl(path, fromPath) {
-        return this.getUrl(path, fromPath);
+        path = this.getUrl(path, fromPath);
+        return path_2.remove_search(path);
     }
     getSourceFilePath(path, fromPath) {
         const asset = this.getAsset(path);
