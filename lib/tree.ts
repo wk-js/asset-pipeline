@@ -1,4 +1,4 @@
-import { AssetPipeline } from "./asset-pipeline";
+import { AssetPipeline, AssetItem } from "./asset-pipeline";
 import { normalize, extname, relative, join } from "path";
 import { URL } from "url";
 /**
@@ -49,7 +49,7 @@ export class Tree {
     subdirectories: {}
   }
 
-  _usedPaths: string[] = []
+  _resolved_paths: string[] = []
 
   constructor(public pipeline:AssetPipeline) {}
 
@@ -153,7 +153,7 @@ export class Tree {
       join(this.pipeline.absolute_dst_path, path),
     )
 
-    this.used( path )
+    this._resolved( path )
 
     return output
   }
@@ -182,16 +182,6 @@ export class Tree {
     return this.getUrl( path, fromPath )
   }
 
-  used(path: string) {
-    if (this._usedPaths.indexOf(path) == -1) {
-      this._usedPaths.push( path )
-    }
-  }
-
-  isUsed(path: string) {
-    return this._usedPaths.indexOf(path) == -1
-  }
-
   view() {
     function ptree(tree:TreeInterface, tab:string) {
       let print = ''
@@ -207,6 +197,32 @@ export class Tree {
     }
 
     return ptree( this._tree, "" ).replace(/\n\s+\n/g, '\n')
+  }
+
+  private _resolved(path: string) {
+    if (this._resolved_paths.indexOf(path) == -1) {
+      this._resolved_paths.push( path )
+    }
+  }
+
+  is_resolved(path: string) {
+    return this._resolved_paths.indexOf(path) > -1
+  }
+
+  get_resolved() {
+    const assets: Record<string, AssetItem> = {}
+
+    Object.keys(this.manifest.assets).forEach((path) => {
+      if (this.pipeline.tree.is_resolved(path)) {
+        assets[path] = this.manifest.assets[path]
+      }
+    })
+
+    return assets
+  }
+
+  clean_resolved() {
+    this._resolved_paths = []
   }
 
 }

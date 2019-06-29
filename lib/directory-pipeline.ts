@@ -1,9 +1,7 @@
 import { AssetItemRules } from "./asset-pipeline";
 import { dirname } from "path";
 import { fetch } from "./utils/fs";
-import { unique } from "lol/utils/array";
 import minimatch from "minimatch";
-import { fetchDirs } from "./utils";
 import { FilePipeline } from "./file-pipeline";
 
 export class DirectoryPipeline extends FilePipeline {
@@ -11,32 +9,24 @@ export class DirectoryPipeline extends FilePipeline {
   type: string = 'directory'
 
   fetch() {
-    const globs = this.rules.map((item) => {
-      return this.pipeline.fromLoadPath( item.glob )
-    })
+    this.pipeline.load_paths
+    .fetchDirs(this.rules)
 
-    unique(fetchDirs( globs ))
-
-    .map((input) =>{
-      input = this.pipeline.relativeToLoadPath( input )
-
-      this.manifest.assets[input] = {
-        input:  input,
-        output: input,
-        cache:  input
-      }
-
-      this.resolve( input )
-
-      return this.manifest.assets[input]
+    .map((asset) => {
+      this.manifest.assets[asset.input] = asset
+      this.resolve( asset.input )
+      return asset
     })
 
     .forEach((item) => {
-      const subdirs = fetch( this.pipeline.fromLoadPath(item.input) + '/**/*' ).map((input:string) => {
+      const glob = this.pipeline.load_paths.from_load_path(item.load_path, item.input) + '/**/*'
+
+      fetch( glob ).map((input:string) => {
         input = dirname( input )
-        input = this.pipeline.relativeToLoadPath( input )
+        input = this.pipeline.load_paths.relative_to_load_path( item.load_path, input )
 
         this.manifest.assets[input] = {
+          load_path: item.load_path,
           input:  input,
           output: input,
           cache:  input
@@ -44,7 +34,6 @@ export class DirectoryPipeline extends FilePipeline {
 
         this.resolve( input )
       })
-
     })
 
   }

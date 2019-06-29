@@ -1,5 +1,4 @@
-import { AssetPipeline, AssetItemRules, AlternativeOutputs, Rules } from "./asset-pipeline";
-import { fetch } from './utils/fs';
+import { AssetPipeline, AssetItemRules, Rules } from "./asset-pipeline";
 import { join, normalize, relative, basename, dirname, parse, format } from "path";
 import minimatch from 'minimatch';
 import { hashCache, versionCache } from "./cache";
@@ -39,33 +38,11 @@ export class FilePipeline {
   }
 
   fetch() {
-    const globs:   string[] = []
-    const ignores: string[] = []
-
-    this.rules.forEach((item) => {
-      if ("ignore" in item && item.ignore) {
-        ignores.push( this.pipeline.fromLoadPath(item.glob) )
-      } else {
-        globs.push( this.pipeline.fromLoadPath(item.glob) )
-      }
-    })
-
-    let input
-
-    fetch( globs, ignores )
-
-    .map((file:string) => {
-      return this.pipeline.relativeToLoadPath( file )
-    })
-
-    .forEach(( input:string ) => {
-      this.manifest.assets[input] = {
-        input:  input,
-        output: input,
-        cache:  input
-      }
-
-      this.resolve( input )
+    this.pipeline.load_paths
+    .fetch(this.rules)
+    .forEach((asset) => {
+      this.manifest.assets[asset.input] = asset
+      this.resolve( asset.input )
     })
   }
 
@@ -87,7 +64,7 @@ export class FilePipeline {
       }
     }
 
-    return rules
+    return rules as AssetItemRules
   }
 
   resolve(file:string) {

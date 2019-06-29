@@ -1,4 +1,4 @@
-import { AssetPipeline } from "./asset-pipeline";
+import { AssetPipeline, AssetItem } from "./asset-pipeline";
 export interface TreeInterface {
     path: string;
     files: string[];
@@ -9,7 +9,7 @@ export interface TreeInterface {
 export declare class Tree {
     pipeline: AssetPipeline;
     _tree: TreeInterface;
-    _usedPaths: string[];
+    _resolved_paths: string[];
     constructor(pipeline: AssetPipeline);
     readonly manifest: import("./manifest").ManifestFile;
     update(): void;
@@ -27,7 +27,9 @@ export declare class Tree {
     getUrl(path: string, fromPath?: string): string;
     getFilePath(path: string, fromPath?: string): string;
     getFileUrl(path: string, fromPath?: string): string;
-    used(path: string): void;
-    isUsed(path: string): boolean;
     view(): string;
+    private _resolved;
+    is_resolved(path: string): boolean;
+    get_resolved(): Record<string, AssetItem>;
+    clean_resolved(): void;
 }

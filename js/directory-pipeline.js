@@ -5,9 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
 const fs_1 = require("./utils/fs");
-const array_1 = require("lol/utils/array");
 const minimatch_1 = __importDefault(require("minimatch"));
-const utils_1 = require("./utils");
 const file_pipeline_1 = require("./file-pipeline");
 class DirectoryPipeline extends file_pipeline_1.FilePipeline {
     constructor() {
@@ -15,25 +13,20 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
         this.type = 'directory';
     }
     fetch() {
-        const globs = this.rules.map((item) => {
-            return this.pipeline.fromLoadPath(item.glob);
-        });
-        array_1.unique(utils_1.fetchDirs(globs))
-            .map((input) => {
-            input = this.pipeline.relativeToLoadPath(input);
-            this.manifest.assets[input] = {
-                input: input,
-                output: input,
-                cache: input
-            };
-            this.resolve(input);
-            return this.manifest.assets[input];
+        this.pipeline.load_paths
+            .fetchDirs(this.rules)
+            .map((asset) => {
+            this.manifest.assets[asset.input] = asset;
+            this.resolve(asset.input);
+            return asset;
         })
             .forEach((item) => {
-            const subdirs = fs_1.fetch(this.pipeline.fromLoadPath(item.input) + '/**/*').map((input) => {
+            const glob = this.pipeline.load_paths.from_load_path(item.load_path, item.input) + '/**/*';
+            fs_1.fetch(glob).map((input) => {
                 input = path_1.dirname(input);
-                input = this.pipeline.relativeToLoadPath(input);
+                input = this.pipeline.load_paths.relative_to_load_path(item.load_path, input);
                 this.manifest.assets[input] = {
+                    load_path: item.load_path,
                     input: input,
                     output: input,
                     cache: input

@@ -34,8 +34,8 @@ class Renderer {
     }
     render() {
         return __awaiter(this, void 0, void 0, function* () {
-            const inputs = this._fetch().filter((template) => {
-                return !!template[2].template;
+            const inputs = this._fetch().filter((item) => {
+                return !!item[2].template;
             });
             for (let i = 0; i < inputs.length; i++) {
                 const input = inputs[i];
@@ -68,10 +68,9 @@ class Renderer {
         return Renderer.render(src, this.options, data);
     }
     _fetch() {
-        return Object.keys(this.pipeline.manifest.manifest.assets)
-            .map((input) => {
+        return this.pipeline.load_paths.map(Object.keys(this.pipeline.manifest.manifest.assets), (input, load_path) => {
             return [
-                path_1.relative(process.cwd(), this.pipeline.fromLoadPath(input)),
+                path_1.relative(process.cwd(), this.pipeline.load_paths.from_load_path(load_path, input)),
                 path_1.relative(process.cwd(), this.pipeline.fromDstPath(this.pipeline.tree.getPath(input))),
                 this.pipeline.getFileRules(input)
             ];

@@ -50,29 +50,31 @@ class Manager {
     }
     apply(type) {
         return __awaiter(this, void 0, void 0, function* () {
-            const validGlobs = this.globs.filter((item) => {
-                return item.action === type;
-            }).map(item => this.pipeline.fromLoadPath(item.glob));
-            const ignoredGlobs = this.globs.filter((item) => {
-                return item.action === 'ignore';
-            }).map(item => this.pipeline.fromLoadPath(item.glob));
-            const ios = (type === 'symlink' ?
+            const validGlobs = this.pipeline.load_paths.filter_and_map(this.globs, (item, load_path) => {
+                if (item.action !== type)
+                    return false;
+                return this.pipeline.load_paths.from_load_path(load_path, item.glob);
+            });
+            const ignoredGlobs = this.pipeline.load_paths.filter_and_map(this.globs, (item, load_path) => {
+                if (item.action !== 'ignore')
+                    return false;
+                return this.pipeline.load_paths.from_load_path(load_path, item.glob);
+            });
+            const files = (type === 'symlink' ?
                 utils_1.fetchDirs(validGlobs, ignoredGlobs)
                 :
-                    fs_1.fetch(validGlobs, ignoredGlobs))
-                .map((file) => {
-                file = path_1.relative(this.pipeline.absolute_load_path, file);
-                let input = this.pipeline.fromLoadPath(file);
-                let output = this.pipeline.fromDstPath(this.pipeline.tree.getPath(file));
-                // Apply directory change
-                const inputDir = path_1.dirname(file);
-                const outputDir = this.pipeline.tree.getPath(path_1.dirname(file));
-                if (outputDir != inputDir) {
-                    output = path_1.join(this.pipeline.fromDstPath(outputDir), path_1.basename(output));
-                }
-                input = path_1.relative(process.cwd(), input);
+                    fs_1.fetch(validGlobs, ignoredGlobs));
+            const ios = this.pipeline.load_paths.filter_and_map(files, (file, load_path) => {
+                const relative_file = this.pipeline.load_paths.relative_to_load_path(load_path, file);
+                // Future
+                // Maybe copy only resolved files
+                // this.pipeline.tree.is_resolved( relative_file )
+                const input = path_1.relative(process.cwd(), file);
+                let output = this.pipeline.fromDstPath(this.pipeline.tree.getPath(relative_file));
                 output = path_1.relative(process.cwd(), output);
-                return [input, output.split('?')[0]];
+                if (input == output)
+                    return false;
+                return [input, output.split(/\#|\?/)[0]];
             });
             for (let i = 0; i < ios.length; i++) {
                 const io = ios[i];

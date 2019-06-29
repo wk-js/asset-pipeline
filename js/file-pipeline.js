@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = require("./utils/fs");
 const path_1 = require("path");
 const minimatch_1 = __importDefault(require("minimatch"));
 const cache_1 = require("./cache");
@@ -34,28 +33,11 @@ class FilePipeline {
         this.rules.push(parameters);
     }
     fetch() {
-        const globs = [];
-        const ignores = [];
-        this.rules.forEach((item) => {
-            if ("ignore" in item && item.ignore) {
-                ignores.push(this.pipeline.fromLoadPath(item.glob));
-            }
-            else {
-                globs.push(this.pipeline.fromLoadPath(item.glob));
-            }
-        });
-        let input;
-        fs_1.fetch(globs, ignores)
-            .map((file) => {
-            return this.pipeline.relativeToLoadPath(file);
-        })
-            .forEach((input) => {
-            this.manifest.assets[input] = {
-                input: input,
-                output: input,
-                cache: input
-            };
-            this.resolve(input);
+        this.pipeline.load_paths
+            .fetch(this.rules)
+            .forEach((asset) => {
+            this.manifest.assets[asset.input] = asset;
+            this.resolve(asset.input);
         });
     }
     getRules(file) {

@@ -6,6 +6,8 @@ import { FilePipeline } from "./file-pipeline";
 import { DirectoryPipeline } from "./directory-pipeline";
 import { Manifest } from "./manifest";
 import { Renderer } from "./renderer";
+import { throws } from "assert";
+import { Resolver as FileResolver } from "./file-resolver";
 
 export interface AlternativeOutputs {
   condition: string,
@@ -30,6 +32,7 @@ export interface AssetItemRules extends Rules {
 }
 
 export interface AssetItem {
+  load_path: string,
   input:  string,
   output: string,
   cache:  string,
@@ -38,7 +41,9 @@ export interface AssetItem {
 
 export class AssetPipeline {
 
-  load_path: string = './app'
+  load_path: string|null = null
+  load_paths = new FileResolver()
+
   dst_path:  string = './public'
   root_path: string = process.cwd()
 
@@ -63,24 +68,12 @@ export class AssetPipeline {
   file      = new FilePipeline( this )
   directory = new DirectoryPipeline( this )
 
-  get absolute_load_path() {
-    return join(this.root_path, this.load_path)
-  }
-
   get absolute_dst_path() {
     return join(this.root_path, this.dst_path)
   }
 
-  fromLoadPath(path:string) {
-    return join(this.absolute_load_path, path)
-  }
-
   fromDstPath(path:string) {
     return join(this.absolute_dst_path, path)
-  }
-
-  relativeToLoadPath(path:string) {
-    return relative(this.absolute_load_path, path)
   }
 
   getPath( path:string, fromPath?:string ) {
@@ -94,6 +87,9 @@ export class AssetPipeline {
   resolve(force?:boolean) {
     force = force ? force : this.force_resolve
 
+    this.load_paths.root_path = this.root_path
+    if (this.load_path) this.load_paths.add( this.load_path )
+
     if (force || !this.manifest.fileExists()) {
       this.log( '[AssetPipeline] Fetch directories' )
       this.directory.fetch()
@@ -103,12 +99,16 @@ export class AssetPipeline {
       this.file.fetch()
       this.tree.update()
 
+      this.log( '[AssetPipeline] Clean resolved paths' )
+      this.tree.clean_resolved()
+
       this.log( '[AssetPipeline] Update manifest' )
       return this.manifest.updateFile()
     } else {
       this.log( '[AssetPipeline] Read manifest' )
       return this.manifest.readFile()
     }
+
   }
 
   async render() {

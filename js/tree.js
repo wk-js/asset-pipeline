@@ -36,7 +36,7 @@ class Tree {
             files: [],
             subdirectories: {}
         };
-        this._usedPaths = [];
+        this._resolved_paths = [];
     }
     get manifest() {
         return this.pipeline.manifest.manifest;
@@ -115,7 +115,7 @@ class Tree {
         path = this.buildPath(path);
         const fromTree = this.resolve(fromPath);
         const output = path_1.relative(path_1.join(this.pipeline.absolute_dst_path, fromTree.path), path_1.join(this.pipeline.absolute_dst_path, path));
-        this.used(path);
+        this._resolved(path);
         return output;
     }
     /**
@@ -137,14 +137,6 @@ class Tree {
     getFileUrl(path, fromPath) {
         return this.getUrl(path, fromPath);
     }
-    used(path) {
-        if (this._usedPaths.indexOf(path) == -1) {
-            this._usedPaths.push(path);
-        }
-    }
-    isUsed(path) {
-        return this._usedPaths.indexOf(path) == -1;
-    }
     view() {
         function ptree(tree, tab) {
             let print = '';
@@ -156,6 +148,26 @@ class Tree {
             return print;
         }
         return ptree(this._tree, "").replace(/\n\s+\n/g, '\n');
+    }
+    _resolved(path) {
+        if (this._resolved_paths.indexOf(path) == -1) {
+            this._resolved_paths.push(path);
+        }
+    }
+    is_resolved(path) {
+        return this._resolved_paths.indexOf(path) > -1;
+    }
+    get_resolved() {
+        const assets = {};
+        Object.keys(this.manifest.assets).forEach((path) => {
+            if (this.pipeline.tree.is_resolved(path)) {
+                assets[path] = this.manifest.assets[path];
+            }
+        });
+        return assets;
+    }
+    clean_resolved() {
+        this._resolved_paths = [];
     }
 }
 exports.Tree = Tree;

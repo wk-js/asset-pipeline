@@ -3,9 +3,14 @@ import { AssetPipeline } from "./asset-pipeline";
 import { relative, dirname, join, basename } from "path";
 import { symlink, fetchDirs } from "./utils";
 
+interface IManagerRuleItem {
+  glob: string,
+  action: "move" | "copy" | "symlink" | "ignore"
+}
+
 export class Manager {
 
-  globs: any[] = []
+  globs: IManagerRuleItem[] = []
 
   constructor(public pipeline:AssetPipeline) {}
 
@@ -45,37 +50,38 @@ export class Manager {
   }
 
   async apply(type:string) {
-    const validGlobs = this.globs.filter((item) => {
-      return item.action === type
-    }).map(item => this.pipeline.fromLoadPath(item.glob))
 
-    const ignoredGlobs = this.globs.filter((item) => {
-      return item.action === 'ignore'
-    }).map(item => this.pipeline.fromLoadPath(item.glob))
+    const validGlobs = this.pipeline.load_paths.filter_and_map(this.globs, (item, load_path) => {
+      if (item.action !== type) return false
+      return this.pipeline.load_paths.from_load_path(load_path, item.glob)
+    })
 
-    const ios = (
+    const ignoredGlobs = this.pipeline.load_paths.filter_and_map(this.globs, (item, load_path) => {
+      if (item.action !== 'ignore') return false
+      return this.pipeline.load_paths.from_load_path(load_path, item.glob)
+    })
+
+    const files = (
       type === 'symlink' ?
       fetchDirs( validGlobs, ignoredGlobs )
       :
       fetch( validGlobs, ignoredGlobs )
     )
-    .map(( file:string ) => {
-      file = relative( this.pipeline.absolute_load_path, file )
 
-      let input  = this.pipeline.fromLoadPath( file )
-      let output = this.pipeline.fromDstPath( this.pipeline.tree.getPath( file ) )
+    const ios = this.pipeline.load_paths.filter_and_map(files, (file, load_path) => {
+      const relative_file = this.pipeline.load_paths.relative_to_load_path(load_path, file)
 
-      // Apply directory change
-      const inputDir  = dirname(file)
-      const outputDir = this.pipeline.tree.getPath(dirname(file))
-      if (outputDir != inputDir) {
-        output = join( this.pipeline.fromDstPath( outputDir ), basename(output) )
-      }
+      // Future
+      // Maybe copy only resolved files
+      // this.pipeline.tree.is_resolved( relative_file )
 
-      input  = relative( process.cwd(), input )
+      const input = relative( process.cwd(), file )
+
+      let output = this.pipeline.fromDstPath( this.pipeline.tree.getPath( relative_file ) )
       output = relative( process.cwd(), output )
 
-      return [ input, output.split('?')[0] ]
+      if (input == output) return false
+      return [ input, output.split(/\#|\?/)[0] ]
     })
 
     for (let i = 0; i < ios.length; i++) {

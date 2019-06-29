@@ -15,9 +15,11 @@ const file_pipeline_1 = require("./file-pipeline");
 const directory_pipeline_1 = require("./directory-pipeline");
 const manifest_1 = require("./manifest");
 const renderer_1 = require("./renderer");
+const file_resolver_1 = require("./file-resolver");
 class AssetPipeline {
     constructor() {
-        this.load_path = './app';
+        this.load_path = null;
+        this.load_paths = new file_resolver_1.Resolver();
         this.dst_path = './public';
         this.root_path = process.cwd();
         this.cacheable = false;
@@ -36,20 +38,11 @@ class AssetPipeline {
         this.file = new file_pipeline_1.FilePipeline(this);
         this.directory = new directory_pipeline_1.DirectoryPipeline(this);
     }
-    get absolute_load_path() {
-        return path_1.join(this.root_path, this.load_path);
-    }
     get absolute_dst_path() {
         return path_1.join(this.root_path, this.dst_path);
     }
-    fromLoadPath(path) {
-        return path_1.join(this.absolute_load_path, path);
-    }
     fromDstPath(path) {
         return path_1.join(this.absolute_dst_path, path);
-    }
-    relativeToLoadPath(path) {
-        return path_1.relative(this.absolute_load_path, path);
     }
     getPath(path, fromPath) {
         return this.tree.getPath(path, fromPath);
@@ -59,6 +52,9 @@ class AssetPipeline {
     }
     resolve(force) {
         force = force ? force : this.force_resolve;
+        this.load_paths.root_path = this.root_path;
+        if (this.load_path)
+            this.load_paths.add(this.load_path);
         if (force || !this.manifest.fileExists()) {
             this.log('[AssetPipeline] Fetch directories');
             this.directory.fetch();
@@ -66,6 +62,8 @@ class AssetPipeline {
             this.log('[AssetPipeline] Fetch files');
             this.file.fetch();
             this.tree.update();
+            this.log('[AssetPipeline] Clean resolved paths');
+            this.tree.clean_resolved();
             this.log('[AssetPipeline] Update manifest');
             return this.manifest.updateFile();
         }

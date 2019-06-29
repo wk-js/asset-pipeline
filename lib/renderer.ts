@@ -24,8 +24,8 @@ export class Renderer {
   }
 
   async render() {
-    const inputs = this._fetch().filter((template) => {
-      return !!(template[2] as AssetItemRules).template
+    const inputs = this._fetch().filter((item) => {
+      return !!(item[2] as AssetItemRules).template
     })
 
     for (let i = 0; i < inputs.length; i++) {
@@ -64,11 +64,9 @@ export class Renderer {
   }
 
   private _fetch() {
-    return Object.keys(this.pipeline.manifest.manifest.assets)
-
-    .map((input) => {
+    return this.pipeline.load_paths.map(Object.keys(this.pipeline.manifest.manifest.assets), (input, load_path) => {
       return [
-        relative( process.cwd(), this.pipeline.fromLoadPath( input ) ),
+        relative( process.cwd(), this.pipeline.load_paths.from_load_path( load_path , input) ),
         relative( process.cwd(), this.pipeline.fromDstPath(this.pipeline.tree.getPath( input )) ),
         this.pipeline.getFileRules( input )
       ]

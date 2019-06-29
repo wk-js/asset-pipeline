@@ -1,7 +1,11 @@
 import { AssetPipeline } from "./asset-pipeline";
+interface IManagerRuleItem {
+    glob: string;
+    action: "move" | "copy" | "symlink" | "ignore";
+}
 export declare class Manager {
     pipeline: AssetPipeline;
-    globs: any[];
+    globs: IManagerRuleItem[];
     constructor(pipeline: AssetPipeline);
     move(glob: string): void;
     copy(glob: string): void;
@@ -10,3 +14,4 @@ export declare class Manager {
     process(): Promise<void>;
     apply(type: string): Promise<void>;
 }
+export {};
