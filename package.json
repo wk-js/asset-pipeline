@@ -2,7 +2,8 @@
   "name": "asset-pipeline",
   "version": "1.0.8",
   "description": "Asset pipeline",
-  "main": "js/asset-pipeline.js",
+  "main": "js/index.js",
+  "types": "js",
   "scripts": {
     "tsc": "tsc",
     "test": "mocha -r ts-node/register ./test/**/*.spec.ts"
@@ -13,18 +14,16 @@
     "url": "https://github.com/wk-js/asset-pipeline"
   },
   "dependencies": {
-    "filelist": "0.0.6",
-    "lodash.template": "4.4.0",
+    "filelist": "github:FuriouZz/filelist",
     "lol": "github:makemepulse/lol.js#latest",
-    "minimatch": "3.0.3"
+    "minimatch": "^3.0.4"
   },
   "devDependencies": {
-    "@types/lodash.template": "4.4.3",
     "@types/minimatch": "3.0.3",
-    "@types/mocha": "^5.2.6",
+    "@types/mocha": "^5.2.7",
     "@types/node": "9.4.0",
-    "mocha": "6.1.3",
-    "ts-node": "^8.1.0",
+    "mocha": "^6.1.4",
+    "ts-node": "^8.3.0",
     "typescript": "3.4.3"
   }
 }

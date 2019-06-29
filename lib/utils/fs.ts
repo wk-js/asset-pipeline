@@ -1,8 +1,10 @@
 import * as Fs from "fs";
 import { FileList } from "filelist";
 import { normalize, dirname, isAbsolute, join } from "path";
-import { promiseResolved, promise } from "./promise";
-import { spawn, spawnSync } from "child_process";
+import { promise } from "./promise";
+import { spawnSync } from "child_process";
+
+FileList.debug = false
 
 export function isFile(path:string) {
 
@@ -160,7 +162,13 @@ export function fetch(include:string|string[], exclude?:string|string[]) {
   includes.forEach((inc) => FL.include( inc ))
   excludes.forEach((exc) => FL.exclude( exc ))
 
-  const files = FL.toArray().filter(function(file:string) {
+  let files: string[] = []
+
+  try {
+    files = FL.toArray()
+  } catch (e) {}
+
+  files = files.filter(function(file:string) {
     return isFile( file )
   })
 
@@ -216,7 +224,7 @@ export function readFile(file:string, options?: { encoding?: string | null; flag
 
 export type EditFileCallback = (value: string | Buffer) => string | Buffer | Promise<string | Buffer>
 
-export async function editFile(file:string, callback:EditFileCallback) {
+export async function editFile(file:string, callback: EditFileCallback) {
   const content = await readFile(file)
   const modified = await callback(content)
   return writeFile(modified, file)
@@ -269,7 +277,7 @@ export async function symlink(fromPath:string, toPath:string) {
 
 type ShellType = 'cmd' | 'bash' | 'powershell' | 'zsh'
 
-export async function symlink2(fromPath: string, toPath: string, shell: ShellType = process.platform ? 'cmd' : 'bash') {
+export async function symlink2(fromPath: string, toPath: string, shell: ShellType = process.platform == 'win32' ? 'cmd' : 'bash') {
   if (exists(toPath)) throw `Cannot create a symbolic link at ${toPath}`;
 
   let command = ''

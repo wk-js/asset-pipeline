@@ -1,17 +1,19 @@
 import "mocha";
-import { AssetPipeline } from "../js/asset-pipeline";
-import { writeFile, ensureDir, remove, removeDir, fetch, isDirectory } from "../js/utils/fs";
-import Path, { basename } from "path";
+import { AssetPipeline } from "../lib/index";
+import { writeFile, ensureDir, removeDir, fetch, isDirectory } from "../lib/utils/fs";
+import Path, { basename, join, normalize } from "path";
 import * as assert from "assert";
+import { Pipeline } from "../lib/pipeline";
+import { to_unix_path } from "../lib/utils/path";
 
 const LOAD_PATH = 'tmp/test-units'
 const DST_PATH = 'tmp/test-units-dist'
 
-async function setup(callback: (pipeline: AssetPipeline) => void) {
+async function setup(callback: (pipeline: Pipeline) => void) {
   const AP = new AssetPipeline()
-  AP.load_path = LOAD_PATH
+  // AP.load_paths.add( LOAD_PATH )
   AP.dst_path = DST_PATH
-  AP.save_manifest = false
+  AP.manifest.save = false
   await callback(AP)
   await AP.resolve()
   return AP
@@ -32,6 +34,11 @@ before(async () => {
   await writeFile("", Path.join(LOAD_PATH, 'sub0/sub1', 'file7.txt'))
   await writeFile("", Path.join(LOAD_PATH, 'sub0/sub1', 'file8.txt'))
   await writeFile("", Path.join(LOAD_PATH, 'sub0/sub1', 'file9.txt'))
+
+  await ensureDir(Path.join(LOAD_PATH, 'sub2'))
+  await writeFile("", Path.join(LOAD_PATH, 'sub2', 'file7.txt'))
+  await writeFile("", Path.join(LOAD_PATH, 'sub2', 'file8.txt'))
+  await writeFile("", Path.join(LOAD_PATH, 'sub2', 'file9.txt'))
 })
 
 after(async () => {
@@ -42,30 +49,96 @@ afterEach(async () => {
   if (isDirectory(DST_PATH)) await removeDir(DST_PATH)
 })
 
+describe("Load paths", () => {
+
+  it("Override asset path", async () => {
+    const AP = await setup(async (AP) => {
+      AP.load_paths.add(Path.join(LOAD_PATH, 'sub0/sub1'))
+      AP.load_paths.add(Path.join(LOAD_PATH, 'sub2'))
+      AP.file.add('**/*')
+    })
+
+    const assets = Object.keys(AP.manifest.manifest.assets).map((key) => to_unix_path(key))
+    assert.equal(assets.length, 3)
+    assert.deepEqual(assets, ['file7.txt', 'file8.txt', 'file9.txt'])
+    assert.deepEqual(Object.keys(AP.manifest.manifest.assets).map((key) => {
+      return to_unix_path(AP.manifest.manifest.assets[key].load_path)
+    }), [ 'tmp/test-units/sub0/sub1', 'tmp/test-units/sub0/sub1', 'tmp/test-units/sub0/sub1' ])
+  })
+
+})
+
 describe("Directory", () => {
 
   it("Add directory", async () => {
     const AP = await setup(async (AP) => {
-      AP.addDirectory('others')
+      AP.load_paths.add(join(LOAD_PATH))
+      AP.directory.add('others')
     })
     assert.equal(AP.manifest.manifest.assets.hasOwnProperty('others'), true)
   })
 
   it("Add directories", async () => {
     const AP = await setup(async (AP) => {
-      AP.addDirectory("**/**")
+      AP.load_paths.add(join(LOAD_PATH, 'sub0'))
+      AP.directory.add("**/**")
     })
-    const assets = Object.keys(AP.manifest.manifest.assets)
-    assert.equal(assets.length, 3)
+
+    const assets = Object.keys(AP.manifest.manifest.assets).map((key) => to_unix_path(key))
+    assert.equal(assets.length, 4)
+    assert.deepEqual(assets, [ 'sub1', 'sub1/file7.txt', 'sub1/file8.txt', 'sub1/file9.txt' ])
   })
+
+  it('file_rules[] and couple rules', async () => {
+    const AP = await setup(async (AP) => {
+      AP.cacheable = true
+      AP.load_paths.add( LOAD_PATH )
+      AP.directory.add('sub0/sub1', {
+        keep_path: false,
+        rename: "r_sub0/r_sub1",
+        file_rules: [
+          {
+            glob: "sub0/sub1/file7.txt",
+            ignore: true
+          },
+          {
+            glob: "sub0/sub1/file8.txt",
+            rename: "#{dir}/#{name}#{ext}?#{hash}",
+          },
+          {
+            glob: "sub0/sub1/file9.txt",
+            cache: true,
+            rename: "#{name}#{ext}?#{hash}",
+          }
+        ]
+      })
+    })
+
+    const assets = Object.keys(AP.manifest.manifest.assets).map((key) => to_unix_path(key))
+    assert.equal(assets.length, 3)
+    assert.deepEqual(assets, [ 'sub0/sub1', 'sub0/sub1/file8.txt', 'sub0/sub1/file9.txt' ])
+
+    const view = []
+    view.push('r_sub0')
+    view.push('  r_sub1')
+    view.push('    file8.txt?')
+    view.push('file9.txt?2ad93d4838a65697a68da7e6ff4cc758')
+
+    assert.equal(AP.resolver.view(), view.join('\n'));
+  })
+
+})
+
+describe('Directory (FS)', () => {
 
   it("Copy directory", async () => {
     const AP = await setup(async (AP) => {
-      AP.addDirectory("others")
-      AP.manager.copy("others/**/*") // Need wildcards
+      AP.load_paths.add(LOAD_PATH)
+      AP.directory.add("others")
+      AP.fs.copy("others/**/*") // Need wildcards
     })
 
-    await AP.manager.process()
+    await AP.fs.apply()
 
     const files = fetch(DST_PATH + '/**/*')
     assert.deepEqual(files, [
@@ -77,11 +150,12 @@ describe("Directory", () => {
 
   it("Copy renamed directory", async () => {
     const AP = await setup(async (AP) => {
-      AP.addDirectory("others", { rename: "hello" })
-      AP.manager.copy("others/**/*") // Need wildcards
+      AP.load_paths.add(LOAD_PATH)
+      AP.directory.add("others", { rename: "hello" })
+      AP.fs.copy("others/**/*") // Need wildcards
     })
 
-    await AP.manager.process()
+    await AP.fs.apply()
 
     const files = fetch(DST_PATH + '/**/*')
     assert.deepEqual(files, [
@@ -91,17 +165,18 @@ describe("Directory", () => {
     ])
   })
 
-  it("Use resolve() method", async () => {
+  it("Copy and use rename() method", async () => {
     const AP = await setup(async (AP) => {
-      AP.addFile("others/**/*", {
-        resolve(output, file, rules) {
+      AP.load_paths.add(LOAD_PATH)
+      AP.file.add("others/**/*", {
+        rename(output, file, rules) {
           return Path.join('world', basename(output))
         }
       })
-      AP.manager.copy("others/**/*") // Need wildcards
+      AP.fs.copy("others/**/*") // Need wildcards
     })
 
-    await AP.manager.process()
+    await AP.fs.apply()
 
     const files = fetch(DST_PATH + '/**/*')
     assert.deepEqual(files, [

@@ -20,6 +20,7 @@ const filelist_1 = require("filelist");
 const path_1 = require("path");
 const promise_1 = require("./promise");
 const child_process_1 = require("child_process");
+filelist_1.FileList.debug = false;
 function isFile(path) {
     try {
         const stat = Fs.statSync(path);
@@ -160,7 +161,12 @@ function fetch(include, exclude) {
     const excludes = Array.isArray(exclude) ? exclude : exclude ? [exclude] : [];
     includes.forEach((inc) => FL.include(inc));
     excludes.forEach((exc) => FL.exclude(exc));
-    const files = FL.toArray().filter(function (file) {
+    let files = [];
+    try {
+        files = FL.toArray();
+    }
+    catch (e) { }
+    files = files.filter(function (file) {
         return isFile(file);
     });
     return files;
@@ -262,7 +268,7 @@ function symlink(fromPath, toPath) {
     });
 }
 exports.symlink = symlink;
-function symlink2(fromPath, toPath, shell = process.platform ? 'cmd' : 'bash') {
+function symlink2(fromPath, toPath, shell = process.platform == 'win32' ? 'cmd' : 'bash') {
     return __awaiter(this, void 0, void 0, function* () {
         if (exists(toPath))
             throw `Cannot create a symbolic link at ${toPath}`;

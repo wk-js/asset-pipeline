@@ -1,66 +1,73 @@
-import { AssetItemRules } from "./asset-pipeline";
-import { dirname } from "path";
+import Path from "path";
 import { fetch } from "./utils/fs";
-import minimatch from "minimatch";
 import { FilePipeline } from "./file-pipeline";
+import { IAsset, IDirectoryRule } from "./types";
+import { expose } from "lol/utils/object";
+import minimatch from "minimatch";
 
 export class DirectoryPipeline extends FilePipeline {
 
   type: string = 'directory'
 
-  fetch() {
-    this.pipeline.load_paths
-    .fetchDirs(this.rules)
-
-    .map((asset) => {
-      this.manifest.assets[asset.input] = asset
-      this.resolve( asset.input )
-      return asset
-    })
-
-    .forEach((item) => {
-      const glob = this.pipeline.load_paths.from_load_path(item.load_path, item.input) + '/**/*'
-
-      fetch( glob ).map((input:string) => {
-        input = dirname( input )
-        input = this.pipeline.load_paths.relative_to_load_path( item.load_path, input )
-
-        this.manifest.assets[input] = {
-          load_path: item.load_path,
-          input:  input,
-          output: input,
-          cache:  input
-        }
-
-        this.resolve( input )
-      })
-    })
-
+  add(glob: string, parameters: IDirectoryRule = {}) {
+    return super.add(glob, parameters)
   }
 
-  getRules(dir:string) {
-    let rules: AssetItemRules = { glob: dir, cache: false }
+  addEntry(input: string, output: string, parameters: IDirectoryRule = {}) {
+    return super.addEntry(input, output, parameters)
+  }
 
-    for (let i = 0, ilen = this.rules.length, item, relativeGlob; i < ilen; i++) {
-      item = this.rules[i]
+  fetch() {
+    this.load_paths
+      .fetchDirs(this.rules)
 
-      // if (dir === item.glob) {
-      //   rules = item
-      //   break;
-      // } else if (minimatch(dir, item.glob)) {
-      //   rules = Object.assign(rules, item)
-      // }
+      .map((asset) => {
+        this.resolve(asset)
+        return asset
+      })
 
-      if (dir === item.glob || minimatch(dir, item.glob)) {
-        rules = Object.assign(rules, item)
-      } else if (minimatch(dir, item.glob + '/**') && typeof item.rename === 'string') {
-        rules = Object.assign(rules, Object.assign({}, item, {
-          rename: rules.glob.replace(item.glob, item.rename)
-        }))
-      }
-    }
+      .forEach((item) => {
+        const glob = this.load_paths.from_load_path(item.load_path, item.input) + '/**/*'
 
-    return rules
+        // Handle files
+        fetch(glob).map((input: string) => {
+          input = this.load_paths.relative_to_load_path(item.load_path, input)
+
+          const pathObject = Path.parse(input)
+          pathObject.dir = this.resolver.getPath(pathObject.dir)
+          const output = Path.format(pathObject)
+
+
+          const rule = item.rule as IDirectoryRule
+          const asset: IAsset = {
+            load_path: item.load_path,
+            input: input,
+            output: output,
+            cache: output
+          }
+
+          // Handle rules for files
+          if (
+            !(this.manifest.assets[asset.input] && this.manifest.assets[asset.input].resolved)
+            && rule.file_rules
+            && rule.file_rules.length > 0) {
+
+            for (let i = 0; i < rule.file_rules.length; i++) {
+              const r = rule.file_rules[i];
+              if (!r.ignore && minimatch(asset.input, r.glob || asset.input)) {
+                asset.rule = r
+                this.resolve(asset)
+              }
+            }
+
+            return;
+          }
+
+          asset.resolved = true
+          this.manifest.assets[asset.input] = asset
+        })
+      })
+
   }
 
 }

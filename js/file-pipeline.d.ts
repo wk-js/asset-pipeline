@@ -1,14 +1,20 @@
-import { AssetPipeline, AssetItemRules, Rules } from "./asset-pipeline";
+import { Pipeline } from "./pipeline";
+import { IFileRule, IAsset, IMatchRule } from "./types";
 export declare class FilePipeline {
-    pipeline: AssetPipeline;
-    rules: AssetItemRules[];
+    pipeline: Pipeline;
+    rules: IMatchRule[];
     type: string;
-    constructor(pipeline: AssetPipeline);
-    readonly manifest: import("./manifest").ManifestFile;
-    add(glob: string, parameters?: Rules): void;
+    constructor(pipeline: Pipeline);
+    readonly manifest: import("./types").IManifest;
+    readonly cacheable: boolean;
+    readonly cache_type: string;
+    readonly hash_key: string | number;
+    readonly load_paths: import("./file-matcher").FileMatcher;
+    readonly resolver: import("./path-resolver").PathResolver;
+    add(glob: string, parameters?: IFileRule): void;
+    addEntry(input: string, output: string, parameters?: IFileRule): void;
     ignore(glob: string): void;
     fetch(): void;
-    getRules(file: string): AssetItemRules;
-    resolve(file: string): void;
-    resolveOutput(file: string, rules: AssetItemRules): void;
+    resolve(asset: IAsset): void;
+    resolveOutput(file: string, rules: IMatchRule): void;
 }

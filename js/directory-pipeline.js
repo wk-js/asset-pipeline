@@ -3,58 +3,60 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const path_1 = require("path");
+const path_1 = __importDefault(require("path"));
 const fs_1 = require("./utils/fs");
-const minimatch_1 = __importDefault(require("minimatch"));
 const file_pipeline_1 = require("./file-pipeline");
+const minimatch_1 = __importDefault(require("minimatch"));
 class DirectoryPipeline extends file_pipeline_1.FilePipeline {
     constructor() {
         super(...arguments);
         this.type = 'directory';
     }
+    add(glob, parameters = {}) {
+        return super.add(glob, parameters);
+    }
+    addEntry(input, output, parameters = {}) {
+        return super.addEntry(input, output, parameters);
+    }
     fetch() {
-        this.pipeline.load_paths
+        this.load_paths
             .fetchDirs(this.rules)
             .map((asset) => {
-            this.manifest.assets[asset.input] = asset;
-            this.resolve(asset.input);
+            this.resolve(asset);
             return asset;
         })
             .forEach((item) => {
-            const glob = this.pipeline.load_paths.from_load_path(item.load_path, item.input) + '/**/*';
+            const glob = this.load_paths.from_load_path(item.load_path, item.input) + '/**/*';
+            // Handle files
             fs_1.fetch(glob).map((input) => {
-                input = path_1.dirname(input);
-                input = this.pipeline.load_paths.relative_to_load_path(item.load_path, input);
-                this.manifest.assets[input] = {
+                input = this.load_paths.relative_to_load_path(item.load_path, input);
+                const pathObject = path_1.default.parse(input);
+                pathObject.dir = this.resolver.getPath(pathObject.dir);
+                const output = path_1.default.format(pathObject);
+                const rule = item.rule;
+                const asset = {
                     load_path: item.load_path,
                     input: input,
-                    output: input,
-                    cache: input
+                    output: output,
+                    cache: output
                 };
-                this.resolve(input);
+                // Handle rules for files
+                if (!(this.manifest.assets[asset.input] && this.manifest.assets[asset.input].resolved)
+                    && rule.file_rules
+                    && rule.file_rules.length > 0) {
+                    for (let i = 0; i < rule.file_rules.length; i++) {
+                        const r = rule.file_rules[i];
+                        if (!r.ignore && minimatch_1.default(asset.input, r.glob || asset.input)) {
+                            asset.rule = r;
+                            this.resolve(asset);
+                        }
+                    }
+                    return;
+                }
+                asset.resolved = true;
+                this.manifest.assets[asset.input] = asset;
             });
         });
-    }
-    getRules(dir) {
-        let rules = { glob: dir, cache: false };
-        for (let i = 0, ilen = this.rules.length, item, relativeGlob; i < ilen; i++) {
-            item = this.rules[i];
-            // if (dir === item.glob) {
-            //   rules = item
-            //   break;
-            // } else if (minimatch(dir, item.glob)) {
-            //   rules = Object.assign(rules, item)
-            // }
-            if (dir === item.glob || minimatch_1.default(dir, item.glob)) {
-                rules = Object.assign(rules, item);
-            }
-            else if (minimatch_1.default(dir, item.glob + '/**') && typeof item.rename === 'string') {
-                rules = Object.assign(rules, Object.assign({}, item, {
-                    rename: rules.glob.replace(item.glob, item.rename)
-                }));
-            }
-        }
-        return rules;
     }
 }
 exports.DirectoryPipeline = DirectoryPipeline;

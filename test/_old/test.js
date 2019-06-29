@@ -1,57 +1,47 @@
-const { AssetPipeline } = require( '../js/asset-pipeline' )
-const AP = new AssetPipeline
+const { AssetPipeline, AssetFileSystem } = require('../../js')
 
-AP.root_path     = process.cwd() + '/../starter-vue'
-AP.cacheable     = true
-AP.cache_type    = 'version'
-AP.force_resolve = true
-AP.verbose       = true
-AP.asset_host    = 'http://localhost:3000'
-AP.data.locale   = 'fr'
+const p = new AssetPipeline()
+p.root_path = __dirname
+p.load_paths.add('./app')
+p.load_paths.add('./shaders')
+p.load_paths.add('./app/texts')
+p.cacheable = true
 
-AP.addEntry( 'scripts/index.js'       , 'main.js' )
-AP.addEntry( 'scripts/vendor/index.js', 'vendor.js' )
-AP.addEntry( 'styles/index.styl'      , 'main.css' )
-
-
-AP.addFile('views/index.html.ejs', {
+p.directory.add('assets/images', {
   keep_path: false,
-  rename: 'index.html',
+  rename: "plouf/yolo",
+  file_rules: [
+    {
+      // ignore: true,
+      cache: true,
+      rename: "#{dir}/#{name}#{ext}?#{hash}",
+    }
+  ]
+})
+p.file.add('assets/**/*', { base_dir: "youhou" })
+p.file.add('**/*', {
   cache: false,
-  alternatives: {
-    condition: "asset_data.locale === data",
-    outputs: [
-      { baseDir: 'en', data: 'en' },
-      { baseDir: 'fr', data: 'fr' }
-    ]
+  rename: function(output, input, rule) {
+    // console.log(output)
+    return output
   }
 })
 
-AP.addFile( 'assets/**/*', { cache: false } )
-AP.addDirectory( 'assets/**/*', {
-  cache: true,
-  rename: 'resources',
-  keep_path: false,
-  alternatives: {
-    condition: "asset_data.locale === data",
-    outputs: [
-      { baseDir: 'en', data: 'en' },
-      { baseDir: 'fr', data: 'fr' }
-    ]
-  }
-} )
+// const fs = new AssetFileSystem( p )
+// fs.copy('**/*')
+p.fs.copy('**/*')
 
-AP.resolve().then(() => {
+p.resolve(true).then(() => {
+  console.log(p.resolver.view())
+  p.fs.apply()
 
-  console.log(
-    AP.manifest.manifest.assets
-    // AP.getPath( 'scripts/index.js#iefix', 'views/index.html.ejs' )
-    // AP.getPath( 'assets/fonts' )
-    // AP.getPath( 'scripts/index.js' )
-    // AP.tree.view()
-  )
+  // console.log(p.resolver.getSourceFilePath('assets/hello.txt'));
+  // console.log(p.resolver.getSourceFilePath('assets/hello.txt', __dirname));
 
-  AP.manager.copy( 'assets/**/*' )
-  AP.manager.process()
 
+  // p.manager.process()
+  // console.log(p.getPath('hello.txt'))
+  // console.log(p.getPath('images/noimage.txt'))
+  // console.log(p.getPath('plouf.txt'))
+  // console.log(p.manifest.getUsedAssets())
 })

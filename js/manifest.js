@@ -13,26 +13,34 @@ class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;
         this.manifest = {
-            asset_key: this.pipeline.asset_key,
+            asset_key: this.hash_key,
             date: new Date,
             load_path: [],
             dst_path: this.pipeline.dst_path,
             assets: {}
         };
+        this.read = false;
+        this.save = true;
     }
     get manifest_path() {
-        return `tmp/manifest-${this.pipeline.asset_key}.json`;
+        return `tmp/manifest-${this.hash_key}.json`;
+    }
+    get hash_key() {
+        return this.pipeline.hash_key;
+    }
+    get load_paths() {
+        return this.pipeline.load_paths;
     }
     fileExists() {
-        return this.pipeline.save_manifest && fs_1.isFile(this.manifest_path);
+        return this.save && fs_1.isFile(this.manifest_path);
     }
     createFile() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.manifest.asset_key = this.pipeline.asset_key;
+            this.manifest.asset_key = this.hash_key;
             this.manifest.date = new Date;
-            this.manifest.load_path = this.pipeline.load_paths.get_paths();
+            this.manifest.load_path = this.load_paths.get_paths();
             this.manifest.dst_path = this.pipeline.dst_path;
-            if (this.pipeline.save_manifest) {
+            if (this.save) {
                 yield fs_1.writeFile(JSON.stringify(this.manifest, null, 2), this.manifest_path);
             }
         });
@@ -46,7 +54,7 @@ class Manifest {
                 const content = yield fs_1.readFile(this.manifest_path);
                 this.manifest = JSON.parse(content.toString('utf-8'));
             }
-            if (this.pipeline.save_manifest) {
+            if (this.save) {
                 yield this.createFile();
             }
         });
