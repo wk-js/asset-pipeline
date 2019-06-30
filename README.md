@@ -89,7 +89,7 @@ pipeline.resolve().then(() => {
   console.log(pipeline.resolver.getUrl('views/page.html')) // http://mycdn.com/index.html
   console.log(pipeline.resolver.getFilePath('views/page.html')) // Without extra #|?
   console.log(pipeline.resolver.getFileUrl('views/page.html')) // Without extra #|?
-  console.log(pipeline.resolver.getSourceFilePath('views/page.html')) // 'app/views/page.html'
+  console.log(pipeline.resolver.getSourceFilePath('index.html')) // 'app/views/page.html'
 
   // Execute copy/move/symlinks
   pipeline.fs.apply()

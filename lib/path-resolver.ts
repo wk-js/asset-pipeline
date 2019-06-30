@@ -168,20 +168,29 @@ export class PathResolver {
   }
 
   getSourceFilePath(path: string, fromPath?: string) {
-    const asset = this.getAsset(path)
+    const inputs = Object.keys(this.manifest.assets)
+    let asset: any = null
+
+    for (let i = 0; i < inputs.length; i++) {
+      const input = inputs[i];
+      if (this.manifest.assets[input].output == path || this.manifest.assets[input].cache == path) {
+        asset = this.manifest.assets[input]
+        break;
+      }
+    }
 
     if (asset) {
       if (fromPath) {
         if (isAbsolute(fromPath)) {
           path = this.pipeline.load_paths.from_load_path(asset.load_path, asset.input)
         }
-        return relative(fromPath, path)
+        path = relative(fromPath, path)
       } else {
-        return join(asset.load_path, asset.input)
+        path = join(asset.load_path, asset.input)
       }
     }
 
-    return path
+    return to_unix_path(path)
   }
 
   view() {

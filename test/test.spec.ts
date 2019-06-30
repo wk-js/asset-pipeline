@@ -66,6 +66,19 @@ describe("Load paths", () => {
     }), [ 'tmp/test-units/sub0/sub1', 'tmp/test-units/sub0/sub1', 'tmp/test-units/sub0/sub1' ])
   })
 
+  it('Get source file path', async () => {
+    const AP = await setup(async (AP) => {
+      AP.load_paths.add(Path.join(LOAD_PATH, 'sub2'))
+      AP.file.add('file7.txt', { rename: 'file.txt' })
+    })
+
+    const assets = Object.keys(AP.manifest.manifest.assets).map((key) => to_unix_path(key))
+    AP.resolver.getPath('file7.txt')
+    assert.equal(AP.resolver.getPath('file7.txt'), 'file.txt');
+    assert.equal(AP.resolver.getSourceFilePath('file.txt') , 'tmp/test-units/sub2/file7.txt');
+
+  })
+
 })
 
 describe("Directory", () => {

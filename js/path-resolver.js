@@ -125,19 +125,27 @@ class PathResolver {
         return path_2.remove_search(path);
     }
     getSourceFilePath(path, fromPath) {
-        const asset = this.getAsset(path);
+        const inputs = Object.keys(this.manifest.assets);
+        let asset = null;
+        for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
+            if (this.manifest.assets[input].output == path || this.manifest.assets[input].cache == path) {
+                asset = this.manifest.assets[input];
+                break;
+            }
+        }
         if (asset) {
             if (fromPath) {
                 if (path_1.isAbsolute(fromPath)) {
                     path = this.pipeline.load_paths.from_load_path(asset.load_path, asset.input);
                 }
-                return path_1.relative(fromPath, path);
+                path = path_1.relative(fromPath, path);
             }
             else {
-                return path_1.join(asset.load_path, asset.input);
+                path = path_1.join(asset.load_path, asset.input);
             }
         }
-        return path;
+        return path_2.to_unix_path(path);
     }
     view() {
         function ptree(tree, tab) {
