@@ -4,6 +4,7 @@ const path_1 = require("path");
 const cache_1 = require("./cache");
 const string_1 = require("lol/utils/string");
 const object_1 = require("lol/utils/object");
+const minimatch = require("minimatch");
 const TemplateOptions = {
     open: '#{',
     body: '[a-z@$#-_?!]+',
@@ -61,22 +62,32 @@ class FilePipeline {
             .fetch(this.rules)
             .forEach(this.resolve.bind(this));
     }
+    findRule(path) {
+        for (let i = 0, ilen = this.rules.length; i < ilen; i++) {
+            const rule = this.rules[i];
+            if (path === rule.glob || minimatch(path, rule.glob)) {
+                return rule;
+            }
+        }
+        return { glob: path };
+    }
     resolve(asset) {
         // Ignore files registered from directory_pipeline or from previous rules
         if (this.manifest.assets[asset.input] && this.manifest.assets[asset.input].resolved)
             return;
+        const rule = asset.rule || this.findRule(asset.input);
         this.manifest.assets[asset.input] = asset;
-        this.resolveOutput(asset.input, object_1.clone(asset.rule));
+        this.resolveOutput(asset.input, object_1.clone(rule));
     }
-    resolveOutput(file, rules) {
+    resolveOutput(file, rule) {
         let output = file, pathObject;
         // Remove path and keep basename only
-        if ("keep_path" in rules && !rules.keep_path) {
+        if ("keep_path" in rule && !rule.keep_path) {
             output = path_1.basename(output);
         }
         // Add base_dir
-        if ("base_dir" in rules && typeof rules.base_dir === 'string') {
-            output = path_1.join(this.pipeline.dst_path, rules.base_dir, output);
+        if ("base_dir" in rule && typeof rule.base_dir === 'string') {
+            output = path_1.join(this.pipeline.dst_path, rule.base_dir, output);
             output = path_1.relative(this.pipeline.dst_path, output);
         }
         // Replace dir path if needed
@@ -84,9 +95,9 @@ class FilePipeline {
         pathObject.dir = this.resolver.getPath(pathObject.dir);
         output = path_1.format(pathObject);
         let cache = output;
-        if ((this.cacheable && !("cache" in rules))
+        if ((this.cacheable && !("cache" in rule))
             ||
-                this.cacheable && rules.cache) {
+                this.cacheable && rule.cache) {
             if (this.cache_type === 'hash') {
                 cache = cache_1.hashCache(output, this.hash_key);
             }
@@ -98,22 +109,23 @@ class FilePipeline {
             }
         }
         // Rename output
-        if ("rename" in rules) {
-            if (typeof rules.rename === 'function') {
-                output = rules.rename(output, file, rules);
-                rules.rename = output;
+        if ("rename" in rule) {
+            if (typeof rule.rename === 'function') {
+                output = rule.rename(output, file, rule);
+                rule.rename = output;
             }
-            else if (typeof rules.rename === 'string') {
+            else if (typeof rule.rename === 'string') {
                 pathObject = path_1.parse(output);
-                output = string_1.template2(rules.rename, Object.assign({ hash: "" }, pathObject), TemplateOptions);
+                output = string_1.template2(rule.rename, Object.assign({ hash: "" }, pathObject), TemplateOptions);
                 output = path_1.normalize(output);
-                cache = string_1.template2(rules.rename, Object.assign({ hash: this.cacheable && rules.cache ? cache_1.generateHash(output + this.hash_key) : '' }, pathObject), TemplateOptions);
+                cache = string_1.template2(rule.rename, Object.assign({ hash: this.cacheable && rule.cache ? cache_1.generateHash(output + this.hash_key) : '' }, pathObject), TemplateOptions);
                 cache = path_1.normalize(cache);
             }
         }
         this.manifest.assets[file].output = output;
         this.manifest.assets[file].cache = cache;
         this.manifest.assets[file].resolved = true;
+        this.manifest.assets[file].rule = rule;
     }
 }
 exports.FilePipeline = FilePipeline;

@@ -4,6 +4,7 @@ import { hashCache, versionCache, generateHash } from "./cache";
 import { template2 } from "lol/utils/string";
 import { IFileRule, IAsset, IMatchRule } from "./types";
 import { clone } from "lol/utils/object";
+import minimatch = require("minimatch");
 
 const TemplateOptions = {
   open: '#{',
@@ -78,25 +79,38 @@ export class FilePipeline {
       .forEach(this.resolve.bind(this))
   }
 
+  findRule(path: string) {
+    for (let i = 0, ilen = this.rules.length; i < ilen; i++) {
+      const rule = this.rules[i]
+
+      if (path === rule.glob || minimatch(path, rule.glob)) {
+        return rule
+      }
+    }
+
+    return { glob: path } as IMatchRule
+  }
+
   resolve(asset: IAsset) {
     // Ignore files registered from directory_pipeline or from previous rules
     if (this.manifest.assets[asset.input] && this.manifest.assets[asset.input].resolved) return;
 
+    const rule = asset.rule || this.findRule(asset.input)
     this.manifest.assets[asset.input] = asset
-    this.resolveOutput(asset.input, clone(asset.rule) as IMatchRule)
+    this.resolveOutput(asset.input, clone(rule))
   }
 
-  resolveOutput(file: string, rules: IMatchRule) {
+  resolveOutput(file: string, rule: IMatchRule) {
     let output = file, pathObject
 
     // Remove path and keep basename only
-    if ("keep_path" in rules && !rules.keep_path) {
+    if ("keep_path" in rule && !rule.keep_path) {
       output = basename(output)
     }
 
     // Add base_dir
-    if ("base_dir" in rules && typeof rules.base_dir === 'string') {
-      output = join(this.pipeline.dst_path, rules.base_dir, output)
+    if ("base_dir" in rule && typeof rule.base_dir === 'string') {
+      output = join(this.pipeline.dst_path, rule.base_dir, output)
       output = relative(this.pipeline.dst_path, output)
     }
 
@@ -108,9 +122,9 @@ export class FilePipeline {
     let cache = output
 
     if (
-      (this.cacheable && !("cache" in rules))
+      (this.cacheable && !("cache" in rule))
       ||
-      this.cacheable && rules.cache
+      this.cacheable && rule.cache
     ) {
       if (this.cache_type === 'hash') {
         cache = hashCache(output, this.hash_key)
@@ -122,19 +136,19 @@ export class FilePipeline {
     }
 
     // Rename output
-    if ("rename" in rules) {
-      if (typeof rules.rename === 'function') {
-        output = rules.rename(output, file, rules)
-        rules.rename = output
-      } else if (typeof rules.rename === 'string') {
+    if ("rename" in rule) {
+      if (typeof rule.rename === 'function') {
+        output = rule.rename(output, file, rule)
+        rule.rename = output
+      } else if (typeof rule.rename === 'string') {
         pathObject = parse(output)
-        output = template2(rules.rename, {
+        output = template2(rule.rename, {
           hash: "",
           ...pathObject
         }, TemplateOptions)
         output = normalize(output)
-        cache = template2(rules.rename, {
-          hash: this.cacheable && rules.cache ? generateHash(output + this.hash_key) : '',
+        cache = template2(rule.rename, {
+          hash: this.cacheable && rule.cache ? generateHash(output + this.hash_key) : '',
           ...pathObject
         }, TemplateOptions)
         cache = normalize(cache)
@@ -144,6 +158,7 @@ export class FilePipeline {
     this.manifest.assets[file].output = output
     this.manifest.assets[file].cache = cache
     this.manifest.assets[file].resolved = true
+    this.manifest.assets[file].rule = rule
   }
 
 }

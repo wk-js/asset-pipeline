@@ -39,6 +39,12 @@ before(async () => {
   await writeFile("", Path.join(LOAD_PATH, 'sub2', 'file7.txt'))
   await writeFile("", Path.join(LOAD_PATH, 'sub2', 'file8.txt'))
   await writeFile("", Path.join(LOAD_PATH, 'sub2', 'file9.txt'))
+
+  await ensureDir(Path.join(LOAD_PATH, 'sub3'))
+  await writeFile("", Path.join(LOAD_PATH, 'sub3', 'file10.txt'))
+  await writeFile("", Path.join(LOAD_PATH, 'sub3', 'file11.txt'))
+  await writeFile("", Path.join(LOAD_PATH, 'sub3', 'file12.txt'))
+  await writeFile("", Path.join(LOAD_PATH, 'sub3', '_file13.txt'))
 })
 
 after(async () => {
@@ -49,7 +55,7 @@ afterEach(async () => {
   if (isDirectory(DST_PATH)) await removeDir(DST_PATH)
 })
 
-describe("Load paths", () => {
+describe("Files", () => {
 
   it("Override asset path", async () => {
     const AP = await setup(async (AP) => {
@@ -72,11 +78,21 @@ describe("Load paths", () => {
       AP.file.add('file7.txt', { rename: 'file.txt' })
     })
 
-    const assets = Object.keys(AP.manifest.manifest.assets).map((key) => to_unix_path(key))
     AP.resolver.getPath('file7.txt')
     assert.equal(AP.resolver.getPath('file7.txt'), 'file.txt');
     assert.equal(AP.resolver.getSourceFilePath('file.txt') , 'tmp/test-units/sub2/file7.txt');
+  })
 
+  it('Ignore', async () => {
+    const AP = await setup(async (AP) => {
+      AP.load_paths.add(Path.join(LOAD_PATH, 'sub3'))
+      AP.file.add('**/*.txt')
+      AP.file.ignore('**/_*.txt')
+    })
+
+    const assets = Object.keys(AP.manifest.manifest.assets).map((key) => to_unix_path(key))
+    assert.equal(assets.length, 3)
+    assert.deepEqual(assets, ['file10.txt', 'file11.txt', 'file12.txt'])
   })
 
 })

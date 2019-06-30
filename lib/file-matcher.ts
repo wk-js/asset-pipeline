@@ -43,35 +43,50 @@ export class FileMatcher {
     return Path.relative(Path.join(this.root_path, load_path), path)
   }
 
+  findLoadPath(path: string) {
+    path = Path.normalize(path)
+
+    for (let i = 0; i < this.load_paths.length; i++) {
+      const load_path = Path.isAbsolute(path) ? this.absolute_load_path(this.load_paths[i]) : this.load_paths[i];
+      if (path.indexOf(load_path) > -1) return this.load_paths[i]
+    }
+
+    return null
+  }
+
   fetch(rules: IMatchRule[], type: "file" | "directory" = "file") {
     const fetcher = this._fetcher(type)
 
-    const assets = this.map(rules, (rule, load_path) => {
-      const globs: string[] = []
-      const ignores: string[] = []
+    const globs: string[] = []
+    const ignores: string[] = []
 
-      if ("ignore" in rule && rule.ignore) {
-        ignores.push(this.from_load_path(load_path, rule.glob))
-      } else {
-        globs.push(this.from_load_path(load_path, rule.glob))
-      }
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
 
-      return fetcher(globs, ignores)
-        .map((file) => {
-          const input = this.relative_to_load_path(load_path, file)
+      this.load_paths.forEach((load_path) => {
+        if ("ignore" in rule && rule.ignore) {
+          ignores.push(this.from_load_path(load_path, rule.glob))
+        } else {
+          globs.push(this.from_load_path(load_path, rule.glob))
+        }
+      })
+    }
 
-          return {
-            load_path,
-            input: input,
-            output: input,
-            cache: input,
-            resolved: false,
-            rule: rule
-          } as IAsset
-        })
+    const assets = fetcher(globs, ignores)
+    .map((file) => {
+      const load_path = this.findLoadPath(file) as string
+      const input = this.relative_to_load_path(load_path, file)
+
+      return {
+        load_path,
+        input: input,
+        output: input,
+        cache: input,
+        resolved: false
+      } as IAsset
     })
 
-    return Array.prototype.concat.apply([], assets) as IAsset[]
+    return assets
   }
 
   fetchDirs(rules: IMatchRule[]) {

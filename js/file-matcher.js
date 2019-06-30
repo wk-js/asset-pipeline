@@ -38,31 +38,43 @@ class FileMatcher {
     relative_to_load_path(load_path, path) {
         return path_1.default.relative(path_1.default.join(this.root_path, load_path), path);
     }
+    findLoadPath(path) {
+        path = path_1.default.normalize(path);
+        for (let i = 0; i < this.load_paths.length; i++) {
+            const load_path = path_1.default.isAbsolute(path) ? this.absolute_load_path(this.load_paths[i]) : this.load_paths[i];
+            if (path.indexOf(load_path) > -1)
+                return this.load_paths[i];
+        }
+        return null;
+    }
     fetch(rules, type = "file") {
         const fetcher = this._fetcher(type);
-        const assets = this.map(rules, (rule, load_path) => {
-            const globs = [];
-            const ignores = [];
-            if ("ignore" in rule && rule.ignore) {
-                ignores.push(this.from_load_path(load_path, rule.glob));
-            }
-            else {
-                globs.push(this.from_load_path(load_path, rule.glob));
-            }
-            return fetcher(globs, ignores)
-                .map((file) => {
-                const input = this.relative_to_load_path(load_path, file);
-                return {
-                    load_path,
-                    input: input,
-                    output: input,
-                    cache: input,
-                    resolved: false,
-                    rule: rule
-                };
+        const globs = [];
+        const ignores = [];
+        for (let i = 0; i < rules.length; i++) {
+            const rule = rules[i];
+            this.load_paths.forEach((load_path) => {
+                if ("ignore" in rule && rule.ignore) {
+                    ignores.push(this.from_load_path(load_path, rule.glob));
+                }
+                else {
+                    globs.push(this.from_load_path(load_path, rule.glob));
+                }
             });
+        }
+        const assets = fetcher(globs, ignores)
+            .map((file) => {
+            const load_path = this.findLoadPath(file);
+            const input = this.relative_to_load_path(load_path, file);
+            return {
+                load_path,
+                input: input,
+                output: input,
+                cache: input,
+                resolved: false
+            };
         });
-        return Array.prototype.concat.apply([], assets);
+        return assets;
     }
     fetchDirs(rules) {
         return this.fetch(rules, "directory");

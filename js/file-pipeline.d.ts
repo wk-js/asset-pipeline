@@ -15,6 +15,7 @@ export declare class FilePipeline {
     addEntry(input: string, output: string, parameters?: IFileRule): void;
     ignore(glob: string): void;
     fetch(): void;
+    findRule(path: string): IMatchRule;
     resolve(asset: IAsset): void;
-    resolveOutput(file: string, rules: IMatchRule): void;
+    resolveOutput(file: string, rule: IMatchRule): void;
 }

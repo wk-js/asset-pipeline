@@ -38,7 +38,7 @@ export class DirectoryPipeline extends FilePipeline {
           const output = Path.format(pathObject)
 
 
-          const rule = item.rule as IDirectoryRule
+          const rule = this.findRule(item.input) as IDirectoryRule
           const asset: IAsset = {
             load_path: item.load_path,
             input: input,

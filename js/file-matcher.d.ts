@@ -12,6 +12,7 @@ export declare class FileMatcher {
     absolute_load_path(load_path: string): string;
     from_load_path(load_path: string, path: string): string;
     relative_to_load_path(load_path: string, path: string): string;
+    findLoadPath(path: string): string | null;
     fetch(rules: IMatchRule[], type?: "file" | "directory"): IAsset[];
     fetchDirs(rules: IMatchRule[]): IAsset[];
     _fetcher(type?: "file" | "directory"): (globs: string[], ignores: string[]) => string[];

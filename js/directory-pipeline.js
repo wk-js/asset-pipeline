@@ -33,7 +33,7 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
                 const pathObject = path_1.default.parse(input);
                 pathObject.dir = this.resolver.getPath(pathObject.dir);
                 const output = path_1.default.format(pathObject);
-                const rule = item.rule;
+                const rule = this.findRule(item.input);
                 const asset = {
                     load_path: item.load_path,
                     input: input,
