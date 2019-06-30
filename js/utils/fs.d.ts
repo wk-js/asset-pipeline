@@ -23,4 +23,5 @@ export declare function isSymbolicLink(path: string): boolean;
 export declare function symlink(fromPath: string, toPath: string): Promise<boolean>;
 declare type ShellType = 'cmd' | 'bash' | 'powershell' | 'zsh';
 export declare function symlink2(fromPath: string, toPath: string, shell?: ShellType): Promise<boolean>;
+export declare function touch(path: string): boolean;
 export {};
