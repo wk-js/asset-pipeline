@@ -14,7 +14,7 @@ class PathResolver {
         this._resolved_paths = [];
     }
     get manifest() {
-        return this.pipeline.manifest.manifest;
+        return this.pipeline.manifest.file;
     }
     get cacheable() {
         return this.pipeline.cacheable;
@@ -85,8 +85,8 @@ class PathResolver {
         if (asset) {
             output = this.cacheable ? asset.cache : asset.output;
         }
-        output = path_2.clean_path(output);
-        output = process.platform === 'win32' ? path_2.to_unix_path(output) : output;
+        output = path_2.cleanPath(output);
+        output = process.platform === 'win32' ? path_2.toUnixPath(output) : output;
         output = output + suffix;
         return output;
     }
@@ -118,11 +118,11 @@ class PathResolver {
     }
     getFilePath(path, fromPath) {
         path = this.getPath(path, fromPath);
-        return path_2.remove_search(path);
+        return path_2.removeSearch(path);
     }
     getFileUrl(path, fromPath) {
         path = this.getUrl(path, fromPath);
-        return path_2.remove_search(path);
+        return path_2.removeSearch(path);
     }
     getSourceFilePath(path, fromPath) {
         const inputs = Object.keys(this.manifest.assets);
@@ -137,7 +137,7 @@ class PathResolver {
         if (asset) {
             if (fromPath) {
                 if (path_1.isAbsolute(fromPath)) {
-                    path = this.pipeline.load_paths.from_load_path(asset.load_path, asset.input);
+                    path = this.pipeline.load_paths.fromLoadPath(asset.load_path, asset.input);
                 }
                 path = path_1.relative(fromPath, path);
             }
@@ -145,7 +145,7 @@ class PathResolver {
                 path = path_1.join(asset.load_path, asset.input);
             }
         }
-        return path_2.to_unix_path(path);
+        return path_2.toUnixPath(path);
     }
     view() {
         function ptree(tree, tab) {
@@ -164,19 +164,19 @@ class PathResolver {
             this._resolved_paths.push(path);
         }
     }
-    is_resolved(path) {
+    isResolved(path) {
         return this._resolved_paths.indexOf(path) > -1;
     }
-    get_resolved() {
+    getResolved() {
         const assets = {};
         Object.keys(this.manifest.assets).forEach((path) => {
-            if (this.is_resolved(path)) {
+            if (this.isResolved(path)) {
                 assets[path] = this.manifest.assets[path];
             }
         });
         return assets;
     }
-    clean_resolved() {
+    cleanResolved() {
         this._resolved_paths = [];
     }
 }

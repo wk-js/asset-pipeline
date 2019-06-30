@@ -27,11 +27,11 @@ export class DirectoryPipeline extends FilePipeline {
       })
 
       .forEach((item) => {
-        const glob = this.load_paths.from_load_path(item.load_path, item.input) + '/**/*'
+        const glob = this.load_paths.fromLoadPath(item.load_path, item.input) + '/**/*'
 
         // Handle files
         fetch(glob).map((input: string) => {
-          input = this.load_paths.relative_to_load_path(item.load_path, input)
+          input = this.load_paths.relativeToLoadPath(item.load_path, input)
 
           const pathObject = Path.parse(input)
           pathObject.dir = this.resolver.getPath(pathObject.dir)

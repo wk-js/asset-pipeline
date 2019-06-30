@@ -2,7 +2,7 @@ import { Pipeline } from "./pipeline";
 import { IManifest } from "./types";
 export declare class Manifest {
     private pipeline;
-    manifest: IManifest;
+    file: IManifest;
     read: boolean;
     save: boolean;
     constructor(pipeline: Pipeline);

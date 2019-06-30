@@ -307,12 +307,7 @@ export async function symlink2(fromPath: string, toPath: string, shell: ShellTyp
 }
 
 export function touch(path: string) {
-  try {
-    const id = Fs.openSync(path, 'w')
-    Fs.closeSync(id)
-  } catch(e) {
-    return false
-  }
-
+  const id = Fs.openSync(path, 'w')
+  Fs.closeSync(id)
   return true
 }

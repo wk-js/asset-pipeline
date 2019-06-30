@@ -7,17 +7,17 @@ const path_1 = __importDefault(require("path"));
 /**
  * Clean path
  */
-function clean_path(input) {
+function cleanPath(input) {
     const i = input.split('/');
     i.push('');
     input = path_1.default.normalize(i.join('/')).slice(0, -1);
     return input;
 }
-exports.clean_path = clean_path;
+exports.cleanPath = cleanPath;
 /**
  *
  */
-function to_unix_path(pth) {
+function toUnixPath(pth) {
     pth = pth.replace(/\\/g, '/');
     const double = /\/\//;
     while (pth.match(double)) {
@@ -25,11 +25,11 @@ function to_unix_path(pth) {
     }
     return pth;
 }
-exports.to_unix_path = to_unix_path;
+exports.toUnixPath = toUnixPath;
 /**
  * Remove extras
  */
-function remove_search(pth) {
+function removeSearch(pth) {
     return pth.split(/\?|\#/)[0];
 }
-exports.remove_search = remove_search;
+exports.removeSearch = removeSearch;

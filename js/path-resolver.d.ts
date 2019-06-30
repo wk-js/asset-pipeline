@@ -34,7 +34,7 @@ export declare class PathResolver {
     getSourceFilePath(path: string, fromPath?: string): string;
     view(): string;
     private _resolved;
-    is_resolved(path: string): boolean;
-    get_resolved(): Record<string, IAsset>;
-    clean_resolved(): void;
+    isResolved(path: string): boolean;
+    getResolved(): Record<string, IAsset>;
+    cleanResolved(): void;
 }

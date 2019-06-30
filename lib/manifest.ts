@@ -5,7 +5,7 @@ import { expose } from "lol/utils/object";
 
 export class Manifest {
 
-  manifest: IManifest = {
+  file: IManifest = {
     asset_key: this.hash_key,
     date: new Date,
     load_path: [],
@@ -35,13 +35,13 @@ export class Manifest {
   }
 
   async createFile() {
-    this.manifest.asset_key = this.hash_key
-    this.manifest.date = new Date
-    this.manifest.load_path = this.load_paths.get_paths()
-    this.manifest.dst_path = this.pipeline.dst_path
+    this.file.asset_key = this.hash_key
+    this.file.date = new Date
+    this.file.load_path = this.load_paths.getPaths()
+    this.file.dst_path = this.pipeline.dst_path
 
     if (this.save) {
-      await writeFile(JSON.stringify(this.manifest, null, 2), this.manifest_path)
+      await writeFile(JSON.stringify(this.file, null, 2), this.manifest_path)
     }
   }
 
@@ -52,7 +52,7 @@ export class Manifest {
   async readFile() {
     if (isFile(this.manifest_path)) {
       const content = await readFile(this.manifest_path)
-      this.manifest = JSON.parse(content.toString('utf-8'))
+      this.file = JSON.parse(content.toString('utf-8'))
     }
 
     if (this.save) {

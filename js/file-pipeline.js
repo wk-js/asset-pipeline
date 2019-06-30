@@ -17,7 +17,7 @@ class FilePipeline {
         this.type = 'file';
     }
     get manifest() {
-        return this.pipeline.manifest.manifest;
+        return this.pipeline.manifest.file;
     }
     get cacheable() {
         return this.pipeline.cacheable;

@@ -20,7 +20,7 @@ export class FilePipeline {
   constructor(public pipeline: Pipeline) { }
 
   get manifest() {
-    return this.pipeline.manifest.manifest
+    return this.pipeline.manifest.file
   }
 
   get cacheable() {

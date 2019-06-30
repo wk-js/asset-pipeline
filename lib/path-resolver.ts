@@ -2,7 +2,7 @@ import { Pipeline } from "./pipeline"
 import { normalize, extname, relative, join, isAbsolute } from "path";
 import { URL } from "url";
 import { IAsset } from "./types";
-import { clean_path, to_unix_path, remove_search } from "./utils/path";
+import { cleanPath, toUnixPath, removeSearch } from "./utils/path";
 
 export interface TreeInterface {
   path: string,
@@ -25,7 +25,7 @@ export class PathResolver {
   constructor(private pipeline: Pipeline) { }
 
   get manifest() {
-    return this.pipeline.manifest.manifest
+    return this.pipeline.manifest.file
   }
 
   get cacheable() {
@@ -113,8 +113,8 @@ export class PathResolver {
       output = this.cacheable ? asset.cache : asset.output
     }
 
-    output = clean_path(output)
-    output = process.platform === 'win32' ? to_unix_path(output) : output
+    output = cleanPath(output)
+    output = process.platform === 'win32' ? toUnixPath(output) : output
     output = output + suffix
 
     return output
@@ -159,12 +159,12 @@ export class PathResolver {
 
   getFilePath(path: string, fromPath?: string) {
     path = this.getPath(path, fromPath)
-    return remove_search(path)
+    return removeSearch(path)
   }
 
   getFileUrl(path: string, fromPath?: string) {
     path = this.getUrl(path, fromPath)
-    return remove_search(path)
+    return removeSearch(path)
   }
 
   getSourceFilePath(path: string, fromPath?: string) {
@@ -182,7 +182,7 @@ export class PathResolver {
     if (asset) {
       if (fromPath) {
         if (isAbsolute(fromPath)) {
-          path = this.pipeline.load_paths.from_load_path(asset.load_path, asset.input)
+          path = this.pipeline.load_paths.fromLoadPath(asset.load_path, asset.input)
         }
         path = relative(fromPath, path)
       } else {
@@ -190,7 +190,7 @@ export class PathResolver {
       }
     }
 
-    return to_unix_path(path)
+    return toUnixPath(path)
   }
 
   view() {
@@ -216,15 +216,15 @@ export class PathResolver {
     }
   }
 
-  is_resolved(path: string) {
+  isResolved(path: string) {
     return this._resolved_paths.indexOf(path) > -1
   }
 
-  get_resolved() {
+  getResolved() {
     const assets: Record<string, IAsset> = {}
 
     Object.keys(this.manifest.assets).forEach((path) => {
-      if (this.is_resolved(path)) {
+      if (this.isResolved(path)) {
         assets[path] = this.manifest.assets[path]
       }
     })
@@ -232,7 +232,7 @@ export class PathResolver {
     return assets
   }
 
-  clean_resolved() {
+  cleanResolved() {
     this._resolved_paths = []
   }
 

@@ -27,19 +27,19 @@ export class FileMatcher {
     if (index > -1) this.load_paths.splice(index, 1)
   }
 
-  get_paths() {
+  getPaths() {
     return this.load_paths.slice(0)
   }
 
-  absolute_load_path(load_path: string) {
+  getAbsoluteLoadPath(load_path: string) {
     return Path.join(this.root_path, load_path)
   }
 
-  from_load_path(load_path: string, path: string) {
+  fromLoadPath(load_path: string, path: string) {
     return Path.join(this.root_path, load_path, path)
   }
 
-  relative_to_load_path(load_path: string, path: string) {
+  relativeToLoadPath(load_path: string, path: string) {
     return Path.relative(Path.join(this.root_path, load_path), path)
   }
 
@@ -47,7 +47,7 @@ export class FileMatcher {
     path = Path.normalize(path)
 
     for (let i = 0; i < this.load_paths.length; i++) {
-      const load_path = Path.isAbsolute(path) ? this.absolute_load_path(this.load_paths[i]) : this.load_paths[i];
+      const load_path = Path.isAbsolute(path) ? this.getAbsoluteLoadPath(this.load_paths[i]) : this.load_paths[i];
       if (path.indexOf(load_path) > -1) return this.load_paths[i]
     }
 
@@ -65,9 +65,9 @@ export class FileMatcher {
 
       this.load_paths.forEach((load_path) => {
         if ("ignore" in rule && rule.ignore) {
-          ignores.push(this.from_load_path(load_path, rule.glob))
+          ignores.push(this.fromLoadPath(load_path, rule.glob))
         } else {
-          globs.push(this.from_load_path(load_path, rule.glob))
+          globs.push(this.fromLoadPath(load_path, rule.glob))
         }
       })
     }
@@ -75,7 +75,7 @@ export class FileMatcher {
     const assets = fetcher(globs, ignores)
     .map((file) => {
       const load_path = this.findLoadPath(file) as string
-      const input = this.relative_to_load_path(load_path, file)
+      const input = this.relativeToLoadPath(load_path, file)
 
       return {
         load_path,
@@ -140,7 +140,7 @@ export class FileMatcher {
     return new_items
   }
 
-  filter_and_map<T, S>(items: T[], cb: (item: T, load_path: string) => S | boolean) {
+  filterAndMap<T, S>(items: T[], cb: (item: T, load_path: string) => S | boolean) {
     const new_items: S[] = []
 
     items.forEach((item) => {

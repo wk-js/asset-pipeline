@@ -55,22 +55,22 @@ class FileSystem {
     }
     _apply(type) {
         return __awaiter(this, void 0, void 0, function* () {
-            const validGlobs = this.load_paths.filter_and_map(this.globs, (item, load_path) => {
+            const validGlobs = this.load_paths.filterAndMap(this.globs, (item, load_path) => {
                 if (item.action !== type)
                     return false;
-                return this.load_paths.from_load_path(load_path, item.glob);
+                return this.load_paths.fromLoadPath(load_path, item.glob);
             });
-            const ignoredGlobs = this.load_paths.filter_and_map(this.globs, (item, load_path) => {
+            const ignoredGlobs = this.load_paths.filterAndMap(this.globs, (item, load_path) => {
                 if (item.action !== 'ignore')
                     return false;
-                return this.load_paths.from_load_path(load_path, item.glob);
+                return this.load_paths.fromLoadPath(load_path, item.glob);
             });
             const files = (type === 'symlink' ?
                 fs_1.fetchDirs(validGlobs, ignoredGlobs)
                 :
                     fs_1.fetch(validGlobs, ignoredGlobs));
-            const ios = this.load_paths.filter_and_map(files, (file, load_path) => {
-                const relative_file = this.load_paths.relative_to_load_path(load_path, file);
+            const ios = this.load_paths.filterAndMap(files, (file, load_path) => {
+                const relative_file = this.load_paths.relativeToLoadPath(load_path, file);
                 // Future
                 // Maybe copy only resolved files
                 // this.pipeline.tree.is_resolved( relative_file )

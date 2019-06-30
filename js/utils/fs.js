@@ -299,13 +299,8 @@ function symlink2(fromPath, toPath, shell = process.platform == 'win32' ? 'cmd' 
 }
 exports.symlink2 = symlink2;
 function touch(path) {
-    try {
-        const id = Fs.openSync(path, 'w');
-        Fs.closeSync(id);
-    }
-    catch (e) {
-        return false;
-    }
+    const id = Fs.openSync(path, 'w');
+    Fs.closeSync(id);
     return true;
 }
 exports.touch = touch;

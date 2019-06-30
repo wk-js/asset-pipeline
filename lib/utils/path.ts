@@ -3,7 +3,7 @@ import Path from 'path';
 /**
  * Clean path
  */
-export function clean_path(input: string) {
+export function cleanPath(input: string) {
   const i = input.split('/')
   i.push('')
   input = Path.normalize(i.join('/')).slice(0, -1)
@@ -13,7 +13,7 @@ export function clean_path(input: string) {
 /**
  *
  */
-export function to_unix_path(pth: string) {
+export function toUnixPath(pth: string) {
   pth = pth.replace(/\\/g, '/')
 
   const double = /\/\//
@@ -27,6 +27,6 @@ export function to_unix_path(pth: string) {
 /**
  * Remove extras
  */
-export function remove_search(pth: string) {
+export function removeSearch(pth: string) {
   return pth.split(/\?|\#/)[0]
 }

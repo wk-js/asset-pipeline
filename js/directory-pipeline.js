@@ -26,10 +26,10 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
             return asset;
         })
             .forEach((item) => {
-            const glob = this.load_paths.from_load_path(item.load_path, item.input) + '/**/*';
+            const glob = this.load_paths.fromLoadPath(item.load_path, item.input) + '/**/*';
             // Handle files
             fs_1.fetch(glob).map((input) => {
-                input = this.load_paths.relative_to_load_path(item.load_path, input);
+                input = this.load_paths.relativeToLoadPath(item.load_path, input);
                 const pathObject = path_1.default.parse(input);
                 pathObject.dir = this.resolver.getPath(pathObject.dir);
                 const output = path_1.default.format(pathObject);

@@ -47,7 +47,7 @@ export class Pipeline {
       this.resolver.update()
 
       this.log('[AssetPipeline] Clean resolved paths')
-      this.resolver.clean_resolved()
+      this.resolver.cleanResolved()
 
       this.log('[AssetPipeline] Update manifest')
       return this.manifest.updateFile()

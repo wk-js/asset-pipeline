@@ -12,7 +12,7 @@ const fs_1 = require("./utils/fs");
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;
-        this.manifest = {
+        this.file = {
             asset_key: this.hash_key,
             date: new Date,
             load_path: [],
@@ -36,12 +36,12 @@ class Manifest {
     }
     createFile() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.manifest.asset_key = this.hash_key;
-            this.manifest.date = new Date;
-            this.manifest.load_path = this.load_paths.get_paths();
-            this.manifest.dst_path = this.pipeline.dst_path;
+            this.file.asset_key = this.hash_key;
+            this.file.date = new Date;
+            this.file.load_path = this.load_paths.getPaths();
+            this.file.dst_path = this.pipeline.dst_path;
             if (this.save) {
-                yield fs_1.writeFile(JSON.stringify(this.manifest, null, 2), this.manifest_path);
+                yield fs_1.writeFile(JSON.stringify(this.file, null, 2), this.manifest_path);
             }
         });
     }
@@ -52,7 +52,7 @@ class Manifest {
         return __awaiter(this, void 0, void 0, function* () {
             if (fs_1.isFile(this.manifest_path)) {
                 const content = yield fs_1.readFile(this.manifest_path);
-                this.manifest = JSON.parse(content.toString('utf-8'));
+                this.file = JSON.parse(content.toString('utf-8'));
             }
             if (this.save) {
                 yield this.createFile();

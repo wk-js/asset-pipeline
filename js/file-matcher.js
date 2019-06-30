@@ -26,22 +26,22 @@ class FileMatcher {
         if (index > -1)
             this.load_paths.splice(index, 1);
     }
-    get_paths() {
+    getPaths() {
         return this.load_paths.slice(0);
     }
-    absolute_load_path(load_path) {
+    getAbsoluteLoadPath(load_path) {
         return path_1.default.join(this.root_path, load_path);
     }
-    from_load_path(load_path, path) {
+    fromLoadPath(load_path, path) {
         return path_1.default.join(this.root_path, load_path, path);
     }
-    relative_to_load_path(load_path, path) {
+    relativeToLoadPath(load_path, path) {
         return path_1.default.relative(path_1.default.join(this.root_path, load_path), path);
     }
     findLoadPath(path) {
         path = path_1.default.normalize(path);
         for (let i = 0; i < this.load_paths.length; i++) {
-            const load_path = path_1.default.isAbsolute(path) ? this.absolute_load_path(this.load_paths[i]) : this.load_paths[i];
+            const load_path = path_1.default.isAbsolute(path) ? this.getAbsoluteLoadPath(this.load_paths[i]) : this.load_paths[i];
             if (path.indexOf(load_path) > -1)
                 return this.load_paths[i];
         }
@@ -55,17 +55,17 @@ class FileMatcher {
             const rule = rules[i];
             this.load_paths.forEach((load_path) => {
                 if ("ignore" in rule && rule.ignore) {
-                    ignores.push(this.from_load_path(load_path, rule.glob));
+                    ignores.push(this.fromLoadPath(load_path, rule.glob));
                 }
                 else {
-                    globs.push(this.from_load_path(load_path, rule.glob));
+                    globs.push(this.fromLoadPath(load_path, rule.glob));
                 }
             });
         }
         const assets = fetcher(globs, ignores)
             .map((file) => {
             const load_path = this.findLoadPath(file);
-            const input = this.relative_to_load_path(load_path, file);
+            const input = this.relativeToLoadPath(load_path, file);
             return {
                 load_path,
                 input: input,
@@ -120,7 +120,7 @@ class FileMatcher {
         });
         return new_items;
     }
-    filter_and_map(items, cb) {
+    filterAndMap(items, cb) {
         const new_items = [];
         items.forEach((item) => {
             this.load_paths.forEach((load_path) => {
