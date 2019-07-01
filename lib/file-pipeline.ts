@@ -112,7 +112,7 @@ export class FilePipeline {
       }
     }
 
-    return { glob: path } as IMatchRule
+    return { glob: path + '/**/*' } as IMatchRule
   }
 
   protected resolve(asset: IAsset) {

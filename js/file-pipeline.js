@@ -94,7 +94,7 @@ class FilePipeline {
                 return rule;
             }
         }
-        return { glob: path };
+        return { glob: path + '/**/*' };
     }
     resolve(asset) {
         // Ignore files registered from directory_pipeline or from previous rules
