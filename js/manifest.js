@@ -13,7 +13,7 @@ const path_1 = require("./utils/path");
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;
-        this.file = {
+        this.read_file = {
             asset_key: 'no_key',
             date: new Date,
             load_path: [],
@@ -29,32 +29,32 @@ class Manifest {
     fileExists() {
         return this.save && fs_1.isFile(this.manifest_path);
     }
-    createFile() {
+    create_file() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.file.asset_key = this.pipeline.cache.key;
-            this.file.date = new Date;
-            this.file.load_path = this.pipeline.source.all();
-            this.file.dst_path = this.pipeline.resolve.output;
+            this.read_file.asset_key = this.pipeline.cache.key;
+            this.read_file.date = new Date;
+            this.read_file.load_path = this.pipeline.source.all();
+            this.read_file.dst_path = this.pipeline.resolve.output;
             if (this.save) {
-                yield fs_1.writeFile(JSON.stringify(this.file, null, 2), this.manifest_path);
+                yield fs_1.writeFile(JSON.stringify(this.read_file, null, 2), this.manifest_path);
             }
         });
     }
-    updateFile() {
-        return this.createFile();
+    update_file() {
+        return this.create_file();
     }
     readFile() {
         return __awaiter(this, void 0, void 0, function* () {
             if (fs_1.isFile(this.manifest_path)) {
                 const content = yield fs_1.readFile(this.manifest_path);
-                this.file = JSON.parse(content.toString('utf-8'));
+                this.read_file = JSON.parse(content.toString('utf-8'));
             }
             if (this.save) {
-                yield this.createFile();
+                yield this.create_file();
             }
         });
     }
-    deleteFile() {
+    delete_file() {
         return __awaiter(this, void 0, void 0, function* () {
             if (fs_1.isFile(this.manifest_path)) {
                 yield fs_1.remove(this.manifest_path);
@@ -64,18 +64,18 @@ class Manifest {
     get(input) {
         input = path_1.cleanPath(input);
         input = input.split(/\#|\?/)[0];
-        return this.file.assets[input];
+        return this.read_file.assets[input];
     }
     has(input) {
         input = path_1.cleanPath(input);
         input = input.split(/\#|\?/)[0];
-        return !!this.file.assets[input];
+        return !!this.read_file.assets[input];
     }
     set(asset) {
-        this.file.assets[asset.input] = asset;
+        this.read_file.assets[asset.input] = asset;
     }
     all() {
-        return Object.keys(this.file.assets).map((key) => this.file.assets[key]);
+        return Object.keys(this.read_file.assets).map((key) => this.read_file.assets[key]);
     }
 }
 exports.Manifest = Manifest;

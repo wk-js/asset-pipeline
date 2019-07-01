@@ -85,7 +85,7 @@ class SourceManager {
         });
         return new_items;
     }
-    filterAndMap(items, cb) {
+    filter_and_map(items, cb) {
         const new_items = [];
         this._sources.forEach((source) => {
             items.forEach((item) => {

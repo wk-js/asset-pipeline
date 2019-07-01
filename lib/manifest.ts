@@ -6,7 +6,7 @@ import { cleanPath } from "./utils/path";
 
 export class Manifest {
 
-  file: IManifest = {
+  read_file: IManifest = {
     asset_key: 'no_key',
     date: new Date,
     load_path: [],
@@ -27,33 +27,33 @@ export class Manifest {
     return this.save && isFile(this.manifest_path)
   }
 
-  async createFile() {
-    this.file.asset_key = this.pipeline.cache.key
-    this.file.date = new Date
-    this.file.load_path = this.pipeline.source.all()
-    this.file.dst_path = this.pipeline.resolve.output
+  async create_file() {
+    this.read_file.asset_key = this.pipeline.cache.key
+    this.read_file.date = new Date
+    this.read_file.load_path = this.pipeline.source.all()
+    this.read_file.dst_path = this.pipeline.resolve.output
 
     if (this.save) {
-      await writeFile(JSON.stringify(this.file, null, 2), this.manifest_path)
+      await writeFile(JSON.stringify(this.read_file, null, 2), this.manifest_path)
     }
   }
 
-  updateFile() {
-    return this.createFile()
+  update_file() {
+    return this.create_file()
   }
 
   async readFile() {
     if (isFile(this.manifest_path)) {
       const content = await readFile(this.manifest_path)
-      this.file = JSON.parse(content.toString('utf-8'))
+      this.read_file = JSON.parse(content.toString('utf-8'))
     }
 
     if (this.save) {
-      await this.createFile()
+      await this.create_file()
     }
   }
 
-  async deleteFile() {
+  async delete_file() {
     if (isFile(this.manifest_path)) {
       await remove(this.manifest_path)
     }
@@ -62,21 +62,21 @@ export class Manifest {
   get(input: string): IAsset | null {
     input = cleanPath(input)
     input = input.split(/\#|\?/)[0]
-    return this.file.assets[input]
+    return this.read_file.assets[input]
   }
 
   has(input: string) {
     input = cleanPath(input)
     input = input.split(/\#|\?/)[0]
-    return !!this.file.assets[input]
+    return !!this.read_file.assets[input]
   }
 
   set(asset: IAsset) {
-    this.file.assets[asset.input] = asset
+    this.read_file.assets[asset.input] = asset
   }
 
   all() {
-    return Object.keys(this.file.assets).map((key) => this.file.assets[key])
+    return Object.keys(this.read_file.assets).map((key) => this.read_file.assets[key])
   }
 
 }

@@ -36,7 +36,7 @@ export class Pipeline {
       this.resolve.clean_used()
 
       this.log('[AssetPipeline] Update manifest')
-      return this.manifest.updateFile()
+      return this.manifest.update_file()
     } else {
       this.log('[AssetPipeline] Read manifest')
       return this.manifest.readFile()

@@ -52,11 +52,10 @@ export class FilePipeline {
   }
 
   fetch() {
-
     this._fetch().forEach(this.resolve.bind(this))
   }
 
-  _fetch() {
+  protected _fetch() {
     const fetcher = this._fetcher(this.type)
 
     const globs: string[] = []
@@ -75,18 +74,18 @@ export class FilePipeline {
     }
 
     const assets = fetcher(globs, ignores)
-    .map((file) => {
-      const source = this.pipeline.source.find_from(file, true) as string
-      const input = this.pipeline.resolve.relative(source, file)
+      .map((file) => {
+        const source = this.pipeline.source.find_from(file, true) as string
+        const input = this.pipeline.resolve.relative(source, file)
 
-      return {
-        load_path: this.pipeline.resolve.relative(this.pipeline.resolve.root, source),
-        input: input,
-        output: input,
-        cache: input,
-        resolved: false
-      } as IAsset
-    })
+        return {
+          load_path: this.pipeline.resolve.relative(this.pipeline.resolve.root, source),
+          input: input,
+          output: input,
+          cache: input,
+          resolved: false
+        } as IAsset
+      })
 
     return assets
   }
@@ -104,7 +103,7 @@ export class FilePipeline {
     }
   }
 
-  findRule(path: string) {
+  protected findRule(path: string) {
     for (let i = 0, ilen = this.rules.length; i < ilen; i++) {
       const rule = this.rules[i]
 
@@ -116,9 +115,9 @@ export class FilePipeline {
     return { glob: path } as IMatchRule
   }
 
-  resolve(asset: IAsset) {
+  protected resolve(asset: IAsset) {
     // Ignore files registered from directory_pipeline or from previous rules
-    if (this.pipeline.manifest.file.assets[asset.input] && this.pipeline.manifest.file.assets[asset.input].resolved) return;
+    if (this.pipeline.manifest.read_file.assets[asset.input] && this.pipeline.manifest.read_file.assets[asset.input].resolved) return;
 
     const rule = asset.rule || this.findRule(asset.input)
     this.pipeline.manifest.set(asset)
@@ -126,7 +125,7 @@ export class FilePipeline {
     this.resolveOutput(asset.input, clone(rule))
   }
 
-  resolveOutput(file: string, rule: IMatchRule) {
+  protected resolveOutput(file: string, rule: IMatchRule) {
     let output = file, pathObject
 
     // Remove path and keep basename only

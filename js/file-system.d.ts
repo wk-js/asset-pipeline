@@ -12,6 +12,6 @@ export declare class FileSystem {
     symlink(glob: string): void;
     ignore(glob: string): void;
     apply(): Promise<void>;
-    _apply(type: string): Promise<void>;
+    protected _apply(type: string): Promise<void>;
 }
 export {};

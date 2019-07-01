@@ -52,7 +52,7 @@ export class Tree {
       subdirectories: {}
     } as TreeInterface
 
-    const keys = Object.keys(this.pipeline.manifest.file.assets).map((key) => {
+    const keys = Object.keys(this.pipeline.manifest.read_file.assets).map((key) => {
       return this.build(key)
     })
     let currDir = tree
@@ -111,7 +111,7 @@ export class Tree {
       return print
     }
 
-    return  this.pipeline.resolve.output + '\n' + ptree(this.tree, "  ").replace(/\n\s+\n/g, '\n')
+    return this.pipeline.resolve.output + '\n' + ptree(this.tree, "  ").replace(/\n\s+\n/g, '\n')
   }
 
 }

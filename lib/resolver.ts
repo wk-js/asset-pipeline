@@ -79,7 +79,7 @@ export class Resolver {
   clean_url(path: string, fromPath?: string) {
     path = this.url(path, fromPath)
     return removeSearch(path)
-}
+  }
 
   asset(input: string) {
     return this.pipeline.manifest.get(input)

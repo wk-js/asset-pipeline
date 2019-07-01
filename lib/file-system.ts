@@ -48,14 +48,14 @@ export class FileSystem {
     }
   }
 
-  async _apply(type: string) {
+  protected async _apply(type: string) {
 
-    const validGlobs = this.pipeline.source.filterAndMap(this.globs, (item, load_path) => {
+    const validGlobs = this.pipeline.source.filter_and_map(this.globs, (item, load_path) => {
       if (item.action !== type) return false
       return this.pipeline.source.source_with(load_path, item.glob, true)
     })
 
-    const ignoredGlobs = this.pipeline.source.filterAndMap(this.globs, (item, load_path) => {
+    const ignoredGlobs = this.pipeline.source.filter_and_map(this.globs, (item, load_path) => {
       if (item.action !== 'ignore') return false
       return this.pipeline.source.source_with(load_path, item.glob, true)
     })
@@ -67,7 +67,7 @@ export class FileSystem {
         fetch(validGlobs, ignoredGlobs)
     )
 
-    const ios = this.pipeline.source.filterAndMap(files, (file, load_path) => {
+    const ios = this.pipeline.source.filter_and_map(files, (file, load_path) => {
       const relative_file = this.pipeline.resolve.relative(load_path, file)
 
       // Future

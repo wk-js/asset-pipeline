@@ -8,8 +8,8 @@ import { Pipeline } from "./pipeline";
 
 export class DirectoryPipeline extends FilePipeline {
 
-  constructor( pipeline: Pipeline ) {
-    super( pipeline )
+  constructor(pipeline: Pipeline) {
+    super(pipeline)
     this.type = 'directory'
   }
 
@@ -22,7 +22,7 @@ export class DirectoryPipeline extends FilePipeline {
   }
 
   fetch() {
-      this._fetch()
+    this._fetch()
       .map((asset) => {
         this.resolve(asset)
         return asset
@@ -70,7 +70,6 @@ export class DirectoryPipeline extends FilePipeline {
           this.pipeline.manifest.set(asset)
         })
       })
-
   }
 
 }

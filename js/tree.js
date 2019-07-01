@@ -38,7 +38,7 @@ class Tree {
             files: [],
             subdirectories: {}
         };
-        const keys = Object.keys(this.pipeline.manifest.file.assets).map((key) => {
+        const keys = Object.keys(this.pipeline.manifest.read_file.assets).map((key) => {
             return this.build(key);
         });
         let currDir = tree;

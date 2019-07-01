@@ -98,7 +98,7 @@ class FilePipeline {
     }
     resolve(asset) {
         // Ignore files registered from directory_pipeline or from previous rules
-        if (this.pipeline.manifest.file.assets[asset.input] && this.pipeline.manifest.file.assets[asset.input].resolved)
+        if (this.pipeline.manifest.read_file.assets[asset.input] && this.pipeline.manifest.read_file.assets[asset.input].resolved)
             return;
         const rule = asset.rule || this.findRule(asset.input);
         this.pipeline.manifest.set(asset);

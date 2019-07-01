@@ -98,7 +98,7 @@ export class SourceManager {
     return new_items
   }
 
-  filterAndMap<T, S>(items: T[], cb: (item: T, source: string) => S | boolean) {
+  filter_and_map<T, S>(items: T[], cb: (item: T, source: string) => S | boolean) {
     const new_items: S[] = []
 
     this._sources.forEach((source) => {

@@ -49,12 +49,12 @@ class FileSystem {
     }
     _apply(type) {
         return __awaiter(this, void 0, void 0, function* () {
-            const validGlobs = this.pipeline.source.filterAndMap(this.globs, (item, load_path) => {
+            const validGlobs = this.pipeline.source.filter_and_map(this.globs, (item, load_path) => {
                 if (item.action !== type)
                     return false;
                 return this.pipeline.source.source_with(load_path, item.glob, true);
             });
-            const ignoredGlobs = this.pipeline.source.filterAndMap(this.globs, (item, load_path) => {
+            const ignoredGlobs = this.pipeline.source.filter_and_map(this.globs, (item, load_path) => {
                 if (item.action !== 'ignore')
                     return false;
                 return this.pipeline.source.source_with(load_path, item.glob, true);
@@ -63,7 +63,7 @@ class FileSystem {
                 fs_1.fetchDirs(validGlobs, ignoredGlobs)
                 :
                     fs_1.fetch(validGlobs, ignoredGlobs));
-            const ios = this.pipeline.source.filterAndMap(files, (file, load_path) => {
+            const ios = this.pipeline.source.filter_and_map(files, (file, load_path) => {
                 const relative_file = this.pipeline.resolve.relative(load_path, file);
                 // Future
                 // Maybe copy only resolved files

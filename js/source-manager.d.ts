@@ -12,5 +12,5 @@ export declare class SourceManager {
     forEach<T>(items: T[], cb: (item: T, source: string) => void): void;
     map<T, S>(items: T[], cb: (item: T, source: string) => S): S[];
     filter<T>(items: T[], cb: (item: T, source: string) => boolean): T[];
-    filterAndMap<T, S>(items: T[], cb: (item: T, source: string) => S | boolean): S[];
+    filter_and_map<T, S>(items: T[], cb: (item: T, source: string) => S | boolean): S[];
 }

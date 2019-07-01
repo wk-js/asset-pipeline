@@ -9,9 +9,9 @@ export declare class FilePipeline {
     addEntry(input: string, output: string, parameters?: IFileRule): void;
     ignore(glob: string): void;
     fetch(): void;
-    _fetch(): IAsset[];
+    protected _fetch(): IAsset[];
     private _fetcher;
-    findRule(path: string): IMatchRule;
-    resolve(asset: IAsset): void;
-    resolveOutput(file: string, rule: IMatchRule): void;
+    protected findRule(path: string): IMatchRule;
+    protected resolve(asset: IAsset): void;
+    protected resolveOutput(file: string, rule: IMatchRule): void;
 }
