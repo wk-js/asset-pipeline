@@ -7,6 +7,7 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = require("./utils/fs");
 const file_pipeline_1 = require("./file-pipeline");
 const minimatch_1 = __importDefault(require("minimatch"));
+const path_2 = require("./utils/path");
 class DirectoryPipeline extends file_pipeline_1.FilePipeline {
     constructor(pipeline) {
         super(pipeline);
@@ -35,9 +36,9 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
                 const rule = this.findRule(item.input);
                 const asset = {
                     load_path: item.load_path,
-                    input: input,
-                    output: output,
-                    cache: output
+                    input: path_2.cleanPath(input),
+                    output: path_2.cleanPath(output),
+                    cache: path_2.cleanPath(output)
                 };
                 // Handle rules for files
                 if (!(this.pipeline.manifest.has(asset.input) && this.pipeline.manifest.get(asset.input).resolved)

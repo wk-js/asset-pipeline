@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 function cleanPath(path) {
     path = toUnixPath(path);
-    path = path.replace(/^\/|^\.\/|\/$/g, '');
+    path = path.replace(/^\.\/|\/$/g, '');
     return path;
 }
 exports.cleanPath = cleanPath;
