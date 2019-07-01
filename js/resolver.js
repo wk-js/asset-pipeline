@@ -70,7 +70,7 @@ class Resolver {
     asset(input) {
         return this.pipeline.manifest.get(input);
     }
-    source(output, is_absolute = false) {
+    source(output, is_absolute = false, normalize = false) {
         output = path_1.cleanPath(output);
         const items = this.pipeline.manifest.all();
         let asset = null;
@@ -83,7 +83,11 @@ class Resolver {
         }
         if (asset)
             output = this.pipeline.source.source_with(asset.load_path, output, is_absolute);
-        return path_1.cleanPath(output);
+        output = path_1.cleanPath(output);
+        return normalize ? path_2.default.normalize(output) : output;
+    }
+    normalize(path) {
+        return path_2.default.normalize(path);
     }
     use(path) {
         path = path_1.cleanPath(path);

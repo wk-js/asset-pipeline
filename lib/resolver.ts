@@ -85,7 +85,7 @@ export class Resolver {
     return this.pipeline.manifest.get(input)
   }
 
-  source(output: string, is_absolute = false) {
+  source(output: string, is_absolute = false, normalize = false) {
     output = cleanPath(output)
 
     const items = this.pipeline.manifest.all()
@@ -102,7 +102,13 @@ export class Resolver {
 
     if (asset) output = this.pipeline.source.source_with(asset.load_path, output, is_absolute)
 
-    return cleanPath(output)
+    output = cleanPath(output)
+
+    return normalize ? Path.normalize(output) : output
+  }
+
+  normalize(path: string) {
+    return Path.normalize(path)
   }
 
   use(path: string) {
