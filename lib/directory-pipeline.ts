@@ -5,6 +5,7 @@ import { IAsset, IDirectoryRule } from "./types";
 import { expose } from "lol/utils/object";
 import minimatch from "minimatch";
 import { Pipeline } from "./pipeline";
+import { cleanPath } from "./utils/path";
 
 export class DirectoryPipeline extends FilePipeline {
 
@@ -42,12 +43,10 @@ export class DirectoryPipeline extends FilePipeline {
           const rule = this.findRule(item.input) as IDirectoryRule
           const asset: IAsset = {
             load_path: item.load_path,
-            input: input,
-            output: output,
-            cache: output
+            input: cleanPath(input),
+            output: cleanPath(output),
+            cache: cleanPath(output)
           }
-
-
 
           // Handle rules for files
           if (

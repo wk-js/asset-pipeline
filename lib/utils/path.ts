@@ -5,7 +5,7 @@ import Path, { normalize } from 'path';
  */
 export function cleanPath(path: string) {
   path = toUnixPath(path)
-  path = path.replace(/^\/|^\.\/|\/$/g, '')
+  path = path.replace(/^\.\/|\/$/g, '')
   return path
 }
 
