@@ -3,7 +3,7 @@ import { join, relative, basename, parse, format } from "path";
 import { template2 } from "lol/utils/string";
 import { IFileRule, IAsset, IMatchRule } from "./types";
 import { clone } from "lol/utils/object";
-import minimatch = require("minimatch");
+import minimatch from "minimatch";
 import { cleanPath } from "./utils/path";
 import { unique } from "lol/utils/array";
 import { fetch, fetchDirs } from "./utils/fs";
@@ -117,11 +117,11 @@ export class FilePipeline {
 
   protected resolve(asset: IAsset) {
     // Ignore files registered from directory_pipeline or from previous rules
-    if (this.pipeline.manifest.read_file.assets[asset.input] && this.pipeline.manifest.read_file.assets[asset.input].resolved) return;
+    const masset = this.pipeline.manifest.get(asset.input)
+    if (masset && masset.resolved) return;
 
     const rule = asset.rule || this.findRule(asset.input)
     this.pipeline.manifest.set(asset)
-    // this.pipeline.manifest.file.assets[asset.input] = asset
     this.resolveOutput(asset.input, clone(rule))
   }
 

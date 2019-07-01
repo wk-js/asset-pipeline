@@ -13,11 +13,12 @@ const path_1 = require("./utils/path");
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;
-        this.read_file = {
-            asset_key: 'no_key',
+        this._file = {
+            key: 'no_key',
             date: new Date,
-            load_path: [],
-            dst_path: './public',
+            sources: [],
+            output: './public',
+            root: process.cwd(),
             assets: {}
         };
         this.read = false;
@@ -31,23 +32,24 @@ class Manifest {
     }
     create_file() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.read_file.asset_key = this.pipeline.cache.key;
-            this.read_file.date = new Date;
-            this.read_file.load_path = this.pipeline.source.all();
-            this.read_file.dst_path = this.pipeline.resolve.output;
+            this._file.key = this.pipeline.cache.key;
+            this._file.date = new Date;
+            this._file.sources = this.pipeline.source.all();
+            this._file.output = this.pipeline.resolve.output;
+            this._file.root = this.pipeline.resolve.root;
             if (this.save) {
-                yield fs_1.writeFile(JSON.stringify(this.read_file, null, 2), this.manifest_path);
+                yield fs_1.writeFile(JSON.stringify(this._file, null, 2), this.manifest_path);
             }
         });
     }
     update_file() {
         return this.create_file();
     }
-    readFile() {
+    read_file() {
         return __awaiter(this, void 0, void 0, function* () {
             if (fs_1.isFile(this.manifest_path)) {
                 const content = yield fs_1.readFile(this.manifest_path);
-                this.read_file = JSON.parse(content.toString('utf-8'));
+                this._file = JSON.parse(content.toString('utf-8'));
             }
             if (this.save) {
                 yield this.create_file();
@@ -64,18 +66,18 @@ class Manifest {
     get(input) {
         input = path_1.cleanPath(input);
         input = input.split(/\#|\?/)[0];
-        return this.read_file.assets[input];
+        return this._file.assets[input];
     }
     has(input) {
         input = path_1.cleanPath(input);
         input = input.split(/\#|\?/)[0];
-        return !!this.read_file.assets[input];
+        return !!this._file.assets[input];
     }
     set(asset) {
-        this.read_file.assets[asset.input] = asset;
+        this._file.assets[asset.input] = asset;
     }
     all() {
-        return Object.keys(this.read_file.assets).map((key) => this.read_file.assets[key]);
+        return Object.keys(this._file.assets).map((key) => this._file.assets[key]);
     }
 }
 exports.Manifest = Manifest;

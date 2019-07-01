@@ -52,8 +52,8 @@ export class Tree {
       subdirectories: {}
     } as TreeInterface
 
-    const keys = Object.keys(this.pipeline.manifest.read_file.assets).map((key) => {
-      return this.build(key)
+    const keys = this.pipeline.manifest.all().map((asset) => {
+      return this.build(asset.input)
     })
     let currDir = tree
     let path = tree.path

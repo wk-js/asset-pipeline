@@ -25,10 +25,11 @@ export interface IAsset {
     rule?: IFileRule | IDirectoryRule;
 }
 export interface IManifest {
-    asset_key: string | number;
+    key: string | number;
     date: Date;
-    load_path: string[];
-    dst_path: string;
+    sources: string[];
+    output: string;
+    root: string;
     assets: Record<string, IAsset>;
 }
 export {};

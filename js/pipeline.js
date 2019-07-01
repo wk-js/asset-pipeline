@@ -36,7 +36,7 @@ class Pipeline {
         }
         else {
             this.log('[AssetPipeline] Read manifest');
-            return this.manifest.readFile();
+            return this.manifest.read_file();
         }
     }
     log(...args) {

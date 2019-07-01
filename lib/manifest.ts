@@ -6,11 +6,12 @@ import { cleanPath } from "./utils/path";
 
 export class Manifest {
 
-  read_file: IManifest = {
-    asset_key: 'no_key',
+  private _file: IManifest = {
+    key: 'no_key',
     date: new Date,
-    load_path: [],
-    dst_path: './public',
+    sources: [],
+    output: './public',
+    root: process.cwd(),
     assets: {} as { [key: string]: IAsset }
   }
 
@@ -28,13 +29,14 @@ export class Manifest {
   }
 
   async create_file() {
-    this.read_file.asset_key = this.pipeline.cache.key
-    this.read_file.date = new Date
-    this.read_file.load_path = this.pipeline.source.all()
-    this.read_file.dst_path = this.pipeline.resolve.output
+    this._file.key = this.pipeline.cache.key
+    this._file.date = new Date
+    this._file.sources = this.pipeline.source.all()
+    this._file.output = this.pipeline.resolve.output
+    this._file.root = this.pipeline.resolve.root
 
     if (this.save) {
-      await writeFile(JSON.stringify(this.read_file, null, 2), this.manifest_path)
+      await writeFile(JSON.stringify(this._file, null, 2), this.manifest_path)
     }
   }
 
@@ -42,10 +44,10 @@ export class Manifest {
     return this.create_file()
   }
 
-  async readFile() {
+  async read_file() {
     if (isFile(this.manifest_path)) {
       const content = await readFile(this.manifest_path)
-      this.read_file = JSON.parse(content.toString('utf-8'))
+      this._file = JSON.parse(content.toString('utf-8'))
     }
 
     if (this.save) {
@@ -62,21 +64,21 @@ export class Manifest {
   get(input: string): IAsset | null {
     input = cleanPath(input)
     input = input.split(/\#|\?/)[0]
-    return this.read_file.assets[input]
+    return this._file.assets[input]
   }
 
   has(input: string) {
     input = cleanPath(input)
     input = input.split(/\#|\?/)[0]
-    return !!this.read_file.assets[input]
+    return !!this._file.assets[input]
   }
 
   set(asset: IAsset) {
-    this.read_file.assets[asset.input] = asset
+    this._file.assets[asset.input] = asset
   }
 
   all() {
-    return Object.keys(this.read_file.assets).map((key) => this.read_file.assets[key])
+    return Object.keys(this._file.assets).map((key) => this._file.assets[key])
   }
 
 }

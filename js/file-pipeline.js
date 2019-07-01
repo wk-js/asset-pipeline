@@ -1,9 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
 const string_1 = require("lol/utils/string");
 const object_1 = require("lol/utils/object");
-const minimatch = require("minimatch");
+const minimatch_1 = __importDefault(require("minimatch"));
 const path_2 = require("./utils/path");
 const array_1 = require("lol/utils/array");
 const fs_1 = require("./utils/fs");
@@ -90,7 +93,7 @@ class FilePipeline {
     findRule(path) {
         for (let i = 0, ilen = this.rules.length; i < ilen; i++) {
             const rule = this.rules[i];
-            if (path === rule.glob || minimatch(path, rule.glob)) {
+            if (path === rule.glob || minimatch_1.default(path, rule.glob)) {
                 return rule;
             }
         }
@@ -98,11 +101,11 @@ class FilePipeline {
     }
     resolve(asset) {
         // Ignore files registered from directory_pipeline or from previous rules
-        if (this.pipeline.manifest.read_file.assets[asset.input] && this.pipeline.manifest.read_file.assets[asset.input].resolved)
+        const masset = this.pipeline.manifest.get(asset.input);
+        if (masset && masset.resolved)
             return;
         const rule = asset.rule || this.findRule(asset.input);
         this.pipeline.manifest.set(asset);
-        // this.pipeline.manifest.file.assets[asset.input] = asset
         this.resolveOutput(asset.input, object_1.clone(rule));
     }
     resolveOutput(file, rule) {

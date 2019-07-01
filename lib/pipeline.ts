@@ -39,7 +39,7 @@ export class Pipeline {
       return this.manifest.update_file()
     } else {
       this.log('[AssetPipeline] Read manifest')
-      return this.manifest.readFile()
+      return this.manifest.read_file()
     }
   }
 

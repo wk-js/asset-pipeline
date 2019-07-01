@@ -37,9 +37,10 @@ export interface IAsset {
 }
 
 export interface IManifest {
-  asset_key: string | number;
-  date: Date;
-  load_path: string[];
-  dst_path: string;
+  key: string | number,
+  date: Date,
+  sources: string[],
+  output: string,
+  root: string,
   assets: Record<string, IAsset>
 }
