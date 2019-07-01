@@ -1,17 +1,12 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const path_1 = __importDefault(require("path"));
 /**
  * Clean path
  */
-function cleanPath(input) {
-    const i = input.split('/');
-    i.push('');
-    input = path_1.default.normalize(i.join('/')).slice(0, -1);
-    return input;
+function cleanPath(path) {
+    path = toUnixPath(path);
+    path = path.replace(/^\/|^\.\/|\/$/g, '');
+    return path;
 }
 exports.cleanPath = cleanPath;
 /**

@@ -1,53 +1,39 @@
-import { join } from "path";
-import { PathResolver } from "./path-resolver";
 import { FilePipeline } from "./file-pipeline";
 import { DirectoryPipeline } from "./directory-pipeline";
 import { Manifest } from "./manifest";
-import { FileMatcher } from "./file-matcher";
 import { FileSystem } from "./file-system";
+import { Tree } from "./tree";
+import { Resolver } from "./resolver";
+import { SourceManager } from "./source-manager";
+import { Cache } from "./cache";
 
 export class Pipeline {
 
-  dst_path: string = './public'
-  root_path: string = process.cwd()
-
-  cacheable: boolean = false
-  cache_type: string = 'hash'
-  hash_key: string | number = 'no_key'
-  host: string | null = null
-
   verbose: boolean = false
 
-  load_paths = new FileMatcher(this)
+  cache = new Cache()
+  source = new SourceManager(this)
   directory = new DirectoryPipeline(this)
   file = new FilePipeline(this)
   manifest = new Manifest(this)
-  resolver = new PathResolver(this)
+  resolve = new Resolver(this)
+  tree = new Tree(this)
+  fs = new FileSystem(this)
 
-  fs = new FileSystem( this )
-
-  get absolute_dst_path() {
-    return join(this.root_path, this.dst_path)
-  }
-
-  fromDstPath(path: string) {
-    return join(this.absolute_dst_path, path)
-  }
-
-  resolve(force?: boolean) {
+  fetch(force?: boolean) {
     force = force ? force : !this.manifest.read
 
     if (force || !this.manifest.fileExists()) {
       this.log('[AssetPipeline] Fetch directories')
       this.directory.fetch()
-      this.resolver.update()
+      this.tree.update()
 
       this.log('[AssetPipeline] Fetch files')
       this.file.fetch()
-      this.resolver.update()
+      this.tree.update()
 
       this.log('[AssetPipeline] Clean resolved paths')
-      this.resolver.cleanResolved()
+      this.resolve.clean_used()
 
       this.log('[AssetPipeline] Update manifest')
       return this.manifest.updateFile()

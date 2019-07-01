@@ -1,13 +1,12 @@
-import Path from 'path';
+import Path, { normalize } from 'path';
 
 /**
  * Clean path
  */
-export function cleanPath(input: string) {
-  const i = input.split('/')
-  i.push('')
-  input = Path.normalize(i.join('/')).slice(0, -1)
-  return input
+export function cleanPath(path: string) {
+  path = toUnixPath(path)
+  path = path.replace(/^\/|^\.\/|\/$/g, '')
+  return path
 }
 
 /**

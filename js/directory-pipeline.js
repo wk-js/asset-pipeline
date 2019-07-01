@@ -8,8 +8,8 @@ const fs_1 = require("./utils/fs");
 const file_pipeline_1 = require("./file-pipeline");
 const minimatch_1 = __importDefault(require("minimatch"));
 class DirectoryPipeline extends file_pipeline_1.FilePipeline {
-    constructor() {
-        super(...arguments);
+    constructor(pipeline) {
+        super(pipeline);
         this.type = 'directory';
     }
     add(glob, parameters = {}) {
@@ -19,19 +19,18 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
         return super.addEntry(input, output, parameters);
     }
     fetch() {
-        this.load_paths
-            .fetchDirs(this.rules)
+        this._fetch()
             .map((asset) => {
             this.resolve(asset);
             return asset;
         })
             .forEach((item) => {
-            const glob = this.load_paths.fromLoadPath(item.load_path, item.input) + '/**/*';
+            const glob = this.pipeline.source.source_with(item.load_path, item.input, true) + '/**/*';
             // Handle files
             fs_1.fetch(glob).map((input) => {
-                input = this.load_paths.relativeToLoadPath(item.load_path, input);
+                input = this.pipeline.resolve.relative(item.load_path, input);
                 const pathObject = path_1.default.parse(input);
-                pathObject.dir = this.resolver.getPath(pathObject.dir);
+                pathObject.dir = this.pipeline.resolve.path(pathObject.dir);
                 const output = path_1.default.format(pathObject);
                 const rule = this.findRule(item.input);
                 const asset = {
@@ -41,7 +40,7 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
                     cache: output
                 };
                 // Handle rules for files
-                if (!(this.manifest.assets[asset.input] && this.manifest.assets[asset.input].resolved)
+                if (!(this.pipeline.manifest.has(asset.input) && this.pipeline.manifest.get(asset.input).resolved)
                     && rule.file_rules
                     && rule.file_rules.length > 0) {
                     for (let i = 0; i < rule.file_rules.length; i++) {
@@ -54,7 +53,7 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
                     return;
                 }
                 asset.resolved = true;
-                this.manifest.assets[asset.input] = asset;
+                this.pipeline.manifest.set(asset);
             });
         });
     }

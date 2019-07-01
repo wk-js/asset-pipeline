@@ -1,10 +1,12 @@
 import { Pipeline } from "./pipeline"
-import { join, normalize, relative, basename, dirname, parse, format } from "path";
-import { hashCache, versionCache, generateHash } from "./cache";
+import { join, relative, basename, parse, format } from "path";
 import { template2 } from "lol/utils/string";
 import { IFileRule, IAsset, IMatchRule } from "./types";
 import { clone } from "lol/utils/object";
 import minimatch = require("minimatch");
+import { cleanPath } from "./utils/path";
+import { unique } from "lol/utils/array";
+import { fetch, fetchDirs } from "./utils/fs";
 
 const TemplateOptions = {
   open: '#{',
@@ -15,36 +17,12 @@ const TemplateOptions = {
 export class FilePipeline {
 
   rules: IMatchRule[] = []
-  type: string = 'file'
+  type: "file" | "directory" = 'file'
 
   constructor(public pipeline: Pipeline) { }
 
-  get manifest() {
-    return this.pipeline.manifest.file
-  }
-
-  get cacheable() {
-    return this.pipeline.cacheable
-  }
-
-  get cache_type() {
-    return this.pipeline.cache_type
-  }
-
-  get hash_key() {
-    return this.pipeline.hash_key
-  }
-
-  get load_paths() {
-    return this.pipeline.load_paths
-  }
-
-  get resolver() {
-    return this.pipeline.resolver
-  }
-
   add(glob: string, parameters: IFileRule = {}) {
-    glob = normalize(glob)
+    glob = cleanPath(glob)
 
     const params: IMatchRule = parameters = Object.assign({
       glob: glob
@@ -63,7 +41,7 @@ export class FilePipeline {
   }
 
   ignore(glob: string) {
-    glob = normalize(glob)
+    glob = cleanPath(glob)
 
     const parameters = {
       glob: glob,
@@ -74,9 +52,56 @@ export class FilePipeline {
   }
 
   fetch() {
-    this.load_paths
-      .fetch(this.rules)
-      .forEach(this.resolve.bind(this))
+
+    this._fetch().forEach(this.resolve.bind(this))
+  }
+
+  _fetch() {
+    const fetcher = this._fetcher(this.type)
+
+    const globs: string[] = []
+    const ignores: string[] = []
+
+    for (let i = 0; i < this.rules.length; i++) {
+      const rule = this.rules[i];
+
+      this.pipeline.source.all(true).forEach((source) => {
+        if ("ignore" in rule && rule.ignore) {
+          ignores.push(this.pipeline.source.source_with(source, rule.glob, true))
+        } else {
+          globs.push(this.pipeline.source.source_with(source, rule.glob, true))
+        }
+      })
+    }
+
+    const assets = fetcher(globs, ignores)
+    .map((file) => {
+      const source = this.pipeline.source.find_from(file, true) as string
+      const input = this.pipeline.resolve.relative(source, file)
+
+      return {
+        load_path: this.pipeline.resolve.relative(this.pipeline.resolve.root, source),
+        input: input,
+        output: input,
+        cache: input,
+        resolved: false
+      } as IAsset
+    })
+
+    return assets
+  }
+
+  private _fetcher(type: "file" | "directory" = "file") {
+    return function (globs: string[], ignores: string[]) {
+      try {
+        if (type == "file") {
+          return fetch(globs, ignores)
+        } else {
+          return unique(fetchDirs(globs, ignores))
+        }
+      } catch (e) { }
+      return []
+    }
   }
 
   findRule(path: string) {
@@ -93,10 +118,11 @@ export class FilePipeline {
 
   resolve(asset: IAsset) {
     // Ignore files registered from directory_pipeline or from previous rules
-    if (this.manifest.assets[asset.input] && this.manifest.assets[asset.input].resolved) return;
+    if (this.pipeline.manifest.file.assets[asset.input] && this.pipeline.manifest.file.assets[asset.input].resolved) return;
 
     const rule = asset.rule || this.findRule(asset.input)
-    this.manifest.assets[asset.input] = asset
+    this.pipeline.manifest.set(asset)
+    // this.pipeline.manifest.file.assets[asset.input] = asset
     this.resolveOutput(asset.input, clone(rule))
   }
 
@@ -110,26 +136,26 @@ export class FilePipeline {
 
     // Add base_dir
     if ("base_dir" in rule && typeof rule.base_dir === 'string') {
-      output = join(this.pipeline.dst_path, rule.base_dir, output)
-      output = relative(this.pipeline.dst_path, output)
+      output = join(this.pipeline.resolve.output, rule.base_dir, output)
+      output = relative(this.pipeline.resolve.output, output)
     }
 
     // Replace dir path if needed
     pathObject = parse(output)
-    pathObject.dir = this.resolver.getPath(pathObject.dir)
+    pathObject.dir = this.pipeline.resolve.path(pathObject.dir)
     output = format(pathObject)
 
     let cache = output
 
     if (
-      (this.cacheable && !("cache" in rule))
+      (this.pipeline.cache.enabled && !("cache" in rule))
       ||
-      this.cacheable && rule.cache
+      this.pipeline.cache.enabled && rule.cache
     ) {
-      if (this.cache_type === 'hash') {
-        cache = hashCache(output, this.hash_key)
-      } else if (this.cache_type === 'version' && this.type === 'file') {
-        cache = versionCache(output, this.hash_key)
+      if (this.pipeline.cache.type === 'hash') {
+        cache = this.pipeline.cache.hash(output)
+      } else if (this.pipeline.cache.type === 'version' && this.type === 'file') {
+        cache = this.pipeline.cache.version(output)
       } else {
         cache = output
       }
@@ -146,19 +172,20 @@ export class FilePipeline {
           hash: "",
           ...pathObject
         }, TemplateOptions)
-        output = normalize(output)
         cache = template2(rule.rename, {
-          hash: this.cacheable && rule.cache ? generateHash(output + this.hash_key) : '',
+          hash: this.pipeline.cache.enabled && rule.cache ? this.pipeline.cache.generateHash(output + this.pipeline.cache.key) : '',
           ...pathObject
         }, TemplateOptions)
-        cache = normalize(cache)
       }
     }
 
-    this.manifest.assets[file].output = output
-    this.manifest.assets[file].cache = cache
-    this.manifest.assets[file].resolved = true
-    this.manifest.assets[file].rule = rule
+    const asset = this.pipeline.manifest.get(file) as IAsset
+    asset.input = cleanPath(asset.input)
+    asset.output = cleanPath(output)
+    asset.cache = cleanPath(cache)
+    asset.resolved = true
+    asset.rule = rule
+    this.pipeline.manifest.set(asset)
   }
 
 }

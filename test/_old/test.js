@@ -1,11 +1,11 @@
 const { AssetPipeline, AssetFileSystem } = require('../../js')
 
 const p = new AssetPipeline()
-p.root_path = __dirname
-p.load_paths.add('./app')
-p.load_paths.add('./shaders')
-p.load_paths.add('./app/texts')
-p.cacheable = true
+p.resolve.root = __dirname
+p.source.add('./app')
+p.source.add('./shaders')
+p.source.add('./app/texts')
+p.cache.enabled = true
 
 p.directory.add('assets/images', {
   keep_path: false,
@@ -31,8 +31,8 @@ p.file.add('**/*', {
 // fs.copy('**/*')
 p.fs.copy('**/*')
 
-p.resolve(true).then(() => {
-  console.log(p.resolver.view())
+p.fetch(true).then(() => {
+  console.log(p.tree.view())
   p.fs.apply()
 
   // console.log(p.resolver.getSourceFilePath('assets/hello.txt'));

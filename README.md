@@ -21,22 +21,22 @@ const { AssetPipeline } = require('asset-pipeline')
 const pipeline = new AssetPipeline()
 
 // Add multiple source path
-pipeline.load_paths.add('./app')
+pipeline.source.add('./app')
 
 // Add multiple source path
-pipeline.dst_path = './public'
+pipeline.resolve.output = './public'
 
 // Set the root path
-pipeline.root_path = process.cwd()
+pipeline.resolve.root = process.cwd()
 
 // Enable cache-break
-pipeline.cacheable = false
+pipeline.cache.enabled = false
 
 // Set cache type between hash|version
-pipeline.cache_type = 'hash'
+pipeline.cache.type = 'hash'
 
 // Hash key for cache-break and manifest file name
-pipeline.hash_key = Math.random()
+pipeline.cache.key = Math.random()
 
 // Force asset-pipeline to resolve at each .resolve() call
 pipeline.manifest.read = false
@@ -45,7 +45,7 @@ pipeline.manifest.read = false
 pipeline.manifest.save = true
 
 // Set host
-pipeline.host = 'http://mycdn.com'
+pipeline.resolve.host = 'http://mycdn.com'
 
 // Register file
 pipeline.file.add('views/page.html', {
@@ -69,36 +69,39 @@ pipeline.file.add('views/page.html', {
 // Register multiple files
 pipeline.file.add('scripts/vendors/**/*.js', {
   // Rename output path
-  rename: '${name}${ext}?${hash}',
+  rename: 'vendors/${name}${ext}?${hash}',
 })
 
 // Register a directory
 pipeline.directory.add('assets', {
-  rename: 'resources'
+  rename: 'resources',
+
+  // Apply rules to files or subdirectories, you can only cache, rename, ignore
+  file_rules: [
+    {
+      glob: "**/*.jpg",
+      cache: true
+    }
+  ]
 })
 
 // Register every files inside assets and copy them into resources as precised in the previous rule
 pipeline.fs.copy('assets/**/*')
 
-
 // Resolve assets
-pipeline.resolve().then(() => {
-  console.log(pipeline.manifest.manifest)
-  console.log(pipeline.resolver.view())
-  console.log(pipeline.resolver.getPath('views/page.html')) // index.html
-  console.log(pipeline.resolver.getUrl('views/page.html')) // http://mycdn.com/index.html
-  console.log(pipeline.resolver.getFilePath('views/page.html')) // Without extra #|?
-  console.log(pipeline.resolver.getFileUrl('views/page.html')) // Without extra #|?
-  console.log(pipeline.resolver.getSourceFilePath('index.html')) // 'app/views/page.html'
+pipeline.fetch().then(() => {
+  console.log(pipeline.manifest.file)
+  console.log(pipeline.resolve.view())
+  console.log(pipeline.resolve.path('scripts/vendors/index.js')) // vendors/index.js?41cf53f6d96624fb40dc4f2780b89bf0
+  console.log(pipeline.resolve.url('scripts/vendors/index.js')) // http://mycdn.com/vendors/index.js?41cf53f6d96624fb40dc4f2780b89bf0
+  console.log(pipeline.resolve.clean_path('scripts/vendors/index.js')) // vendors/index.js
+  console.log(pipeline.resolve.clean_url('scripts/vendors/index.js')) // http://mycdn.com/vendors/index.js
+
+  const asset = pipeline.resolve.asset('scripts/vendors/index.js')
+  console.log(pipeline.resolve.source(asset.output)) // 'scripts/vendors/index.js'
+  console.log(pipeline.resolve.source(asset.output, true)) // '/User/someone/Documents/sample/scripts/vendors/index.js'
 
   // Execute copy/move/symlinks
   pipeline.fs.apply()
 })
 ```
-
-# TODO
-
-* Add test units
-* Remove alternatives
-* Remove data object
-* Review cache types

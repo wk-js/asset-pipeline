@@ -1,7 +1,7 @@
 /**
  * Clean path
  */
-export declare function cleanPath(input: string): string;
+export declare function cleanPath(path: string): string;
 /**
  *
  */

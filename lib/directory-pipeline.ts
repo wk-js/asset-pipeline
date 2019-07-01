@@ -4,10 +4,14 @@ import { FilePipeline } from "./file-pipeline";
 import { IAsset, IDirectoryRule } from "./types";
 import { expose } from "lol/utils/object";
 import minimatch from "minimatch";
+import { Pipeline } from "./pipeline";
 
 export class DirectoryPipeline extends FilePipeline {
 
-  type: string = 'directory'
+  constructor( pipeline: Pipeline ) {
+    super( pipeline )
+    this.type = 'directory'
+  }
 
   add(glob: string, parameters: IDirectoryRule = {}) {
     return super.add(glob, parameters)
@@ -18,25 +22,22 @@ export class DirectoryPipeline extends FilePipeline {
   }
 
   fetch() {
-    this.load_paths
-      .fetchDirs(this.rules)
-
+      this._fetch()
       .map((asset) => {
         this.resolve(asset)
         return asset
       })
 
       .forEach((item) => {
-        const glob = this.load_paths.fromLoadPath(item.load_path, item.input) + '/**/*'
+        const glob = this.pipeline.source.source_with(item.load_path, item.input, true) + '/**/*'
 
         // Handle files
         fetch(glob).map((input: string) => {
-          input = this.load_paths.relativeToLoadPath(item.load_path, input)
+          input = this.pipeline.resolve.relative(item.load_path, input)
 
           const pathObject = Path.parse(input)
-          pathObject.dir = this.resolver.getPath(pathObject.dir)
+          pathObject.dir = this.pipeline.resolve.path(pathObject.dir)
           const output = Path.format(pathObject)
-
 
           const rule = this.findRule(item.input) as IDirectoryRule
           const asset: IAsset = {
@@ -46,9 +47,11 @@ export class DirectoryPipeline extends FilePipeline {
             cache: output
           }
 
+
+
           // Handle rules for files
           if (
-            !(this.manifest.assets[asset.input] && this.manifest.assets[asset.input].resolved)
+            !(this.pipeline.manifest.has(asset.input) && (this.pipeline.manifest.get(asset.input) as IAsset).resolved)
             && rule.file_rules
             && rule.file_rules.length > 0) {
 
@@ -64,7 +67,7 @@ export class DirectoryPipeline extends FilePipeline {
           }
 
           asset.resolved = true
-          this.manifest.assets[asset.input] = asset
+          this.pipeline.manifest.set(asset)
         })
       })
 

@@ -13,14 +13,6 @@ export class FileSystem {
 
   constructor(private pipeline: Pipeline) { }
 
-  get load_paths() {
-    return this.pipeline.load_paths
-  }
-
-  get resolver() {
-    return this.pipeline.resolver
-  }
-
   move(glob: string) {
     this.globs.push({
       glob: glob,
@@ -58,14 +50,14 @@ export class FileSystem {
 
   async _apply(type: string) {
 
-    const validGlobs = this.load_paths.filterAndMap(this.globs, (item, load_path) => {
+    const validGlobs = this.pipeline.source.filterAndMap(this.globs, (item, load_path) => {
       if (item.action !== type) return false
-      return this.load_paths.fromLoadPath(load_path, item.glob)
+      return this.pipeline.source.source_with(load_path, item.glob, true)
     })
 
-    const ignoredGlobs = this.load_paths.filterAndMap(this.globs, (item, load_path) => {
+    const ignoredGlobs = this.pipeline.source.filterAndMap(this.globs, (item, load_path) => {
       if (item.action !== 'ignore') return false
-      return this.load_paths.fromLoadPath(load_path, item.glob)
+      return this.pipeline.source.source_with(load_path, item.glob, true)
     })
 
     const files = (
@@ -75,8 +67,8 @@ export class FileSystem {
         fetch(validGlobs, ignoredGlobs)
     )
 
-    const ios = this.load_paths.filterAndMap(files, (file, load_path) => {
-      const relative_file = this.load_paths.relativeToLoadPath(load_path, file)
+    const ios = this.pipeline.source.filterAndMap(files, (file, load_path) => {
+      const relative_file = this.pipeline.resolve.relative(load_path, file)
 
       // Future
       // Maybe copy only resolved files
@@ -84,7 +76,7 @@ export class FileSystem {
 
       const input = relative(process.cwd(), file)
 
-      let output = this.pipeline.fromDstPath(this.resolver.getPath(relative_file))
+      let output = this.pipeline.resolve.output_with(this.pipeline.resolve.path(relative_file))
       output = relative(process.cwd(), output)
 
       if (input == output) return false

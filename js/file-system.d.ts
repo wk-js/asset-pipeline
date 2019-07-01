@@ -7,8 +7,6 @@ export declare class FileSystem {
     private pipeline;
     globs: IManagerRuleItem[];
     constructor(pipeline: Pipeline);
-    readonly load_paths: import("./file-matcher").FileMatcher;
-    readonly resolver: import("./path-resolver").PathResolver;
     move(glob: string): void;
     copy(glob: string): void;
     symlink(glob: string): void;

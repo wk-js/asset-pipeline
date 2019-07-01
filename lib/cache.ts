@@ -1,17 +1,26 @@
 import { join, parse } from "path";
 import { createHash } from "crypto";
 
-export function hashCache(path: string, asset_key: string | number) {
-  const pathObject = parse(path)
-  const hash = generateHash(path + asset_key)
-  return join(pathObject.dir, `${pathObject.name}-${hash}${pathObject.ext}`)
-}
 
-export function versionCache(path: string, version: string | number) {
-  const pathObject = parse(path)
-  return join(pathObject.dir, `${pathObject.name}${pathObject.ext}?v=${version}`)
-}
+export class Cache {
 
-export function generateHash(str: string) {
-  return createHash('md5').update(str).digest('hex')
+  enabled: boolean = false
+  type: string = 'hash'
+  key: string | number = 'no_key'
+
+  hash(path: string) {
+    const pathObject = parse(path)
+    const hash = this.generateHash(path + this.key)
+    return join(pathObject.dir, `${pathObject.name}-${hash}${pathObject.ext}`)
+  }
+
+  version(path: string) {
+    const pathObject = parse(path)
+    return join(pathObject.dir, `${pathObject.name}${pathObject.ext}?v=${this.key}`)
+  }
+
+  generateHash(str: string) {
+    return createHash('md5').update(str).digest('hex')
+  }
+
 }

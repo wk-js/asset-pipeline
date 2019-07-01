@@ -1,5 +1,5 @@
 import { Pipeline } from "./pipeline";
-import { IManifest } from "./types";
+import { IAsset, IManifest } from "./types";
 export declare class Manifest {
     private pipeline;
     file: IManifest;
@@ -7,11 +7,13 @@ export declare class Manifest {
     save: boolean;
     constructor(pipeline: Pipeline);
     readonly manifest_path: string;
-    readonly hash_key: string | number;
-    readonly load_paths: import("./file-matcher").FileMatcher;
     fileExists(): boolean;
     createFile(): Promise<void>;
     updateFile(): Promise<void>;
     readFile(): Promise<void>;
     deleteFile(): Promise<void>;
+    get(input: string): IAsset | null;
+    has(input: string): boolean;
+    set(asset: IAsset): void;
+    all(): IAsset[];
 }

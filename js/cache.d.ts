@@ -1,3 +1,8 @@
-export declare function hashCache(path: string, asset_key: string | number): string;
-export declare function versionCache(path: string, version: string | number): string;
-export declare function generateHash(str: string): string;
+export declare class Cache {
+    enabled: boolean;
+    type: string;
+    key: string | number;
+    hash(path: string): string;
+    version(path: string): string;
+    generateHash(str: string): string;
+}

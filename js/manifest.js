@@ -9,37 +9,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("./utils/fs");
+const path_1 = require("./utils/path");
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;
         this.file = {
-            asset_key: this.hash_key,
+            asset_key: 'no_key',
             date: new Date,
             load_path: [],
-            dst_path: this.pipeline.dst_path,
+            dst_path: './public',
             assets: {}
         };
         this.read = false;
         this.save = true;
     }
     get manifest_path() {
-        return `tmp/manifest-${this.hash_key}.json`;
-    }
-    get hash_key() {
-        return this.pipeline.hash_key;
-    }
-    get load_paths() {
-        return this.pipeline.load_paths;
+        return `tmp/manifest-${this.pipeline.cache.key}.json`;
     }
     fileExists() {
         return this.save && fs_1.isFile(this.manifest_path);
     }
     createFile() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.file.asset_key = this.hash_key;
+            this.file.asset_key = this.pipeline.cache.key;
             this.file.date = new Date;
-            this.file.load_path = this.load_paths.getPaths();
-            this.file.dst_path = this.pipeline.dst_path;
+            this.file.load_path = this.pipeline.source.all();
+            this.file.dst_path = this.pipeline.resolve.output;
             if (this.save) {
                 yield fs_1.writeFile(JSON.stringify(this.file, null, 2), this.manifest_path);
             }
@@ -65,6 +60,22 @@ class Manifest {
                 yield fs_1.remove(this.manifest_path);
             }
         });
+    }
+    get(input) {
+        input = path_1.cleanPath(input);
+        input = input.split(/\#|\?/)[0];
+        return this.file.assets[input];
+    }
+    has(input) {
+        input = path_1.cleanPath(input);
+        input = input.split(/\#|\?/)[0];
+        return !!this.file.assets[input];
+    }
+    set(asset) {
+        this.file.assets[asset.input] = asset;
+    }
+    all() {
+        return Object.keys(this.file.assets).map((key) => this.file.assets[key]);
     }
 }
 exports.Manifest = Manifest;
