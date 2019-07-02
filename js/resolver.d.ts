@@ -8,7 +8,7 @@ export declare class Resolver {
     constructor(pipeline: Pipeline);
     root: string;
     output: string;
-    output_with(path: string): string;
+    output_with(path: string, is_absolute?: boolean): string;
     relative(from: string, to: string): string;
     path(path: string, from?: string): string;
     url(path: string, from?: string): string;

@@ -24,6 +24,7 @@ before(async () => {
   await writeFile("", Path.join(LOAD_PATH, 'file1.txt'))
   await writeFile("", Path.join(LOAD_PATH, 'file2.txt'))
   await writeFile("", Path.join(LOAD_PATH, 'file3.txt'))
+  await writeFile("", Path.join(LOAD_PATH, 'file.txt.ejs'))
 
   await ensureDir(Path.join(LOAD_PATH, 'others'))
   await writeFile("", Path.join(LOAD_PATH, 'others', 'file4.txt'))
@@ -97,20 +98,30 @@ describe("Files", () => {
     assert.deepEqual(assets.map((asset) => asset.input), ['file10.txt', 'file11.txt', 'file12.txt'])
   })
 
-  it('Paths', async () => {
+  it.only('Paths', async () => {
     const AP = await setup(async (AP) => {
       AP.resolve.host = 'http://mycdn.com/'
       AP.source.add( LOAD_PATH )
       AP.file.add('file1.txt', { rename: "#{dir}/#{name}#{ext}?v=1" })
+      AP.file.add('file.txt.ejs', { rename: "#{name}" })
     })
 
     AP.manifest.all().forEach((asset) => {
-      assert.equal(AP.resolve.path(asset.input), 'file1.txt?v=1')
-      assert.equal(AP.resolve.url(asset.input), 'http://mycdn.com/file1.txt?v=1')
-      assert.equal(AP.resolve.clean_path(asset.input), 'file1.txt')
-      assert.equal(AP.resolve.clean_url(asset.input), 'http://mycdn.com/file1.txt')
-      assert.equal(AP.resolve.source(asset.output), 'tmp/test-units/file1.txt?v=1')
-      assert.equal(AP.resolve.source(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file1.txt?v=1')))
+      if (asset.input.match(/file1\.txt/)) {
+        assert.equal(AP.resolve.path(asset.input), 'file1.txt?v=1')
+        assert.equal(AP.resolve.url(asset.input), 'http://mycdn.com/file1.txt?v=1')
+        assert.equal(AP.resolve.clean_path(asset.input), 'file1.txt')
+        assert.equal(AP.resolve.clean_url(asset.input), 'http://mycdn.com/file1.txt')
+        assert.equal(AP.resolve.source(asset.output), 'tmp/test-units/file1.txt')
+        assert.equal(AP.resolve.source(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file1.txt')))
+      } else {
+        assert.equal(AP.resolve.path(asset.input), 'file.txt')
+        assert.equal(AP.resolve.url(asset.input), 'http://mycdn.com/file.txt')
+        assert.equal(AP.resolve.clean_path(asset.input), 'file.txt')
+        assert.equal(AP.resolve.clean_url(asset.input), 'http://mycdn.com/file.txt')
+        assert.equal(AP.resolve.source(asset.output), 'tmp/test-units/file.txt.ejs')
+        assert.equal(AP.resolve.source(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file.txt.ejs')))
+      }
     })
   })
 

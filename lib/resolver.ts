@@ -28,9 +28,13 @@ export class Resolver {
     this._output = cleanPath(path)
   }
 
-  output_with(path: string) {
+  output_with(path: string, is_absolute = true) {
     path = cleanPath(path)
-    path = Path.join(this.root, this._output, path)
+    if (is_absolute) {
+      path = Path.join(this.root, this._output, path)
+    } else {
+      path = Path.join(this._output, path)
+    }
     return cleanPath(path)
   }
 
@@ -100,11 +104,12 @@ export class Resolver {
       }
     }
 
-    if (asset) output = this.pipeline.source.source_with(asset.load_path, output, is_absolute)
+    let input = output
+    if (asset) input = this.pipeline.source.source_with(asset.load_path, asset.input, is_absolute)
 
-    output = cleanPath(output)
+    input = cleanPath(input)
 
-    return normalize ? Path.normalize(output) : output
+    return normalize ? Path.normalize(input) : input
   }
 
   normalize(path: string) {

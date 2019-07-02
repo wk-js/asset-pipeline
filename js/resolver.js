@@ -27,9 +27,14 @@ class Resolver {
     set output(path) {
         this._output = path_1.cleanPath(path);
     }
-    output_with(path) {
+    output_with(path, is_absolute = true) {
         path = path_1.cleanPath(path);
-        path = path_2.default.join(this.root, this._output, path);
+        if (is_absolute) {
+            path = path_2.default.join(this.root, this._output, path);
+        }
+        else {
+            path = path_2.default.join(this._output, path);
+        }
         return path_1.cleanPath(path);
     }
     relative(from, to) {
@@ -81,10 +86,11 @@ class Resolver {
                 break;
             }
         }
+        let input = output;
         if (asset)
-            output = this.pipeline.source.source_with(asset.load_path, output, is_absolute);
-        output = path_1.cleanPath(output);
-        return normalize ? path_2.default.normalize(output) : output;
+            input = this.pipeline.source.source_with(asset.load_path, asset.input, is_absolute);
+        input = path_1.cleanPath(input);
+        return normalize ? path_2.default.normalize(input) : input;
     }
     normalize(path) {
         return path_2.default.normalize(path);
