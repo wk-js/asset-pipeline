@@ -28,10 +28,10 @@ class SourceManager {
     source_with(source, input, is_absolute = false) {
         input = path_1.cleanPath(input);
         if (is_absolute && !path_2.default.isAbsolute(source)) {
-            source = path_2.default.join(this.pipeline.resolve.root, source);
+            source = path_2.default.join(this.pipeline.resolve.root(), source);
         }
         else if (!is_absolute && path_2.default.isAbsolute(source)) {
-            source = path_2.default.relative(this.pipeline.resolve.root, source);
+            source = path_2.default.relative(this.pipeline.resolve.root(), source);
         }
         input = path_2.default.join(source, input);
         return path_1.cleanPath(input);
@@ -40,18 +40,18 @@ class SourceManager {
         if (!is_absolute)
             return this._sources.slice(0);
         return this._sources.map((source) => {
-            return path_1.cleanPath(path_2.default.join(this.pipeline.resolve.root, source));
+            return path_1.cleanPath(path_2.default.join(this.pipeline.resolve.root(), source));
         });
     }
     find_from(input, is_absolute = false) {
         if (path_2.default.isAbsolute(input))
-            input = this.pipeline.resolve.relative(this.pipeline.resolve.root, input);
+            input = this.pipeline.resolve.relative(this.pipeline.resolve.root(), input);
         input = path_1.cleanPath(input);
         for (let i = 0; i < this._sources.length; i++) {
             let source = this._sources[i];
             if (input.indexOf(source) > -1) {
                 if (is_absolute) {
-                    source = path_2.default.join(this.pipeline.resolve.root, source);
+                    source = path_2.default.join(this.pipeline.resolve.root(), source);
                 }
                 return path_1.cleanPath(source);
             }

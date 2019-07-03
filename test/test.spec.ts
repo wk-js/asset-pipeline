@@ -12,7 +12,7 @@ const DST_PATH = 'tmp/test-units-dist'
 async function setup(callback: (pipeline: Pipeline) => void) {
   const AP = new AssetPipeline()
   // AP.source.add( LOAD_PATH )
-  AP.resolve.output = DST_PATH
+  AP.resolve.output(DST_PATH)
   AP.manifest.save = false
   await callback(AP)
   await AP.fetch()
@@ -112,15 +112,15 @@ describe("Files", () => {
         assert.equal(AP.resolve.url(asset.input), 'http://mycdn.com/file1.txt?v=1')
         assert.equal(AP.resolve.clean_path(asset.input), 'file1.txt')
         assert.equal(AP.resolve.clean_url(asset.input), 'http://mycdn.com/file1.txt')
-        assert.equal(AP.resolve.source(asset.output), 'tmp/test-units/file1.txt')
-        assert.equal(AP.resolve.source(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file1.txt')))
+        assert.equal(AP.resolve.source_from_output(asset.output), 'tmp/test-units/file1.txt')
+        assert.equal(AP.resolve.source_from_output(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file1.txt')))
       } else {
         assert.equal(AP.resolve.path(asset.input), 'file.txt')
         assert.equal(AP.resolve.url(asset.input), 'http://mycdn.com/file.txt')
         assert.equal(AP.resolve.clean_path(asset.input), 'file.txt')
         assert.equal(AP.resolve.clean_url(asset.input), 'http://mycdn.com/file.txt')
-        assert.equal(AP.resolve.source(asset.output), 'tmp/test-units/file.txt.ejs')
-        assert.equal(AP.resolve.source(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file.txt.ejs')))
+        assert.equal(AP.resolve.source_from_output(asset.output), 'tmp/test-units/file.txt.ejs')
+        assert.equal(AP.resolve.source_from_output(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file.txt.ejs')))
       }
     })
   })

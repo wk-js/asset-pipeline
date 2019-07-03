@@ -28,9 +28,9 @@ export class SourceManager {
     input = cleanPath(input)
 
     if (is_absolute && !Path.isAbsolute(source)) {
-      source = Path.join(this.pipeline.resolve.root, source)
+      source = Path.join(this.pipeline.resolve.root(), source)
     } else if (!is_absolute && Path.isAbsolute(source)) {
-      source = Path.relative(this.pipeline.resolve.root, source)
+      source = Path.relative(this.pipeline.resolve.root(), source)
     }
 
     input = Path.join(source, input)
@@ -41,12 +41,12 @@ export class SourceManager {
     if (!is_absolute) return this._sources.slice(0)
 
     return this._sources.map((source) => {
-      return cleanPath(Path.join(this.pipeline.resolve.root, source))
+      return cleanPath(Path.join(this.pipeline.resolve.root(), source))
     })
   }
 
   find_from(input: string, is_absolute: boolean = false) {
-    if (Path.isAbsolute(input)) input = this.pipeline.resolve.relative(this.pipeline.resolve.root, input)
+    if (Path.isAbsolute(input)) input = this.pipeline.resolve.relative(this.pipeline.resolve.root(), input)
     input = cleanPath(input)
 
     for (let i = 0; i < this._sources.length; i++) {
@@ -54,7 +54,7 @@ export class SourceManager {
 
       if (input.indexOf(source) > -1) {
         if (is_absolute) {
-          source = Path.join(this.pipeline.resolve.root, source)
+          source = Path.join(this.pipeline.resolve.root(), source)
         }
 
         return cleanPath(source)

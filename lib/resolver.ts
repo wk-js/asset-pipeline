@@ -11,27 +11,24 @@ export class Resolver {
 
   constructor(private pipeline: Pipeline) { }
 
-  set root(path: string) {
-    if (!Path.isAbsolute(path)) throw new Error('Root must be absolute')
-    this._root = cleanPath(path)
-  }
-
-  get root() {
+  root(path?: string) {
+    if (path) {
+      if (!Path.isAbsolute(path)) throw new Error('Root must be absolute')
+      this._root = cleanPath(path)
+    }
     return this._root
   }
 
-  get output() {
-    return this._output
-  }
+  output(path?: string) {
+    if (path) this._output = cleanPath(path)
 
-  set output(path: string) {
-    this._output = cleanPath(path)
+    return this._output
   }
 
   output_with(path: string, is_absolute = true) {
     path = cleanPath(path)
     if (is_absolute) {
-      path = Path.join(this.root, this._output, path)
+      path = Path.join(this.root(), this._output, path)
     } else {
       path = Path.join(this._output, path)
     }
@@ -40,9 +37,9 @@ export class Resolver {
 
   relative(from: string, to: string) {
     from = cleanPath(from)
-    if (Path.isAbsolute(from)) from = Path.relative(this.root, from)
+    if (Path.isAbsolute(from)) from = Path.relative(this.root(), from)
     to = cleanPath(to)
-    if (Path.isAbsolute(to)) to = Path.relative(this.root, to)
+    if (Path.isAbsolute(to)) to = Path.relative(this.root(), to)
 
     return cleanPath(Path.relative(from, to))
   }
@@ -85,11 +82,27 @@ export class Resolver {
     return removeSearch(path)
   }
 
+  find_path(path: string) {
+    const load_path = this.pipeline.source.find_from(path, true)
+    if (!load_path) return null
+    const relative_path = this.relative(load_path, path)
+    const output = this.pipeline.resolve.path(relative_path)
+    return output
+  }
+
+  find_url(path: string) {
+    const load_path = this.pipeline.source.find_from(path, true)
+    if (!load_path) return null
+    const relative_path = this.relative(load_path, path)
+    const output = this.pipeline.resolve.url(relative_path)
+    return output
+  }
+
   asset(input: string) {
     return this.pipeline.manifest.get(input)
   }
 
-  source(output: string, is_absolute = false, normalize = false) {
+  source_from_output(output: string, is_absolute = false, normalize = false) {
     output = cleanPath(output)
 
     const items = this.pipeline.manifest.all()

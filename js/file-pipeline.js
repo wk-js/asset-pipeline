@@ -67,7 +67,7 @@ class FilePipeline {
             const source = this.pipeline.source.find_from(file, true);
             const input = this.pipeline.resolve.relative(source, file);
             return {
-                load_path: this.pipeline.resolve.relative(this.pipeline.resolve.root, source),
+                load_path: this.pipeline.resolve.relative(this.pipeline.resolve.root(), source),
                 input: input,
                 output: input,
                 cache: input,
@@ -116,8 +116,8 @@ class FilePipeline {
         }
         // Add base_dir
         if ("base_dir" in rule && typeof rule.base_dir === 'string') {
-            output = path_1.join(this.pipeline.resolve.output, rule.base_dir, output);
-            output = path_1.relative(this.pipeline.resolve.output, output);
+            output = path_1.join(this.pipeline.resolve.output(), rule.base_dir, output);
+            output = path_1.relative(this.pipeline.resolve.output(), output);
         }
         // Replace dir path if needed
         pathObject = path_1.parse(output);

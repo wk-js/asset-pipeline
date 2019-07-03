@@ -79,7 +79,7 @@ export class FilePipeline {
         const input = this.pipeline.resolve.relative(source, file)
 
         return {
-          load_path: this.pipeline.resolve.relative(this.pipeline.resolve.root, source),
+          load_path: this.pipeline.resolve.relative(this.pipeline.resolve.root(), source),
           input: input,
           output: input,
           cache: input,
@@ -135,8 +135,8 @@ export class FilePipeline {
 
     // Add base_dir
     if ("base_dir" in rule && typeof rule.base_dir === 'string') {
-      output = join(this.pipeline.resolve.output, rule.base_dir, output)
-      output = relative(this.pipeline.resolve.output, output)
+      output = join(this.pipeline.resolve.output(), rule.base_dir, output)
+      output = relative(this.pipeline.resolve.output(), output)
     }
 
     // Replace dir path if needed

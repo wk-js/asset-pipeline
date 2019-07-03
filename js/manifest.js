@@ -35,8 +35,8 @@ class Manifest {
             this._file.key = this.pipeline.cache.key;
             this._file.date = new Date;
             this._file.sources = this.pipeline.source.all();
-            this._file.output = this.pipeline.resolve.output;
-            this._file.root = this.pipeline.resolve.root;
+            this._file.output = this.pipeline.resolve.output();
+            this._file.root = this.pipeline.resolve.root();
             if (this.save) {
                 yield fs_1.writeFile(JSON.stringify(this._file, null, 2), this.manifest_path);
             }
