@@ -84,7 +84,7 @@ export class Resolver {
 
   find_path(path: string) {
     const load_path = this.pipeline.source.find_from(path, true)
-    if (!load_path) return null
+    if (!load_path) return path
     const relative_path = this.relative(load_path, path)
     const output = this.pipeline.resolve.path(relative_path)
     return output
@@ -92,7 +92,7 @@ export class Resolver {
 
   find_url(path: string) {
     const load_path = this.pipeline.source.find_from(path, true)
-    if (!load_path) return null
+    if (!load_path) return path
     const relative_path = this.relative(load_path, path)
     const output = this.pipeline.resolve.url(relative_path)
     return output

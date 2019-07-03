@@ -14,8 +14,8 @@ export declare class Resolver {
     url(path: string, from?: string): string;
     clean_path(path: string, fromPath?: string): string;
     clean_url(path: string, fromPath?: string): string;
-    find_path(path: string): string | null;
-    find_url(path: string): string | null;
+    find_path(path: string): string;
+    find_url(path: string): string;
     asset(input: string): import("./types").IAsset | null;
     source_from_output(output: string, is_absolute?: boolean, normalize?: boolean): string;
     normalize(path: string): string;
