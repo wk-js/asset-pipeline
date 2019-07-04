@@ -86,7 +86,7 @@ class Tree {
             print += tab + tree.files.join(`\n${tab}`);
             return print;
         }
-        return this.pipeline.resolve.output + '\n' + ptree(this.tree, "  ").replace(/\n\s+\n/g, '\n');
+        return this.pipeline.resolve.output() + '\n' + ptree(this.tree, "  ").replace(/\n\s+\n/g, '\n');
     }
 }
 exports.Tree = Tree;

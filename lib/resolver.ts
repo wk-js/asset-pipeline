@@ -1,6 +1,7 @@
 import { cleanPath, toUnixPath, removeSearch } from "./utils/path";
 import Path from "path";
 import { Pipeline } from "./pipeline";
+import { IPathObject, IAsset } from "./types";
 
 export class Resolver {
 
@@ -11,6 +12,12 @@ export class Resolver {
 
   constructor(private pipeline: Pipeline) { }
 
+  clone(resolve: Resolver) {
+    resolve.host = this.host
+    resolve.root(this._root)
+    resolve.output(this._output)
+  }
+
   root(path?: string) {
     if (path) {
       if (!Path.isAbsolute(path)) throw new Error('Root must be absolute')
@@ -19,29 +26,24 @@ export class Resolver {
     return this._root
   }
 
+  root_with(path: string) {
+    path = Path.join(this._root, cleanPath(path))
+    return cleanPath(path)
+  }
+
   output(path?: string) {
     if (path) this._output = cleanPath(path)
-
     return this._output
   }
 
-  output_with(path: string, is_absolute = true) {
+  output_with(path: string, absolute = true) {
     path = cleanPath(path)
-    if (is_absolute) {
-      path = Path.join(this.root(), this._output, path)
+    if (absolute) {
+      path = Path.join(this._root, this._output, path)
     } else {
       path = Path.join(this._output, path)
     }
     return cleanPath(path)
-  }
-
-  relative(from: string, to: string) {
-    from = cleanPath(from)
-    if (Path.isAbsolute(from)) from = Path.relative(this.root(), from)
-    to = cleanPath(to)
-    if (Path.isAbsolute(to)) to = Path.relative(this.root(), to)
-
-    return cleanPath(Path.relative(from, to))
   }
 
   path(path: string, from: string = this.pipeline.tree.tree.path) {
@@ -82,47 +84,69 @@ export class Resolver {
     return removeSearch(path)
   }
 
-  find_path(path: string) {
-    const load_path = this.pipeline.source.find_from(path, true)
-    if (!load_path) return path
-    const relative_path = this.relative(load_path, path)
-    const output = this.pipeline.resolve.path(relative_path)
-    return output
-  }
-
-  find_url(path: string) {
-    const load_path = this.pipeline.source.find_from(path, true)
-    if (!load_path) return path
-    const relative_path = this.relative(load_path, path)
-    const output = this.pipeline.resolve.url(relative_path)
-    return output
-  }
-
   asset(input: string) {
     return this.pipeline.manifest.get(input)
   }
 
-  source_from_output(output: string, is_absolute = false, normalize = false) {
+  source(output: string, is_absolute = false, normalize = false) {
     output = cleanPath(output)
 
     const items = this.pipeline.manifest.all()
-    let asset: any = null
+    const asset = (() => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-
-      if (item.output == output || item.cache == output) {
-        asset = item
-        break;
+        if (item.output == output || item.cache == output) {
+          return item
+        }
       }
-    }
+    })()
 
     let input = output
-    if (asset) input = this.pipeline.source.source_with(asset.load_path, asset.input, is_absolute)
+    if (asset) input = this.pipeline.source.with(asset.source, asset.input, is_absolute)
 
     input = cleanPath(input)
 
     return normalize ? Path.normalize(input) : input
+  }
+
+  parse(path: string) {
+    const root = this._root
+    const is_absolute = Path.isAbsolute(path)
+
+    // Build relative path
+    let relative = path
+    if (is_absolute) relative = Path.relative(root, path)
+
+    // Build full path
+    const full = Path.join(root, relative)
+
+    // Clean paths
+    const result: IPathObject = {
+      relative: cleanPath(relative),
+      full: cleanPath(full)
+    }
+
+    // Looking for source
+    const source = this.pipeline.source.find_from_input(result.relative)
+
+    // Build key and clean paths
+    if (source) {
+      result.source = cleanPath(source)
+      result.key = cleanPath(Path.relative(source, result.relative))
+    }
+
+    return result
+  }
+
+  relative(from: string, to: string) {
+    from = cleanPath(from)
+    if (Path.isAbsolute(from)) from = Path.relative(this._root, from)
+
+    to = cleanPath(to)
+    if (Path.isAbsolute(to)) to = Path.relative(this._root, to)
+
+    return cleanPath(Path.relative(from, to))
   }
 
   normalize(path: string) {

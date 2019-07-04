@@ -2,11 +2,18 @@ import { cleanPath } from "./utils/path";
 import Path from "path";
 import { Pipeline } from "./pipeline";
 
-export class SourceManager {
+export class Source {
 
   private _sources: string[] = []
 
   constructor(private pipeline: Pipeline) { }
+
+  clone(source: Source) {
+    for (let i = 0; i < this._sources.length; i++) {
+      const s = this._sources[i];
+      source.add(s)
+    }
+  }
 
   add(path: string) {
     path = cleanPath(path)
@@ -24,13 +31,14 @@ export class SourceManager {
     if (index > -1) this._sources.splice(index, 1)
   }
 
-  source_with(source: string, input: string, is_absolute: boolean = false) {
+  with(source: string, input: string, absolute: boolean = false) {
     input = cleanPath(input)
+    const root = this.pipeline.resolve.root()
 
-    if (is_absolute && !Path.isAbsolute(source)) {
-      source = Path.join(this.pipeline.resolve.root(), source)
-    } else if (!is_absolute && Path.isAbsolute(source)) {
-      source = Path.relative(this.pipeline.resolve.root(), source)
+    if (absolute && !Path.isAbsolute(source)) {
+      source = Path.join(root, source)
+    } else if (!absolute && Path.isAbsolute(source)) {
+      source = Path.relative(root, source)
     }
 
     input = Path.join(source, input)
@@ -45,7 +53,7 @@ export class SourceManager {
     })
   }
 
-  find_from(input: string, is_absolute: boolean = false) {
+  find_from_input(input: string, is_absolute: boolean = false) {
     if (Path.isAbsolute(input)) input = this.pipeline.resolve.relative(this.pipeline.resolve.root(), input)
     input = cleanPath(input)
 

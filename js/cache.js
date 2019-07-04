@@ -8,6 +8,11 @@ class Cache {
         this.type = 'hash';
         this.key = 'no_key';
     }
+    clone(cache) {
+        cache.enabled = this.enabled;
+        cache.type = this.type;
+        cache.key = this.key;
+    }
     hash(path) {
         const pathObject = path_1.parse(path);
         const hash = this.generateHash(path + this.key);

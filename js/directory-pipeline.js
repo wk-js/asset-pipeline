@@ -19,6 +19,13 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
     addEntry(input, output, parameters = {}) {
         return super.addEntry(input, output, parameters);
     }
+    clone(dir) {
+        for (let i = 0; i < this.rules.length; i++) {
+            const glob = this.rules[i];
+            dir.rules.push(glob);
+        }
+        return dir;
+    }
     fetch() {
         this._fetch()
             .map((asset) => {
@@ -26,16 +33,16 @@ class DirectoryPipeline extends file_pipeline_1.FilePipeline {
             return asset;
         })
             .forEach((item) => {
-            const glob = this.pipeline.source.source_with(item.load_path, item.input, true) + '/**/*';
+            const glob = this.pipeline.source.with(item.source, item.input, true) + '/**/*';
             // Handle files
             fs_1.fetch(glob).map((input) => {
-                input = this.pipeline.resolve.relative(item.load_path, input);
+                input = this.pipeline.resolve.relative(item.source, input);
                 const pathObject = path_1.default.parse(input);
                 pathObject.dir = this.pipeline.resolve.path(pathObject.dir);
                 const output = path_1.default.format(pathObject);
                 const rule = this.findRule(item.input);
                 const asset = {
-                    load_path: item.load_path,
+                    source: item.source,
                     input: path_2.cleanPath(input),
                     output: path_2.cleanPath(output),
                     cache: path_2.cleanPath(output)

@@ -9,7 +9,7 @@ export class MemoryStream extends Writable {
     memStore[this.key] = new Buffer('')
   }
 
-  _write( chunk: any, encoding: string, callback: (err?: Error) => void ) {
+  _write( chunk: Buffer|string, encoding: string, callback: (err?: Error) => void ) {
     var bf = Buffer.isBuffer(chunk) ? chunk : new Buffer(chunk)
     memStore[this.key] = Buffer.concat([memStore[this.key], bf])
     callback()

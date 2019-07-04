@@ -24,6 +24,10 @@ class Manifest {
         this.read = false;
         this.save = true;
     }
+    clone(manifest) {
+        manifest.read = this.read;
+        manifest.save = this.save;
+    }
     get manifest_path() {
         return `tmp/manifest-${this.pipeline.cache.key}.json`;
     }

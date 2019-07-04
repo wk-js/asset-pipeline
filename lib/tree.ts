@@ -111,7 +111,7 @@ export class Tree {
       return print
     }
 
-    return this.pipeline.resolve.output + '\n' + ptree(this.tree, "  ").replace(/\n\s+\n/g, '\n')
+    return this.pipeline.resolve.output() + '\n' + ptree(this.tree, "  ").replace(/\n\s+\n/g, '\n')
   }
 
 }

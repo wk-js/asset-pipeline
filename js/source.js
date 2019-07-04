@@ -5,10 +5,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("./utils/path");
 const path_2 = __importDefault(require("path"));
-class SourceManager {
+class Source {
     constructor(pipeline) {
         this.pipeline = pipeline;
         this._sources = [];
+    }
+    clone(source) {
+        for (let i = 0; i < this._sources.length; i++) {
+            const s = this._sources[i];
+            source.add(s);
+        }
     }
     add(path) {
         path = path_1.cleanPath(path);
@@ -25,13 +31,14 @@ class SourceManager {
         if (index > -1)
             this._sources.splice(index, 1);
     }
-    source_with(source, input, is_absolute = false) {
+    with(source, input, absolute = false) {
         input = path_1.cleanPath(input);
-        if (is_absolute && !path_2.default.isAbsolute(source)) {
-            source = path_2.default.join(this.pipeline.resolve.root(), source);
+        const root = this.pipeline.resolve.root();
+        if (absolute && !path_2.default.isAbsolute(source)) {
+            source = path_2.default.join(root, source);
         }
-        else if (!is_absolute && path_2.default.isAbsolute(source)) {
-            source = path_2.default.relative(this.pipeline.resolve.root(), source);
+        else if (!absolute && path_2.default.isAbsolute(source)) {
+            source = path_2.default.relative(root, source);
         }
         input = path_2.default.join(source, input);
         return path_1.cleanPath(input);
@@ -43,7 +50,7 @@ class SourceManager {
             return path_1.cleanPath(path_2.default.join(this.pipeline.resolve.root(), source));
         });
     }
-    find_from(input, is_absolute = false) {
+    find_from_input(input, is_absolute = false) {
         if (path_2.default.isAbsolute(input))
             input = this.pipeline.resolve.relative(this.pipeline.resolve.root(), input);
         input = path_1.cleanPath(input);
@@ -97,4 +104,4 @@ class SourceManager {
         return new_items;
     }
 }
-exports.SourceManager = SourceManager;
+exports.Source = Source;

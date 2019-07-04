@@ -4,7 +4,7 @@ import { Manifest } from "./manifest";
 import { FileSystem } from "./file-system";
 import { Tree } from "./tree";
 import { Resolver } from "./resolver";
-import { SourceManager } from "./source-manager";
+import { Source } from "./source";
 import { Cache } from "./cache";
 
 export class Pipeline {
@@ -12,13 +12,25 @@ export class Pipeline {
   verbose: boolean = false
 
   cache = new Cache()
-  source = new SourceManager(this)
+  source = new Source(this)
   directory = new DirectoryPipeline(this)
   file = new FilePipeline(this)
   manifest = new Manifest(this)
   resolve = new Resolver(this)
   tree = new Tree(this)
   fs = new FileSystem(this)
+
+  clone() {
+    const p = new Pipeline()
+    this.cache.clone(p.cache)
+    this.source.clone(p.source)
+    this.directory.clone(p.directory)
+    this.file.clone(p.file)
+    this.manifest.clone(p.manifest)
+    this.resolve.clone(p.resolve)
+    this.fs.clone(p.fs)
+    return p
+  }
 
   fetch(force?: boolean) {
     force = force ? force : !this.manifest.read

@@ -11,6 +11,7 @@ export declare class FileSystem {
     copy(glob: string): void;
     symlink(glob: string): void;
     ignore(glob: string): void;
+    clone(fs: FileSystem): FileSystem;
     apply(): Promise<void>;
     protected _apply(type: string): Promise<void>;
 }

@@ -41,6 +41,14 @@ export class FileSystem {
     })
   }
 
+  clone(fs: FileSystem) {
+    for (let i = 0; i < this.globs.length; i++) {
+      const glob = this.globs[i];
+      fs.globs.push( glob )
+    }
+    return fs
+  }
+
   async apply() {
     const types = ['move', 'copy', 'symlink']
     for (let i = 0; i < types.length; i++) {
@@ -50,14 +58,14 @@ export class FileSystem {
 
   protected async _apply(type: string) {
 
-    const validGlobs = this.pipeline.source.filter_and_map(this.globs, (item, load_path) => {
+    const validGlobs = this.pipeline.source.filter_and_map(this.globs, (item, source) => {
       if (item.action !== type) return false
-      return this.pipeline.source.source_with(load_path, item.glob, true)
+      return this.pipeline.source.with(source, item.glob, true)
     })
 
-    const ignoredGlobs = this.pipeline.source.filter_and_map(this.globs, (item, load_path) => {
+    const ignoredGlobs = this.pipeline.source.filter_and_map(this.globs, (item, source) => {
       if (item.action !== 'ignore') return false
-      return this.pipeline.source.source_with(load_path, item.glob, true)
+      return this.pipeline.source.with(source, item.glob, true)
     })
 
     const files = (
@@ -67,8 +75,8 @@ export class FileSystem {
         fetch(validGlobs, ignoredGlobs)
     )
 
-    const ios = this.pipeline.source.filter_and_map(files, (file, load_path) => {
-      const relative_file = this.pipeline.resolve.relative(load_path, file)
+    const ios = this.pipeline.source.filter_and_map(files, (file, source) => {
+      const relative_file = this.pipeline.resolve.relative(source, file)
 
       // Future
       // Maybe copy only resolved files

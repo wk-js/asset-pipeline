@@ -68,7 +68,7 @@ describe("Files", () => {
     const assets = AP.manifest.all()
     assert.equal(assets.length, 3)
     assert.deepEqual(assets.map((asset) => asset.input), ['file7.txt', 'file8.txt', 'file9.txt'])
-    assert.deepEqual(assets.map((asset) => asset.load_path), [
+    assert.deepEqual(assets.map((asset) => asset.source), [
       'tmp/test-units/sub0/sub1',
       'tmp/test-units/sub0/sub1',
       'tmp/test-units/sub0/sub1'
@@ -98,7 +98,7 @@ describe("Files", () => {
     assert.deepEqual(assets.map((asset) => asset.input), ['file10.txt', 'file11.txt', 'file12.txt'])
   })
 
-  it.only('Paths', async () => {
+  it('Paths', async () => {
     const AP = await setup(async (AP) => {
       AP.resolve.host = 'http://mycdn.com/'
       AP.source.add( LOAD_PATH )
@@ -112,15 +112,27 @@ describe("Files", () => {
         assert.equal(AP.resolve.url(asset.input), 'http://mycdn.com/file1.txt?v=1')
         assert.equal(AP.resolve.clean_path(asset.input), 'file1.txt')
         assert.equal(AP.resolve.clean_url(asset.input), 'http://mycdn.com/file1.txt')
-        assert.equal(AP.resolve.source_from_output(asset.output), 'tmp/test-units/file1.txt')
-        assert.equal(AP.resolve.source_from_output(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file1.txt')))
+        assert.equal(AP.resolve.source(asset.output), 'tmp/test-units/file1.txt')
+        assert.equal(AP.resolve.source(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file1.txt')))
+        assert.deepEqual(AP.resolve.parse(toUnixPath(join(__dirname, '../tmp/test-units/file1.txt'))), {
+          relative: "tmp/test-units/file1.txt",
+          full: toUnixPath(join(__dirname, '../tmp/test-units/file1.txt')),
+          source: "tmp/test-units",
+          key: "file1.txt"
+        })
       } else {
         assert.equal(AP.resolve.path(asset.input), 'file.txt')
         assert.equal(AP.resolve.url(asset.input), 'http://mycdn.com/file.txt')
         assert.equal(AP.resolve.clean_path(asset.input), 'file.txt')
         assert.equal(AP.resolve.clean_url(asset.input), 'http://mycdn.com/file.txt')
-        assert.equal(AP.resolve.source_from_output(asset.output), 'tmp/test-units/file.txt.ejs')
-        assert.equal(AP.resolve.source_from_output(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file.txt.ejs')))
+        assert.equal(AP.resolve.source(asset.output), 'tmp/test-units/file.txt.ejs')
+        assert.equal(AP.resolve.source(asset.output, true), toUnixPath(join(__dirname, '../tmp/test-units/file.txt.ejs')))
+        assert.deepEqual(AP.resolve.parse(toUnixPath(join(__dirname, '../tmp/test-units/file.txt.ejs'))), {
+          relative: "tmp/test-units/file.txt.ejs",
+          full: toUnixPath(join(__dirname, '../tmp/test-units/file.txt.ejs')),
+          source: "tmp/test-units",
+          key: "file.txt.ejs"
+        })
       }
     })
   })

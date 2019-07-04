@@ -28,7 +28,7 @@ export interface IMatchRule extends IFileRule {
 }
 
 export interface IAsset {
-  load_path: string,
+  source: string,
   input: string,
   output: string,
   cache: string,
@@ -43,4 +43,11 @@ export interface IManifest {
   output: string,
   root: string,
   assets: Record<string, IAsset>
+}
+
+export interface IPathObject {
+  relative: string,
+  full: string,
+  source?: string,
+  key?: string
 }

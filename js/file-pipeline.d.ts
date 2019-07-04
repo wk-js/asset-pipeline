@@ -8,6 +8,7 @@ export declare class FilePipeline {
     add(glob: string, parameters?: IFileRule): void;
     addEntry(input: string, output: string, parameters?: IFileRule): void;
     ignore(glob: string): void;
+    clone(file: FilePipeline): FilePipeline;
     fetch(): void;
     protected _fetch(): IAsset[];
     private _fetcher;

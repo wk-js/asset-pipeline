@@ -20,6 +20,11 @@ export class Manifest {
 
   constructor(private pipeline: Pipeline) { }
 
+  clone(manifest: Manifest) {
+    manifest.read = this.read
+    manifest.save = this.save
+  }
+
   get manifest_path() {
     return `tmp/manifest-${this.pipeline.cache.key}.json`
   }

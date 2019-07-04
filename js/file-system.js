@@ -39,6 +39,13 @@ class FileSystem {
             action: 'ignore'
         });
     }
+    clone(fs) {
+        for (let i = 0; i < this.globs.length; i++) {
+            const glob = this.globs[i];
+            fs.globs.push(glob);
+        }
+        return fs;
+    }
     apply() {
         return __awaiter(this, void 0, void 0, function* () {
             const types = ['move', 'copy', 'symlink'];
@@ -49,22 +56,22 @@ class FileSystem {
     }
     _apply(type) {
         return __awaiter(this, void 0, void 0, function* () {
-            const validGlobs = this.pipeline.source.filter_and_map(this.globs, (item, load_path) => {
+            const validGlobs = this.pipeline.source.filter_and_map(this.globs, (item, source) => {
                 if (item.action !== type)
                     return false;
-                return this.pipeline.source.source_with(load_path, item.glob, true);
+                return this.pipeline.source.with(source, item.glob, true);
             });
-            const ignoredGlobs = this.pipeline.source.filter_and_map(this.globs, (item, load_path) => {
+            const ignoredGlobs = this.pipeline.source.filter_and_map(this.globs, (item, source) => {
                 if (item.action !== 'ignore')
                     return false;
-                return this.pipeline.source.source_with(load_path, item.glob, true);
+                return this.pipeline.source.with(source, item.glob, true);
             });
             const files = (type === 'symlink' ?
                 fs_1.fetchDirs(validGlobs, ignoredGlobs)
                 :
                     fs_1.fetch(validGlobs, ignoredGlobs));
-            const ios = this.pipeline.source.filter_and_map(files, (file, load_path) => {
-                const relative_file = this.pipeline.resolve.relative(load_path, file);
+            const ios = this.pipeline.source.filter_and_map(files, (file, source) => {
+                const relative_file = this.pipeline.resolve.relative(source, file);
                 // Future
                 // Maybe copy only resolved files
                 // this.pipeline.tree.is_resolved( relative_file )

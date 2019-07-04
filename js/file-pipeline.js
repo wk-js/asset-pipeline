@@ -44,6 +44,13 @@ class FilePipeline {
         };
         this.rules.push(parameters);
     }
+    clone(file) {
+        for (let i = 0; i < this.rules.length; i++) {
+            const glob = this.rules[i];
+            file.rules.push(glob);
+        }
+        return file;
+    }
     fetch() {
         this._fetch().forEach(this.resolve.bind(this));
     }
@@ -55,19 +62,19 @@ class FilePipeline {
             const rule = this.rules[i];
             this.pipeline.source.all(true).forEach((source) => {
                 if ("ignore" in rule && rule.ignore) {
-                    ignores.push(this.pipeline.source.source_with(source, rule.glob, true));
+                    ignores.push(this.pipeline.source.with(source, rule.glob, true));
                 }
                 else {
-                    globs.push(this.pipeline.source.source_with(source, rule.glob, true));
+                    globs.push(this.pipeline.source.with(source, rule.glob, true));
                 }
             });
         }
         const assets = fetcher(globs, ignores)
             .map((file) => {
-            const source = this.pipeline.source.find_from(file, true);
+            const source = this.pipeline.source.find_from_input(file, true);
             const input = this.pipeline.resolve.relative(source, file);
             return {
-                load_path: this.pipeline.resolve.relative(this.pipeline.resolve.root(), source),
+                source: this.pipeline.resolve.relative(this.pipeline.resolve.root(), source),
                 input: input,
                 output: input,
                 cache: input,

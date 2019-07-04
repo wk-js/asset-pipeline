@@ -6,6 +6,7 @@ export declare class Manifest {
     read: boolean;
     save: boolean;
     constructor(pipeline: Pipeline);
+    clone(manifest: Manifest): void;
     readonly manifest_path: string;
     fileExists(): boolean;
     create_file(): Promise<void>;

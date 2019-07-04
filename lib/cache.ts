@@ -1,5 +1,6 @@
 import { join, parse } from "path";
 import { createHash } from "crypto";
+import { clone } from "lol/utils/object";
 
 
 export class Cache {
@@ -7,6 +8,12 @@ export class Cache {
   enabled: boolean = false
   type: string = 'hash'
   key: string | number = 'no_key'
+
+  clone(cache: Cache) {
+    cache.enabled = this.enabled
+    cache.type = this.type
+    cache.key = this.key
+  }
 
   hash(path: string) {
     const pathObject = parse(path)
