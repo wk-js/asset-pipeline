@@ -1,18 +1,18 @@
 import { join, parse } from "path";
 import { createHash } from "crypto";
-import { clone } from "lol/utils/object";
-
 
 export class Cache {
 
   enabled: boolean = false
   type: string = 'hash'
   key: string | number = 'no_key'
+  private count = 0
 
   clone(cache: Cache) {
+    this.count++
     cache.enabled = this.enabled
     cache.type = this.type
-    cache.key = this.key
+    cache.key = this.key + " copy " + this.count
   }
 
   hash(path: string) {
