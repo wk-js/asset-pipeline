@@ -7,13 +7,10 @@ class Cache {
         this.enabled = false;
         this.type = 'hash';
         this.key = 'no_key';
-        this.count = 0;
     }
     clone(cache) {
-        this.count++;
         cache.enabled = this.enabled;
         cache.type = this.type;
-        cache.key = this.key + " copy " + this.count;
     }
     hash(path) {
         const pathObject = path_1.parse(path);

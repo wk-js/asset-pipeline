@@ -9,7 +9,7 @@ const resolver_1 = require("./resolver");
 const source_1 = require("./source");
 const cache_1 = require("./cache");
 class Pipeline {
-    constructor() {
+    constructor(key) {
         this.verbose = false;
         this.cache = new cache_1.Cache();
         this.source = new source_1.Source(this);
@@ -19,9 +19,10 @@ class Pipeline {
         this.resolve = new resolver_1.Resolver(this);
         this.tree = new tree_1.Tree(this);
         this.fs = new file_system_1.FileSystem(this);
+        this.cache.key = key;
     }
-    clone() {
-        const p = new Pipeline();
+    clone(key) {
+        const p = new Pipeline(key);
         this.cache.clone(p.cache);
         this.source.clone(p.source);
         this.directory.clone(p.directory);

@@ -10,7 +10,7 @@ const LOAD_PATH = 'tmp/test-units'
 const DST_PATH = 'tmp/test-units-dist'
 
 async function setup(callback: (pipeline: Pipeline) => void) {
-  const AP = new AssetPipeline()
+  const AP = new AssetPipeline("test")
   // AP.source.add( LOAD_PATH )
   AP.resolve.output(DST_PATH)
   AP.manifest.save = false

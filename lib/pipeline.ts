@@ -20,8 +20,12 @@ export class Pipeline {
   tree = new Tree(this)
   fs = new FileSystem(this)
 
-  clone() {
-    const p = new Pipeline()
+  constructor(key: string) {
+    this.cache.key = key
+  }
+
+  clone(key: string) {
+    const p = new Pipeline(key)
     this.cache.clone(p.cache)
     this.source.clone(p.source)
     this.directory.clone(p.directory)

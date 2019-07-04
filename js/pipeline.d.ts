@@ -16,7 +16,8 @@ export declare class Pipeline {
     resolve: Resolver;
     tree: Tree;
     fs: FileSystem;
-    clone(): Pipeline;
+    constructor(key: string);
+    clone(key: string): Pipeline;
     fetch(force?: boolean): Promise<void>;
     log(...args: any[]): void;
 }

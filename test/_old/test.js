@@ -1,6 +1,6 @@
 const { AssetPipeline, AssetFileSystem } = require('../../js')
 
-const p = new AssetPipeline()
+const p = new AssetPipeline("test")
 p.resolve.root(__dirname)
 p.source.add('./app')
 p.source.add('./shaders')
