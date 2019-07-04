@@ -194,7 +194,7 @@ describe("Directory", () => {
     view.push('  r_sub0')
     view.push('    r_sub1')
     view.push('      file8.txt?')
-    view.push('  file9.txt?2ad93d4838a65697a68da7e6ff4cc758')
+    view.push('  file9.txt?129bcb914b0f005aebf3b66529e36473')
 
     assert.equal(AP.tree.view(), view.join('\n'));
   })
