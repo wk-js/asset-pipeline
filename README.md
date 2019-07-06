@@ -18,16 +18,17 @@ Handle your assets like a boss
 
 ```js
 const { AssetPipeline } = require('asset-pipeline')
-const pipeline = new AssetPipeline()
+const hash_key = Date.now()
+const pipeline = new AssetPipeline(hash_key)
 
 // Add multiple source path
 pipeline.source.add('./app')
 
 // Add multiple source path
-pipeline.resolve.output = './public'
+pipeline.resolve.output('./public')
 
-// Set the root path
-pipeline.resolve.root = process.cwd()
+// Set the root path (must be absolute)
+pipeline.resolve.root(process.cwd())
 
 // Enable cache-break
 pipeline.cache.enabled = false
@@ -36,7 +37,7 @@ pipeline.cache.enabled = false
 pipeline.cache.type = 'hash'
 
 // Hash key for cache-break and manifest file name
-pipeline.cache.key = Math.random()
+pipeline.cache.key = hash_key
 
 // Force asset-pipeline to resolve at each .resolve() call
 pipeline.manifest.read = false
@@ -48,22 +49,29 @@ pipeline.manifest.save = true
 pipeline.resolve.host = 'http://mycdn.com'
 
 // Register file
-pipeline.file.add('views/page.html', {
+pipeline.file.add('views/page.html.ejs', {
   // Ignore these files
   ignore: false,
 
   // Enable cache-break
   cache: false,
+
   // Instead of using options, you can override the output path
-  rename: function(output, file, rules) {
-    return 'index.html'
-  },
+  rename: "#{name}",
 
   // Remove directory path
   keep_path: false,
 
   // Change base directory
   base_dir: '.',
+})
+
+// Register file
+pipeline.file.add('views/home.html.ejs', {
+  // You can pass a function
+  rename: function(output, file, rules) {
+    return 'index.html'
+  }
 })
 
 // Register multiple files
@@ -100,6 +108,9 @@ pipeline.fetch().then(() => {
   const asset = pipeline.resolve.asset('scripts/vendors/index.js')
   console.log(pipeline.resolve.source(asset.output)) // 'scripts/vendors/index.js'
   console.log(pipeline.resolve.source(asset.output, true)) // '/User/someone/Documents/sample/scripts/vendors/index.js'
+
+  // Fetch full path, relative path, source path, asset key
+  console.log(pipelone.resolve.parse('scripts/vendors/index.js'))
 
   // Execute copy/move/symlinks
   pipeline.fs.apply()
