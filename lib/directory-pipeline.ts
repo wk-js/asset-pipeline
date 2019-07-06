@@ -1,8 +1,7 @@
 import Path from "path";
-import { fetch } from "./utils/fs";
+import { fetch } from "lol/js/node/fs";
 import { FilePipeline } from "./file-pipeline";
 import { IAsset, IDirectoryRule } from "./types";
-import { expose } from "lol/utils/object";
 import minimatch from "minimatch";
 import { Pipeline } from "./pipeline";
 import { cleanPath } from "./utils/path";

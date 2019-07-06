@@ -1,6 +1,6 @@
 import "mocha";
 import { AssetPipeline } from "../lib/index";
-import { writeFile, ensureDir, removeDir, fetch, isDirectory } from "../lib/utils/fs";
+import { writeFile, ensureDir, removeDir, fetch, isDirectory } from "lol/js/node/fs";
 import Path, { basename, join } from "path";
 import * as assert from "assert";
 import { Pipeline } from "../lib/pipeline";

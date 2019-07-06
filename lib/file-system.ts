@@ -1,4 +1,4 @@
-import { fetch, copy, move, fetchDirs, symlink2 } from "./utils/fs";
+import { fetch, copy, move, fetchDirs, symlink2 } from "lol/js/node/fs";
 import { Pipeline } from "./pipeline"
 import { relative } from "path";
 

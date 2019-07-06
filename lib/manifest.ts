@@ -1,7 +1,6 @@
 import { Pipeline } from "./pipeline"
-import { writeFile, isFile, readFile, remove } from "./utils/fs";
+import { writeFile, isFile, readFile, remove } from "lol/js/node/fs";
 import { IAsset, IManifest } from "./types";
-import { expose } from "lol/utils/object";
 import { cleanPath } from "./utils/path";
 
 export class Manifest {

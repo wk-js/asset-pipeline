@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = __importDefault(require("path"));
-const fs_1 = require("./utils/fs");
+const fs_1 = require("lol/js/node/fs");
 const file_pipeline_1 = require("./file-pipeline");
 const minimatch_1 = __importDefault(require("minimatch"));
 const path_2 = require("./utils/path");

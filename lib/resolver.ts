@@ -1,7 +1,7 @@
-import { cleanPath, toUnixPath, removeSearch } from "./utils/path";
+import { cleanPath, removeSearch } from "./utils/path";
 import Path from "path";
 import { Pipeline } from "./pipeline";
-import { IPathObject, IAsset } from "./types";
+import { IPathObject } from "./types";
 
 export class Resolver {
 

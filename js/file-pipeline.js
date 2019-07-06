@@ -4,12 +4,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("path");
-const string_1 = require("lol/utils/string");
-const object_1 = require("lol/utils/object");
+const template_1 = require("lol/js/string/template");
+const object_1 = require("lol/js/object");
 const minimatch_1 = __importDefault(require("minimatch"));
 const path_2 = require("./utils/path");
-const array_1 = require("lol/utils/array");
-const fs_1 = require("./utils/fs");
+const array_1 = require("lol/js/array");
+const fs_1 = require("lol/js/node/fs");
 const TemplateOptions = {
     open: '#{',
     body: '[a-z@$#-_?!]+',
@@ -152,8 +152,8 @@ class FilePipeline {
             }
             else if (typeof rule.rename === 'string') {
                 pathObject = path_1.parse(output);
-                output = string_1.template2(rule.rename, Object.assign({ hash: "" }, pathObject), TemplateOptions);
-                cache = string_1.template2(rule.rename, Object.assign({ hash: this.pipeline.cache.enabled && rule.cache ? this.pipeline.cache.generateHash(output + this.pipeline.cache.key) : '' }, pathObject), TemplateOptions);
+                output = template_1.template2(rule.rename, Object.assign({ hash: "" }, pathObject), TemplateOptions);
+                cache = template_1.template2(rule.rename, Object.assign({ hash: this.pipeline.cache.enabled && rule.cache ? this.pipeline.cache.generateHash(output + this.pipeline.cache.key) : '' }, pathObject), TemplateOptions);
             }
         }
         const asset = this.pipeline.manifest.get(file);

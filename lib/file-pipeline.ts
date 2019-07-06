@@ -1,12 +1,12 @@
 import { Pipeline } from "./pipeline"
 import { join, relative, basename, parse, format } from "path";
-import { template2 } from "lol/utils/string";
+import { template2 } from "lol/js/string/template";
 import { IFileRule, IAsset, IMatchRule } from "./types";
-import { clone } from "lol/utils/object";
+import { clone } from "lol/js/object";
 import minimatch from "minimatch";
 import { cleanPath } from "./utils/path";
-import { unique } from "lol/utils/array";
-import { fetch, fetchDirs } from "./utils/fs";
+import { unique } from "lol/js/array";
+import { fetch, fetchDirs } from "lol/js/node/fs";
 
 const TemplateOptions = {
   open: '#{',

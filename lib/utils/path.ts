@@ -1,5 +1,3 @@
-import Path, { normalize } from 'path';
-
 /**
  * Clean path
  */

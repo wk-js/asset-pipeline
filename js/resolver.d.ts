@@ -1,5 +1,5 @@
 import { Pipeline } from "./pipeline";
-import { IPathObject, IAsset } from "./types";
+import { IPathObject } from "./types";
 export declare class Resolver {
     private pipeline;
     private _output;
@@ -16,7 +16,7 @@ export declare class Resolver {
     url(path: string, from?: string): string;
     clean_path(path: string, fromPath?: string): string;
     clean_url(path: string, fromPath?: string): string;
-    asset(input: string): IAsset | null;
+    asset(input: string): import("./types").IAsset | null;
     source(output: string, is_absolute?: boolean, normalize?: boolean): string;
     parse(path: string): IPathObject;
     relative(from: string, to: string): string;

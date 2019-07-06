@@ -1,6 +1,5 @@
 import { cleanPath, toUnixPath } from "./utils/path";
 import Path from "path";
-import { Resolver } from "./resolver";
 import { Pipeline } from "./pipeline";
 
 export interface TreeInterface {

@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = require("./utils/fs");
+const fs_1 = require("lol/js/node/fs");
 const path_1 = require("path");
 class FileSystem {
     constructor(pipeline) {
