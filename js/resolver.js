@@ -57,11 +57,12 @@ class Resolver {
     }
     url(path, from) {
         path = this.path(path, from);
-        if (this.host) {
-            const url = new URL(path, this.host);
-            path = url.href;
+        const host = this.host ? this.host : "https://localhost";
+        const url = new URL(path, host);
+        if (url.href.match(/localhost/)) {
+            return url.pathname + url.search;
         }
-        return path;
+        return url.href;
     }
     clean_path(path, fromPath) {
         path = this.path(path, fromPath);

@@ -137,6 +137,41 @@ describe("Files", () => {
     })
   })
 
+  it('Urls', async () => {
+    const AP0 = await setup(async (AP0) => {
+      AP0.source.add( LOAD_PATH )
+      AP0.file.add('file1.txt', { rename: "#{dir}/#{name}#{ext}?v=1" })
+      AP0.file.add('file.txt.ejs', { rename: "#{name}" })
+    })
+
+    AP0.manifest.all().forEach((asset) => {
+      if (asset.input.match(/file1\.txt/)) {
+        assert.equal(AP0.resolve.url(asset.input), '/file1.txt?v=1')
+        assert.equal(AP0.resolve.clean_url(asset.input), '/file1.txt')
+      } else {
+        assert.equal(AP0.resolve.url(asset.input), '/file.txt')
+        assert.equal(AP0.resolve.clean_url(asset.input), '/file.txt')
+      }
+    })
+
+    const AP1 = await setup(async (AP1) => {
+      AP1.resolve.host = 'http://mycdn.com/'
+      AP1.source.add( LOAD_PATH )
+      AP1.file.add('file1.txt', { rename: "#{dir}/#{name}#{ext}?v=1" })
+      AP1.file.add('file.txt.ejs', { rename: "#{name}" })
+    })
+
+    AP1.manifest.all().forEach((asset) => {
+      if (asset.input.match(/file1\.txt/)) {
+        assert.equal(AP1.resolve.url(asset.input), 'http://mycdn.com/file1.txt?v=1')
+        assert.equal(AP1.resolve.clean_url(asset.input), 'http://mycdn.com/file1.txt')
+      } else {
+        assert.equal(AP1.resolve.url(asset.input), 'http://mycdn.com/file.txt')
+        assert.equal(AP1.resolve.clean_url(asset.input), 'http://mycdn.com/file.txt')
+      }
+    })
+  })
+
 })
 
 describe("Directory", () => {
