@@ -38,4 +38,11 @@ export interface IPathObject {
     source?: string;
     key?: string;
 }
+export interface IOutput {
+    input: string;
+    output: {
+        path: string;
+        url: string;
+    };
+}
 export {};

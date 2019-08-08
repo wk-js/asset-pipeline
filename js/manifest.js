@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("lol/js/node/fs");
 const path_1 = require("./utils/path");
+const object_1 = require("lol/js/object");
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;
@@ -82,6 +83,28 @@ class Manifest {
     }
     all() {
         return Object.keys(this._file.assets).map((key) => this._file.assets[key]);
+    }
+    all_by_key() {
+        return object_1.clone(this._file.assets);
+    }
+    all_outputs() {
+        return Object.keys(this._file.assets).map((key) => {
+            const input = this._file.assets[key].input;
+            return {
+                input,
+                output: {
+                    path: this.pipeline.resolve.path(input),
+                    url: this.pipeline.resolve.url(input),
+                }
+            };
+        });
+    }
+    all_outputs_by_key() {
+        const outputs = {};
+        this.all_outputs().forEach((output) => {
+            outputs[output.input] = output;
+        });
+        return outputs;
     }
 }
 exports.Manifest = Manifest;

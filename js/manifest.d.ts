@@ -1,5 +1,5 @@
 import { Pipeline } from "./pipeline";
-import { IAsset } from "./types";
+import { IAsset, IOutput } from "./types";
 export declare class Manifest {
     private pipeline;
     private _file;
@@ -17,4 +17,7 @@ export declare class Manifest {
     has(input: string): boolean;
     set(asset: IAsset): void;
     all(): IAsset[];
+    all_by_key(): Record<string, IAsset>;
+    all_outputs(): IOutput[];
+    all_outputs_by_key(): Record<string, IOutput>;
 }
