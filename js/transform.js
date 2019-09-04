@@ -116,7 +116,7 @@ class Transform {
         // Rename output
         if ("rename" in rule) {
             if (typeof rule.rename === 'function') {
-                output = rule.rename(output, file, rule);
+                output = cache = rule.rename(output, file, rule);
                 rule.rename = output;
             }
             else if (typeof rule.rename === 'string') {
