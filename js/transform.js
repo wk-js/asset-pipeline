@@ -122,7 +122,11 @@ class Transform {
             else if (typeof rule.rename === 'string') {
                 pathObject = path_1.parse(output);
                 output = template_1.template2(rule.rename, Object.assign({ hash: "" }, pathObject), TemplateOptions);
-                cache = template_1.template2(rule.rename, Object.assign({ hash: pipeline.cache.enabled && rule.cache ? pipeline.cache.generateHash(output + pipeline.cache.key) : '' }, pathObject), TemplateOptions);
+                let hash = '';
+                if ((typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled) || pipeline.cache.enabled) {
+                    hash = pipeline.cache.generateHash(output + pipeline.cache.key);
+                }
+                cache = template_1.template2(rule.rename, Object.assign({ hash }, pathObject), TemplateOptions);
             }
         }
         const asset = pipeline.manifest.get(file);

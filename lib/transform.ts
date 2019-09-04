@@ -142,8 +142,15 @@ export class Transform {
           hash: "",
           ...pathObject
         }, TemplateOptions)
+
+        let hash = ''
+
+        if ((typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled) || pipeline.cache.enabled) {
+          hash = pipeline.cache.generateHash(output + pipeline.cache.key)
+        }
+
         cache = template2(rule.rename, {
-          hash: pipeline.cache.enabled && rule.cache ? pipeline.cache.generateHash(output + pipeline.cache.key) : '',
+          hash,
           ...pathObject
         }, TemplateOptions)
       }
