@@ -6,7 +6,7 @@ export class Source {
 
   private _sources: string[] = []
 
-  constructor(private pipeline: Pipeline) { }
+  constructor(private pipeline: Pipeline) {}
 
   clone(source: Source) {
     for (let i = 0; i < this._sources.length; i++) {

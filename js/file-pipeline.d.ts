@@ -1,18 +1,38 @@
 import { Pipeline } from "./pipeline";
-import { IFileRule, IAsset, IMatchRule } from "./types";
-export declare class FilePipeline {
-    pipeline: Pipeline;
-    rules: IMatchRule[];
-    type: "file" | "directory";
-    constructor(pipeline: Pipeline);
-    add(glob: string, parameters?: IFileRule): void;
-    addEntry(input: string, output: string, parameters?: IFileRule): void;
-    ignore(glob: string): void;
+import { IAsset, IFileRule, IPipeline } from "./types";
+import { Transform } from "./transform";
+export declare class FilePipeline implements IPipeline {
+    /**
+     * Pipeline type
+     */
+    readonly type = "file";
+    /**
+     * Transformation rules
+     */
+    rules: Transform;
+    protected _shadows: IAsset[];
+    protected _globToAdd: string[];
+    protected _globToIgnore: string[];
+    /**
+     * Add file pattern
+     */
+    add(pattern: string, transformRule?: IFileRule): void;
+    /**
+     * Add file pattern to ignore
+     */
+    ignore(pattern: string): void;
+    /**
+     * Add non-existing file to the manifest. Rules are applied.
+     */
+    shadow(file: string): void;
+    /**
+     * Clone the pipeline
+     */
     clone(file: FilePipeline): FilePipeline;
-    fetch(): void;
-    protected _fetch(): IAsset[];
+    /**
+     * Collect a list of files matching patterns, then apply transformation rules
+     */
+    fetch(pipeline: Pipeline): void;
+    protected _fetch(pipeline: Pipeline): IAsset[];
     private _fetcher;
-    protected findRule(path: string): IMatchRule;
-    protected resolve(asset: IAsset): void;
-    protected resolveOutput(file: string, rule: IMatchRule): void;
 }

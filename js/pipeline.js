@@ -13,8 +13,8 @@ class Pipeline {
         this.verbose = false;
         this.cache = new cache_1.Cache();
         this.source = new source_1.Source(this);
-        this.directory = new directory_pipeline_1.DirectoryPipeline(this);
-        this.file = new file_pipeline_1.FilePipeline(this);
+        this.directory = new directory_pipeline_1.DirectoryPipeline();
+        this.file = new file_pipeline_1.FilePipeline();
         this.manifest = new manifest_1.Manifest(this);
         this.resolve = new resolver_1.Resolver(this);
         this.tree = new tree_1.Tree(this);
@@ -36,10 +36,10 @@ class Pipeline {
         force = force ? force : !this.manifest.read;
         if (force || !this.manifest.fileExists()) {
             this.log('[AssetPipeline] Fetch directories');
-            this.directory.fetch();
+            this.directory.fetch(this);
             this.tree.update();
             this.log('[AssetPipeline] Fetch files');
-            this.file.fetch();
+            this.file.fetch(this);
             this.tree.update();
             this.log('[AssetPipeline] Clean resolved paths');
             this.resolve.clean_used();

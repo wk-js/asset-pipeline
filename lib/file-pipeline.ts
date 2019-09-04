@@ -1,198 +1,115 @@
 import { Pipeline } from "./pipeline"
-import { join, relative, basename, parse, format } from "path";
-import { template2 } from "lol/js/string/template";
-import { IFileRule, IAsset, IMatchRule } from "./types";
-import { clone } from "lol/js/object";
-import minimatch from "minimatch";
-import { cleanPath } from "./utils/path";
+import { IAsset, IFileRule, IPipeline } from "./types";
+import { Transform } from "./transform";
 import { unique } from "lol/js/array";
-import { fetch, fetchDirs } from "lol/js/node/fs";
+import { fetchDirs, fetch } from "lol/js/node/fs";
 
-const TemplateOptions = {
-  open: '#{',
-  body: '[a-z@$#-_?!]+',
-  close: '}'
-}
+export class FilePipeline implements IPipeline {
 
-export class FilePipeline {
+  /**
+   * Pipeline type
+   */
+  readonly type = 'file'
 
-  rules: IMatchRule[] = []
-  type: "file" | "directory" = 'file'
+  /**
+   * Transformation rules
+   */
+  rules = new Transform()
 
-  constructor(public pipeline: Pipeline) { }
+  protected _shadows: IAsset[] = []
+  protected _globToAdd: string[] = []
+  protected _globToIgnore: string[] = []
 
-  add(glob: string, parameters: IFileRule = {}) {
-    glob = cleanPath(glob)
-
-    const params: IMatchRule = parameters = Object.assign({
-      glob: glob
-    }, parameters)
-    params.glob = glob
-
-    this.rules.push(params)
+  /**
+   * Add file pattern
+   */
+  add(pattern: string, transformRule?: IFileRule) {
+    this._globToAdd.push(pattern)
+    if (transformRule) this.rules.add(pattern, transformRule)
   }
 
-  addEntry(input: string, output: string, parameters: IFileRule = {}) {
-    parameters = Object.assign({
-      rename: output,
-      keep_path: false
-    }, parameters)
-    this.add(input, parameters)
+  /**
+   * Add file pattern to ignore
+   */
+  ignore(pattern: string) {
+    this._globToIgnore.push(pattern)
   }
 
-  ignore(glob: string) {
-    glob = cleanPath(glob)
-
-    const parameters = {
-      glob: glob,
-      ignore: true
-    }
-
-    this.rules.push(parameters)
+  /**
+   * Add non-existing file to the manifest. Rules are applied.
+   */
+  shadow(file: string) {
+    this._shadows.push({
+      source: '__shadow__',
+      input: file,
+      output: file,
+      cache: file,
+      resolved: false
+    })
   }
 
+  /**
+   * Clone the pipeline
+   */
   clone(file: FilePipeline) {
-    for (let i = 0; i < this.rules.length; i++) {
-      const glob = this.rules[i];
-      file.rules.push( glob )
-    }
+    file._shadows = this._shadows.slice(0)
+    this.rules.clone(file.rules)
     return file
   }
 
-  fetch() {
-    this._fetch().forEach(this.resolve.bind(this))
+  /**
+   * Collect a list of files matching patterns, then apply transformation rules
+   */
+  fetch(pipeline: Pipeline) {
+    this._fetch(pipeline).forEach((asset) => {
+      this.rules.resolve(pipeline, asset)
+    })
   }
 
-  protected _fetch() {
-    const fetcher = this._fetcher(this.type)
-
+  protected _fetch(pipeline: Pipeline) {
     const globs: string[] = []
     const ignores: string[] = []
 
-    for (let i = 0; i < this.rules.length; i++) {
-      const rule = this.rules[i];
-
-      this.pipeline.source.all(true).forEach((source) => {
-        if ("ignore" in rule && rule.ignore) {
-          ignores.push(this.pipeline.source.with(source, rule.glob, true))
-        } else {
-          globs.push(this.pipeline.source.with(source, rule.glob, true))
-        }
+    pipeline.source.all(true).forEach((source) => {
+      this._globToAdd.forEach((pattern) => {
+        globs.push(pipeline.source.with(source, pattern, true))
       })
-    }
+      this._globToIgnore.forEach((pattern) => {
+        ignores.push(pipeline.source.with(source, pattern, true))
+      })
+    })
+
+    const fetcher = this._fetcher()
 
     const assets = fetcher(globs, ignores)
       .map((file) => {
-        const source = this.pipeline.source.find_from_input(file, true) as string
-        const input = this.pipeline.resolve.relative(source, file)
+        const source = pipeline.source.find_from_input(file, true)
 
-        return {
-          source: this.pipeline.resolve.relative(this.pipeline.resolve.root(), source),
-          input: input,
-          output: input,
-          cache: input,
-          resolved: false
-        } as IAsset
+        if (source) {
+          const input = pipeline.resolve.relative(source, file)
+          return {
+            source: pipeline.resolve.relative(pipeline.resolve.root(), source),
+            input: input,
+            output: input,
+            cache: input,
+            resolved: false
+          } as IAsset
+        }
+
+        return null
       })
+    .filter((asset) => asset != null)
 
-    return assets
+    return this._shadows.concat(assets as IAsset[])
   }
 
-  private _fetcher(type: "file" | "directory" = "file") {
+  private _fetcher() {
     return function (globs: string[], ignores: string[]) {
       try {
-        if (type == "file") {
-          return fetch(globs, ignores)
-        } else {
-          return unique(fetchDirs(globs, ignores))
-        }
+        return fetch(globs, ignores)
       } catch (e) { }
       return []
     }
-  }
-
-  protected findRule(path: string) {
-    for (let i = 0, ilen = this.rules.length; i < ilen; i++) {
-      const rule = this.rules[i]
-
-      if (path === rule.glob || minimatch(path, rule.glob)) {
-        return rule
-      }
-    }
-
-    return { glob: path + '/**/*' } as IMatchRule
-  }
-
-  protected resolve(asset: IAsset) {
-    // Ignore files registered from directory_pipeline or from previous rules
-    const masset = this.pipeline.manifest.get(asset.input)
-    if (masset && masset.resolved) return;
-
-    const rule = asset.rule || this.findRule(asset.input)
-    this.pipeline.manifest.set(asset)
-    this.resolveOutput(asset.input, clone(rule))
-  }
-
-  protected resolveOutput(file: string, rule: IMatchRule) {
-    let output = file, pathObject
-
-    // Remove path and keep basename only
-    if ("keep_path" in rule && !rule.keep_path) {
-      output = basename(output)
-    }
-
-    // Add base_dir
-    if ("base_dir" in rule && typeof rule.base_dir === 'string') {
-      output = join(this.pipeline.resolve.output(), rule.base_dir, output)
-      output = relative(this.pipeline.resolve.output(), output)
-    }
-
-    // Replace dir path if needed
-    pathObject = parse(output)
-    pathObject.dir = this.pipeline.resolve.path(pathObject.dir)
-    output = format(pathObject)
-
-    let cache = output
-
-    if (
-      (this.pipeline.cache.enabled && !("cache" in rule))
-      ||
-      this.pipeline.cache.enabled && rule.cache
-    ) {
-      if (this.pipeline.cache.type === 'hash') {
-        cache = this.pipeline.cache.hash(output)
-      } else if (this.pipeline.cache.type === 'version' && this.type === 'file') {
-        cache = this.pipeline.cache.version(output)
-      } else {
-        cache = output
-      }
-    }
-
-    // Rename output
-    if ("rename" in rule) {
-      if (typeof rule.rename === 'function') {
-        output = rule.rename(output, file, rule)
-        rule.rename = output
-      } else if (typeof rule.rename === 'string') {
-        pathObject = parse(output)
-        output = template2(rule.rename, {
-          hash: "",
-          ...pathObject
-        }, TemplateOptions)
-        cache = template2(rule.rename, {
-          hash: this.pipeline.cache.enabled && rule.cache ? this.pipeline.cache.generateHash(output + this.pipeline.cache.key) : '',
-          ...pathObject
-        }, TemplateOptions)
-      }
-    }
-
-    const asset = this.pipeline.manifest.get(file) as IAsset
-    asset.input = cleanPath(asset.input)
-    asset.output = cleanPath(output)
-    asset.cache = cleanPath(cache)
-    asset.resolved = true
-    asset.rule = rule
-    this.pipeline.manifest.set(asset)
   }
 
 }

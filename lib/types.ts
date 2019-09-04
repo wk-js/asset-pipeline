@@ -1,3 +1,6 @@
+import { Transform } from "./transform";
+import { Pipeline } from "./pipeline";
+
 type TRenameFunction = (output: string, file: string, rules: IMatchRule) => string
 
 export interface IMinimumRule {
@@ -58,4 +61,10 @@ export interface IOutput {
     path: string,
     url: string,
   }
+}
+
+export interface IPipeline {
+  type: "file" | "directory"
+  rules: Transform
+  fetch(pipeline: Pipeline) : void
 }

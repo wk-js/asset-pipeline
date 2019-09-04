@@ -294,3 +294,63 @@ describe('Directory (FS)', () => {
   })
 
 })
+
+describe('Shadow', () => {
+
+  it('Add shadow files', async () => {
+    const AP = await setup(async (AP) => {
+      AP.cache.enabled = true
+      AP.source.add(LOAD_PATH)
+      AP.file.add("others/**/*", {
+        rename(output, file, rules) {
+          return Path.join('world', basename(output))
+        }
+      })
+      AP.fs.copy("others/**/*") // Need wildcards
+    })
+
+    AP.file.shadow('vendor.js')
+
+    await AP.fetch()
+
+    const assets = AP.manifest.all()
+    assert.equal(assets.length, 4)
+    assert.deepEqual(AP.manifest.get('vendor.js'), {
+      source: '__shadow__',
+      input: 'vendor.js',
+      output: 'vendor.js',
+      cache: 'vendor-559ea07a8ceb627e2313b5e790fc38a7.js',
+      resolved: true,
+      rule: { glob: 'vendor.js/**/*' }
+    })
+  })
+
+  it('Add shadow directories', async () => {
+    const AP = await setup(async (AP) => {
+      AP.cache.enabled = true
+      AP.source.add(LOAD_PATH)
+      AP.file.add("others/**/*", {
+        rename(output, file, rules) {
+          return Path.join('world', basename(output))
+        }
+      })
+      AP.fs.copy("others/**/*") // Need wildcards
+    })
+
+    AP.directory.shadow('vendors')
+
+    await AP.fetch()
+
+    const assets = AP.manifest.all()
+    assert.equal(assets.length, 4)
+    assert.deepEqual(AP.manifest.get('vendors'), {
+      source: '__shadow__',
+      input: 'vendors',
+      output: 'vendors',
+      cache: 'vendors-db132a11993302685852d70b555e94aa',
+      resolved: true,
+      rule: { glob: 'vendors/**/*' }
+    })
+  })
+
+})

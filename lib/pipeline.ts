@@ -13,8 +13,8 @@ export class Pipeline {
 
   cache = new Cache()
   source = new Source(this)
-  directory = new DirectoryPipeline(this)
-  file = new FilePipeline(this)
+  directory = new DirectoryPipeline()
+  file = new FilePipeline()
   manifest = new Manifest(this)
   resolve = new Resolver(this)
   tree = new Tree(this)
@@ -41,11 +41,11 @@ export class Pipeline {
 
     if (force || !this.manifest.fileExists()) {
       this.log('[AssetPipeline] Fetch directories')
-      this.directory.fetch()
+      this.directory.fetch(this)
       this.tree.update()
 
       this.log('[AssetPipeline] Fetch files')
-      this.file.fetch()
+      this.file.fetch(this)
       this.tree.update()
 
       this.log('[AssetPipeline] Clean resolved paths')
