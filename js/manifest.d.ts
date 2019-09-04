@@ -16,8 +16,8 @@ export declare class Manifest {
     get(input: string): IAsset | null;
     has(input: string): boolean;
     set(asset: IAsset): void;
-    all(): IAsset[];
-    all_by_key(): Record<string, IAsset>;
-    all_outputs(): IOutput[];
-    all_outputs_by_key(): Record<string, IOutput>;
+    all(tag?: string): IAsset[];
+    all_by_key(tag?: string): Record<string, IAsset>;
+    all_outputs(tag?: string): IOutput[];
+    all_outputs_by_key(tag?: string): Record<string, IOutput>;
 }

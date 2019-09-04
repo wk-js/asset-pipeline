@@ -48,6 +48,7 @@ export class DirectoryPipeline implements IPipeline {
       input: file,
       output: file,
       cache: file,
+      tag: 'default',
       resolved: false
     })
   }
@@ -84,7 +85,8 @@ export class DirectoryPipeline implements IPipeline {
             source: item.source,
             input: cleanPath(input),
             output: cleanPath(output),
-            cache: cleanPath(output)
+            cache: cleanPath(output),
+            tag: typeof rule.tag == 'string' ? rule.tag : 'default'
           }
 
           // Handle rules for files

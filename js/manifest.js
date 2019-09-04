@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("lol/js/node/fs");
 const path_1 = require("./utils/path");
-const object_1 = require("lol/js/object");
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;
@@ -81,15 +80,22 @@ class Manifest {
     set(asset) {
         this._file.assets[asset.input] = asset;
     }
-    all() {
-        return Object.keys(this._file.assets).map((key) => this._file.assets[key]);
+    all(tag) {
+        const assets = Object.keys(this._file.assets).map((key) => this._file.assets[key]);
+        if (typeof tag == 'string')
+            return assets.filter((asset) => asset.tag == tag);
+        return assets;
     }
-    all_by_key() {
-        return object_1.clone(this._file.assets);
+    all_by_key(tag) {
+        const assets = {};
+        this.all(tag).forEach((asset) => {
+            assets[asset.input] = asset;
+        });
+        return assets;
     }
-    all_outputs() {
-        return Object.keys(this._file.assets).map((key) => {
-            const input = this._file.assets[key].input;
+    all_outputs(tag) {
+        return this.all(tag).map((asset) => {
+            const input = asset.input;
             return {
                 input,
                 output: {
@@ -99,9 +105,9 @@ class Manifest {
             };
         });
     }
-    all_outputs_by_key() {
+    all_outputs_by_key(tag) {
         const outputs = {};
-        this.all_outputs().forEach((output) => {
+        this.all_outputs(tag).forEach((output) => {
             outputs[output.input] = output;
         });
         return outputs;

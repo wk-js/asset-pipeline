@@ -39,6 +39,7 @@ class FilePipeline {
             input: file,
             output: file,
             cache: file,
+            tag: 'default',
             resolved: false
         });
     }

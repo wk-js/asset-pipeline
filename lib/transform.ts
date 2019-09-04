@@ -162,6 +162,7 @@ export class Transform {
     asset.cache = cleanPath(cache)
     asset.resolved = true
     asset.rule = rule
+    asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default'
     pipeline.manifest.set(asset)
   }
 

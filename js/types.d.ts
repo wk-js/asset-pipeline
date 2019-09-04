@@ -5,6 +5,7 @@ export interface IMinimumRule {
     ignore?: boolean;
     cache?: boolean;
     rename?: string | TRenameFunction;
+    tag?: string;
 }
 export interface IFileRule extends IMinimumRule {
     keep_path?: boolean;
@@ -23,6 +24,7 @@ export interface IAsset {
     input: string;
     output: string;
     cache: string;
+    tag: string;
     resolved?: boolean;
     rule?: IFileRule | IDirectoryRule;
 }

@@ -11,7 +11,10 @@ export interface IMinimumRule {
   cache?: boolean,
 
   // Rename the basename or accept a function to rename full output path
-  rename?: string | TRenameFunction
+  rename?: string | TRenameFunction,
+
+  // Tagname
+  tag?: string
 }
 
 export interface IFileRule extends IMinimumRule {
@@ -35,6 +38,7 @@ export interface IAsset {
   input: string,
   output: string,
   cache: string,
+  tag: string,
   resolved?: boolean,
   rule?: IFileRule | IDirectoryRule
 }

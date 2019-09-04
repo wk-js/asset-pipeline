@@ -47,6 +47,7 @@ class DirectoryPipeline {
             input: file,
             output: file,
             cache: file,
+            tag: 'default',
             resolved: false
         });
     }
@@ -77,7 +78,8 @@ class DirectoryPipeline {
                     source: item.source,
                     input: path_2.cleanPath(input),
                     output: path_2.cleanPath(output),
-                    cache: path_2.cleanPath(output)
+                    cache: path_2.cleanPath(output),
+                    tag: typeof rule.tag == 'string' ? rule.tag : 'default'
                 };
                 // Handle rules for files
                 if (!(pipeline.manifest.has(asset.input) && pipeline.manifest.get(asset.input).resolved)
