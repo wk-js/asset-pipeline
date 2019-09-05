@@ -1,8 +1,8 @@
 import { Pipeline } from "./pipeline"
 import { join, relative, basename, parse, format } from "path";
 import { template2 } from "lol/js/string/template";
-import { IFileRule, IAsset, IMatchRule } from "./types";
-import { clone } from "lol/js/object";
+import { IFileRule, IAsset, IMatchRule, RenameOptions } from "./types";
+import { clone, flat } from "lol/js/object";
 import minimatch from "minimatch";
 import { cleanPath } from "./utils/path";
 
@@ -133,26 +133,25 @@ export class Transform {
 
     // Rename output
     if ("rename" in rule) {
-      if (typeof rule.rename === 'function') {
-        output = cache = rule.rename(output, file, rule)
-        rule.rename = output
-      } else if (typeof rule.rename === 'string') {
-        pathObject = parse(output)
-        output = template2(rule.rename, {
-          hash: "",
-          ...pathObject
-        }, TemplateOptions)
-
-        let hash = ''
-
-        if ((typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled) || pipeline.cache.enabled) {
-          hash = pipeline.cache.generateHash(output + pipeline.cache.key)
-        }
-
-        cache = template2(rule.rename, {
+      const hash = pipeline.cache.generateHash(output + pipeline.cache.key)
+      const options: RenameOptions = {
+        rule,
+        input: {
           hash,
-          ...pathObject
-        }, TemplateOptions)
+          fullpath: file,
+          ...parse(file)
+        },
+        output: {
+          hash,
+          fullpath: output,
+          ...parse(output)
+        }
+      }
+
+      if (typeof rule.rename == 'function') {
+        rule.rename = output = cache = rule.rename(options)
+      } else if (typeof rule.rename === 'string') {
+        output = cache = template2(rule.rename, flat(options), TemplateOptions)
       }
     }
 

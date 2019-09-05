@@ -1,6 +1,27 @@
 import { Transform } from "./transform";
 import { Pipeline } from "./pipeline";
-declare type TRenameFunction = (output: string, file: string, rules: IMatchRule) => string;
+export interface RenameOptions {
+    input: {
+        fullpath: string;
+        root: string;
+        dir: string;
+        base: string;
+        ext: string;
+        name: string;
+        hash: string;
+    };
+    output: {
+        fullpath: string;
+        root: string;
+        dir: string;
+        base: string;
+        ext: string;
+        name: string;
+        hash: string;
+    };
+    rule: IMatchRule;
+}
+export declare type TRenameFunction = (options: RenameOptions) => string;
 export interface IMinimumRule {
     ignore?: boolean;
     cache?: boolean;
@@ -54,4 +75,3 @@ export interface IPipeline {
     rules: Transform;
     fetch(pipeline: Pipeline): void;
 }
-export {};

@@ -1,7 +1,7 @@
 import "mocha";
 import { AssetPipeline } from "../lib/index";
 import { writeFile, ensureDir, removeDir, fetch, isDirectory } from "lol/js/node/fs";
-import Path, { basename, join } from "path";
+import Path, { join } from "path";
 import * as assert from "assert";
 import { Pipeline } from "../lib/pipeline";
 import { toUnixPath } from "../lib/utils/path";
@@ -83,7 +83,7 @@ describe("Files", () => {
 
     AP.resolve.path('file7.txt')
     assert.equal(AP.resolve.path('file7.txt'), 'file.txt');
-    // assert.equal(AP.resolve.source('file.txt') , 'tmp/test-units/sub2/file7.txt');
+    assert.equal(AP.resolve.source('file.txt') , 'tmp/test-units/sub2/file7.txt');
   })
 
   it('Ignore', async () => {
@@ -102,8 +102,8 @@ describe("Files", () => {
     const AP = await setup(async (AP) => {
       AP.resolve.host = 'http://mycdn.com/'
       AP.source.add( LOAD_PATH )
-      AP.file.add('file1.txt', { rename: "#{dir}/#{name}#{ext}?v=1" })
-      AP.file.add('file.txt.ejs', { rename: "#{name}" })
+      AP.file.add('file1.txt', { rename: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
+      AP.file.add('file.txt.ejs', { rename: "#{output.name}" })
     })
 
     AP.manifest.all().forEach((asset) => {
@@ -140,8 +140,8 @@ describe("Files", () => {
   it('Urls', async () => {
     const AP0 = await setup(async (AP0) => {
       AP0.source.add( LOAD_PATH )
-      AP0.file.add('file1.txt', { rename: "#{dir}/#{name}#{ext}?v=1" })
-      AP0.file.add('file.txt.ejs', { rename: "#{name}" })
+      AP0.file.add('file1.txt', { rename: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
+      AP0.file.add('file.txt.ejs', { rename: "#{output.name}" })
     })
 
     AP0.manifest.all().forEach((asset) => {
@@ -157,8 +157,8 @@ describe("Files", () => {
     const AP1 = await setup(async (AP1) => {
       AP1.resolve.host = 'http://mycdn.com/'
       AP1.source.add( LOAD_PATH )
-      AP1.file.add('file1.txt', { rename: "#{dir}/#{name}#{ext}?v=1" })
-      AP1.file.add('file.txt.ejs', { rename: "#{name}" })
+      AP1.file.add('file1.txt', { rename: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
+      AP1.file.add('file.txt.ejs', { rename: "#{output.name}" })
     })
 
     AP1.manifest.all().forEach((asset) => {
@@ -209,12 +209,12 @@ describe("Directory", () => {
           },
           {
             glob: "sub0/sub1/file8.txt",
-            rename: "#{dir}/#{name}#{ext}?#{hash}",
+            rename: "#{output.dir}/#{output.name}#{output.ext}?#{output.hash}",
           },
           {
             glob: "sub0/sub1/file9.txt",
             cache: true,
-            rename: "#{name}#{ext}?#{hash}",
+            rename: "#{output.name}#{output.ext}?#{output.hash}",
           }
         ]
       })
@@ -228,8 +228,8 @@ describe("Directory", () => {
     view.push('tmp/test-units-dist')
     view.push('  r_sub0')
     view.push('    r_sub1')
-    view.push('      file8.txt?')
-    view.push('  file9.txt?129bcb914b0f005aebf3b66529e36473')
+    view.push('      file8.txt?be9e18aeae58a8f993b04f2465f90bae')
+    view.push('  file9.txt?d9417d17825aa9a29d68a5b3a935a283')
 
     assert.equal(AP.tree.view(), view.join('\n'));
   })
@@ -276,8 +276,8 @@ describe('Directory (FS)', () => {
     const AP = await setup(async (AP) => {
       AP.source.add(LOAD_PATH)
       AP.file.add("others/**/*", {
-        rename(output, file, rules) {
-          return Path.join('world', basename(output))
+        rename({ input }) {
+          return Path.join('world', input.base)
         }
       })
       AP.fs.copy("others/**/*") // Need wildcards
@@ -302,8 +302,8 @@ describe('Shadow', () => {
       AP.cache.enabled = true
       AP.source.add(LOAD_PATH)
       AP.file.add("others/**/*", {
-        rename(output, file, rules) {
-          return Path.join('world', basename(output))
+        rename({ input }) {
+          return Path.join('world', input.base)
         }
       })
       AP.fs.copy("others/**/*") // Need wildcards
@@ -321,7 +321,8 @@ describe('Shadow', () => {
       output: 'vendor.js',
       cache: 'vendor-559ea07a8ceb627e2313b5e790fc38a7.js',
       resolved: true,
-      rule: { glob: 'vendor.js/**/*' }
+      rule: { glob: 'vendor.js/**/*' },
+      tag: 'default'
     })
   })
 
@@ -330,8 +331,8 @@ describe('Shadow', () => {
       AP.cache.enabled = true
       AP.source.add(LOAD_PATH)
       AP.file.add("others/**/*", {
-        rename(output, file, rules) {
-          return Path.join('world', basename(output))
+        rename({ input }) {
+          return Path.join('world', input.base)
         }
       })
       AP.fs.copy("others/**/*") // Need wildcards
@@ -349,7 +350,8 @@ describe('Shadow', () => {
       output: 'vendors',
       cache: 'vendors-db132a11993302685852d70b555e94aa',
       resolved: true,
-      rule: { glob: 'vendors/**/*' }
+      rule: { glob: 'vendors/**/*' },
+      tag: 'default'
     })
   })
 

@@ -115,18 +115,17 @@ class Transform {
         }
         // Rename output
         if ("rename" in rule) {
-            if (typeof rule.rename === 'function') {
-                output = cache = rule.rename(output, file, rule);
-                rule.rename = output;
+            const hash = pipeline.cache.generateHash(output + pipeline.cache.key);
+            const options = {
+                rule,
+                input: Object.assign({ hash, fullpath: file }, path_1.parse(file)),
+                output: Object.assign({ hash, fullpath: output }, path_1.parse(output))
+            };
+            if (typeof rule.rename == 'function') {
+                rule.rename = output = cache = rule.rename(options);
             }
             else if (typeof rule.rename === 'string') {
-                pathObject = path_1.parse(output);
-                output = template_1.template2(rule.rename, Object.assign({ hash: "" }, pathObject), TemplateOptions);
-                let hash = '';
-                if ((typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled) || pipeline.cache.enabled) {
-                    hash = pipeline.cache.generateHash(output + pipeline.cache.key);
-                }
-                cache = template_1.template2(rule.rename, Object.assign({ hash }, pathObject), TemplateOptions);
+                output = cache = template_1.template2(rule.rename, object_1.flat(options), TemplateOptions);
             }
         }
         const asset = pipeline.manifest.get(file);
