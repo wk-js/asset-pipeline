@@ -24,8 +24,8 @@ export interface RenameOptions {
 export declare type TRenameFunction = (options: RenameOptions) => string;
 export interface IMinimumRule {
     ignore?: boolean;
-    cache?: boolean;
-    rename?: string | TRenameFunction;
+    cache?: boolean | string | TRenameFunction;
+    output?: string | TRenameFunction;
     tag?: string;
 }
 export interface IFileRule extends IMinimumRule {

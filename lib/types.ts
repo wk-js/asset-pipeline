@@ -30,10 +30,10 @@ export interface IMinimumRule {
   ignore?: boolean,
 
   // Cachebreak mateched files
-  cache?: boolean,
+  cache?: boolean | string | TRenameFunction,
 
   // Rename the basename or accept a function to rename full output path
-  rename?: string | TRenameFunction,
+  output?: string | TRenameFunction,
 
   // Tagname
   tag?: string

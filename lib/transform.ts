@@ -16,7 +16,7 @@ export class Transform {
 
   protected rules: IMatchRule[] = []
 
-  constructor(public type = "file") {}
+  constructor(public type = "file") { }
 
   /**
    * Add as transformation applied to the glob pattern
@@ -63,7 +63,7 @@ export class Transform {
   clone(file: Transform) {
     for (let i = 0; i < this.rules.length; i++) {
       const glob = this.rules[i];
-      file.rules.push( glob )
+      file.rules.push(glob)
     }
     return file
   }
@@ -96,16 +96,16 @@ export class Transform {
     this.resolveOutput(pipeline, asset.input, clone(rule))
   }
 
-  protected resolveOutput(pipeline: Pipeline,file: string, rule: IMatchRule) {
+  protected resolveOutput(pipeline: Pipeline, file: string, rule: IMatchRule) {
     let output = file, pathObject
 
     // Remove path and keep basename only
-    if ("keep_path" in rule && !rule.keep_path) {
+    if (typeof rule.keep_path === 'boolean' && !rule.keep_path) {
       output = basename(output)
     }
 
     // Add base_dir
-    if ("base_dir" in rule && typeof rule.base_dir === 'string') {
+    if (typeof rule.base_dir === 'string') {
       output = join(pipeline.resolve.output(), rule.base_dir, output)
       output = relative(pipeline.resolve.output(), output)
     }
@@ -117,41 +117,40 @@ export class Transform {
 
     let cache = output
 
-    if (
-      (pipeline.cache.enabled && !("cache" in rule))
+    const hash = pipeline.cache.generateHash(output + pipeline.cache.key)
+    let options: RenameOptions = {
+      rule,
+      input: {
+        hash,
+        fullpath: file,
+        ...parse(file)
+      },
+      output: {
+        hash,
+        fullpath: output,
+        ...parse(output)
+      }
+    }
+
+    if (typeof rule.output == 'function') {
+      rule.output = output = cache = rule.output(options)
+    } else if (typeof rule.output === 'string') {
+      output = cache = template2(rule.output, flat(options), TemplateOptions)
+    }
+
+    if (typeof rule.cache == 'function') {
+      rule.cache = cache = rule.cache(options)
+    } else if (typeof rule.cache === 'string') {
+      cache = template2(rule.cache, flat(options), TemplateOptions)
+    } else if (
+      (typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled)
       ||
-      pipeline.cache.enabled && rule.cache
+      (typeof rule.cache != 'boolean' && pipeline.cache.enabled)
     ) {
       if (pipeline.cache.type === 'hash') {
         cache = pipeline.cache.hash(output)
       } else if (pipeline.cache.type === 'version' && this.type === 'file') {
         cache = pipeline.cache.version(output)
-      } else {
-        cache = output
-      }
-    }
-
-    // Rename output
-    if ("rename" in rule) {
-      const hash = pipeline.cache.generateHash(output + pipeline.cache.key)
-      const options: RenameOptions = {
-        rule,
-        input: {
-          hash,
-          fullpath: file,
-          ...parse(file)
-        },
-        output: {
-          hash,
-          fullpath: output,
-          ...parse(output)
-        }
-      }
-
-      if (typeof rule.rename == 'function') {
-        rule.rename = output = cache = rule.rename(options)
-      } else if (typeof rule.rename === 'string') {
-        output = cache = template2(rule.rename, flat(options), TemplateOptions)
       }
     }
 

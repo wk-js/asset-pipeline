@@ -78,7 +78,7 @@ describe("Files", () => {
   it('Get source file path', async () => {
     const AP = await setup(async (AP) => {
       AP.source.add(Path.join(LOAD_PATH, 'sub2'))
-      AP.file.add('file7.txt', { rename: 'file.txt' })
+      AP.file.add('file7.txt', { output: 'file.txt' })
     })
 
     AP.resolve.path('file7.txt')
@@ -102,8 +102,8 @@ describe("Files", () => {
     const AP = await setup(async (AP) => {
       AP.resolve.host = 'http://mycdn.com/'
       AP.source.add( LOAD_PATH )
-      AP.file.add('file1.txt', { rename: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
-      AP.file.add('file.txt.ejs', { rename: "#{output.name}" })
+      AP.file.add('file1.txt', { output: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
+      AP.file.add('file.txt.ejs', { output: "#{output.name}" })
     })
 
     AP.manifest.all().forEach((asset) => {
@@ -140,8 +140,8 @@ describe("Files", () => {
   it('Urls', async () => {
     const AP0 = await setup(async (AP0) => {
       AP0.source.add( LOAD_PATH )
-      AP0.file.add('file1.txt', { rename: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
-      AP0.file.add('file.txt.ejs', { rename: "#{output.name}" })
+      AP0.file.add('file1.txt', { output: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
+      AP0.file.add('file.txt.ejs', { output: "#{output.name}" })
     })
 
     AP0.manifest.all().forEach((asset) => {
@@ -157,8 +157,8 @@ describe("Files", () => {
     const AP1 = await setup(async (AP1) => {
       AP1.resolve.host = 'http://mycdn.com/'
       AP1.source.add( LOAD_PATH )
-      AP1.file.add('file1.txt', { rename: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
-      AP1.file.add('file.txt.ejs', { rename: "#{output.name}" })
+      AP1.file.add('file1.txt', { output: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
+      AP1.file.add('file.txt.ejs', { output: "#{output.name}" })
     })
 
     AP1.manifest.all().forEach((asset) => {
@@ -200,8 +200,8 @@ describe("Directory", () => {
       AP.cache.enabled = true
       AP.source.add( LOAD_PATH )
       AP.directory.add('sub0/sub1', {
-        keep_path: false,
-        rename: "r_sub0/r_sub1",
+        output: "r_sub0/r_sub1",
+        cache: false,
         file_rules: [
           {
             glob: "sub0/sub1/file7.txt",
@@ -209,12 +209,13 @@ describe("Directory", () => {
           },
           {
             glob: "sub0/sub1/file8.txt",
-            rename: "#{output.dir}/#{output.name}#{output.ext}?#{output.hash}",
+            output: "#{output.dir}/#{output.name}#{output.ext}",
+            cache: "#{output.dir}/#{output.name}#{output.ext}?#{output.hash}",
           },
           {
             glob: "sub0/sub1/file9.txt",
             cache: true,
-            rename: "#{output.name}#{output.ext}?#{output.hash}",
+            output: "#{output.name}#{output.ext}",
           }
         ]
       })
@@ -229,7 +230,7 @@ describe("Directory", () => {
     view.push('  r_sub0')
     view.push('    r_sub1')
     view.push('      file8.txt?be9e18aeae58a8f993b04f2465f90bae')
-    view.push('  file9.txt?d9417d17825aa9a29d68a5b3a935a283')
+    view.push('  file9-a753a6e8378ee3ee03118da83d861934.txt')
 
     assert.equal(AP.tree.view(), view.join('\n'));
   })
@@ -258,7 +259,7 @@ describe('Directory (FS)', () => {
   it("Copy renamed directory", async () => {
     const AP = await setup(async (AP) => {
       AP.source.add(LOAD_PATH)
-      AP.directory.add("others", { rename: "hello" })
+      AP.directory.add("others", { output: "hello" })
       AP.fs.copy("others/**/*") // Need wildcards
     })
 
@@ -276,7 +277,7 @@ describe('Directory (FS)', () => {
     const AP = await setup(async (AP) => {
       AP.source.add(LOAD_PATH)
       AP.file.add("others/**/*", {
-        rename({ input }) {
+        output({ input }) {
           return Path.join('world', input.base)
         }
       })
@@ -302,9 +303,7 @@ describe('Shadow', () => {
       AP.cache.enabled = true
       AP.source.add(LOAD_PATH)
       AP.file.add("others/**/*", {
-        rename({ input }) {
-          return Path.join('world', input.base)
-        }
+        output: "world/#{output.base}"
       })
       AP.fs.copy("others/**/*") // Need wildcards
     })
@@ -331,9 +330,7 @@ describe('Shadow', () => {
       AP.cache.enabled = true
       AP.source.add(LOAD_PATH)
       AP.file.add("others/**/*", {
-        rename({ input }) {
-          return Path.join('world', input.base)
-        }
+        output: "world/#{output.base}"
       })
       AP.fs.copy("others/**/*") // Need wildcards
     })
