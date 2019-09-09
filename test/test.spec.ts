@@ -146,11 +146,11 @@ describe("Files", () => {
 
     AP0.manifest.all().forEach((asset) => {
       if (asset.input.match(/file1\.txt/)) {
-        assert.equal(AP0.resolve.url(asset.input), '/file1.txt?v=1')
-        assert.equal(AP0.resolve.clean_url(asset.input), '/file1.txt')
+        assert.equal(AP0.resolve.url(asset.input), 'file1.txt?v=1')
+        assert.equal(AP0.resolve.clean_url(asset.input), 'file1.txt')
       } else {
-        assert.equal(AP0.resolve.url(asset.input), '/file.txt')
-        assert.equal(AP0.resolve.clean_url(asset.input), '/file.txt')
+        assert.equal(AP0.resolve.url(asset.input), 'file.txt')
+        assert.equal(AP0.resolve.clean_url(asset.input), 'file.txt')
       }
     })
 

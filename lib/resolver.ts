@@ -66,9 +66,16 @@ export class Resolver {
   url(path: string, from?: string) {
     path = this.path(path, from)
 
-    const host = this.host ? this.host : "https://localhost"
-    const url = new URL(path, host)
-    return this.host ? url.href : url.pathname + url.search
+    if (this.host) {
+      try {
+        const url = new URL(path, this.host)
+        return url.href
+      } catch(e) {
+        return this.host + path
+      }
+    }
+
+    return path
   }
 
   clean_path(path: string, fromPath?: string) {
