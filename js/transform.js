@@ -70,7 +70,7 @@ class Transform {
                 return rule;
             }
         }
-        return { glob: path + '/**/*' };
+        return { glob: path };
     }
     /**
      * Apply the transformation to the asset and register to the manifest

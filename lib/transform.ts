@@ -80,7 +80,7 @@ export class Transform {
       }
     }
 
-    return { glob: path + '/**/*' } as IMatchRule
+    return { glob: path } as IMatchRule
   }
 
   /**
