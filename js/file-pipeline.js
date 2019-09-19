@@ -33,7 +33,7 @@ class FilePipeline {
     /**
      * Add non-existing file to the manifest. Rules are applied.
      */
-    shadow(file) {
+    shadow(file, transformRule) {
         this._shadows.push({
             source: '__shadow__',
             input: file,
@@ -42,6 +42,8 @@ class FilePipeline {
             tag: 'default',
             resolved: false
         });
+        if (transformRule)
+            this.rules.add(file, transformRule);
     }
     /**
      * Clone the pipeline

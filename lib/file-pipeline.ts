@@ -1,8 +1,8 @@
 import { Pipeline } from "./pipeline"
 import { IAsset, IFileRule, IPipeline } from "./types";
 import { Transform } from "./transform";
-import { unique } from "lol/js/array";
-import { fetchDirs, fetch } from "lol/js/node/fs";
+import { fetch } from "lol/js/node/fs";
+import { merge } from "lol/js/object";
 
 export class FilePipeline implements IPipeline {
 
@@ -38,7 +38,7 @@ export class FilePipeline implements IPipeline {
   /**
    * Add non-existing file to the manifest. Rules are applied.
    */
-  shadow(file: string) {
+  shadow(file: string, transformRule?: IFileRule) {
     this._shadows.push({
       source: '__shadow__',
       input: file,
@@ -47,6 +47,7 @@ export class FilePipeline implements IPipeline {
       tag: 'default',
       resolved: false
     })
+    if (transformRule) this.rules.add(file, transformRule)
   }
 
   /**

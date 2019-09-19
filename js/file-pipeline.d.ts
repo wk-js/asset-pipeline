@@ -24,7 +24,7 @@ export declare class FilePipeline implements IPipeline {
     /**
      * Add non-existing file to the manifest. Rules are applied.
      */
-    shadow(file: string): void;
+    shadow(file: string, transformRule?: IFileRule): void;
     /**
      * Clone the pipeline
      */

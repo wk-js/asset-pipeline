@@ -308,7 +308,7 @@ describe('Shadow', () => {
       AP.fs.copy("others/**/*") // Need wildcards
     })
 
-    AP.file.shadow('vendor.js')
+    AP.file.shadow('vendor.js', { cache: "common.js" })
 
     await AP.fetch()
 
@@ -318,9 +318,12 @@ describe('Shadow', () => {
       source: '__shadow__',
       input: 'vendor.js',
       output: 'vendor.js',
-      cache: 'vendor-559ea07a8ceb627e2313b5e790fc38a7.js',
+      cache: 'common.js',
       resolved: true,
-      rule: { glob: 'vendor.js/**/*' },
+      rule: {
+        glob: 'vendor.js',
+        cache: "common.js"
+      },
       tag: 'default'
     })
   })
@@ -347,7 +350,7 @@ describe('Shadow', () => {
       output: 'vendors',
       cache: 'vendors-db132a11993302685852d70b555e94aa',
       resolved: true,
-      rule: { glob: 'vendors/**/*' },
+      rule: { glob: 'vendors' },
       tag: 'default'
     })
   })
