@@ -1,7 +1,8 @@
 import { Pipeline } from "./pipeline"
 import { writeFile, isFile, readFile, remove } from "lol/js/node/fs";
-import { IAsset, IManifest } from "./types";
+import { IAsset, IManifest, IOutput } from "./types";
 import { cleanPath } from "./utils/path";
+import { clone } from "lol/js/object";
 
 export class Manifest {
 
@@ -81,8 +82,41 @@ export class Manifest {
     this._file.assets[asset.input] = asset
   }
 
-  all() {
-    return Object.keys(this._file.assets).map((key) => this._file.assets[key])
+  all(tag?: string) {
+    const assets = Object.keys(this._file.assets).map((key) => this._file.assets[key])
+    if (typeof tag == 'string') return assets.filter((asset) => asset.tag == tag)
+    return assets
+  }
+
+  all_by_key(tag?: string) {
+    const assets: Record<string, IAsset> = {}
+    this.all(tag).forEach((asset) => {
+      assets[asset.input] = asset
+    })
+    return assets
+  }
+
+  all_outputs(tag?: string) {
+    return this.all(tag).map((asset) => {
+      const input = asset.input
+      return {
+        input,
+        output: {
+          path: this.pipeline.resolve.path(input),
+          url: this.pipeline.resolve.url(input),
+        }
+      } as IOutput
+    })
+  }
+
+  all_outputs_by_key(tag?: string) {
+    const outputs: Record<string, IOutput> = {}
+
+    this.all_outputs(tag).forEach((output) => {
+      outputs[output.input] = output
+    })
+
+    return outputs
   }
 
 }

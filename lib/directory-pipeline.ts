@@ -1,63 +1,97 @@
 import Path from "path";
-import { fetch } from "lol/js/node/fs";
+import { fetch, fetchDirs } from "lol/js/node/fs";
 import { FilePipeline } from "./file-pipeline";
-import { IAsset, IDirectoryRule } from "./types";
+import { IAsset, IDirectoryRule, IPipeline } from "./types";
 import minimatch from "minimatch";
 import { Pipeline } from "./pipeline";
 import { cleanPath } from "./utils/path";
+import { Transform } from "./transform";
+import { unique } from "lol/js/array";
 
-export class DirectoryPipeline extends FilePipeline {
+export class DirectoryPipeline implements IPipeline {
 
-  constructor(pipeline: Pipeline) {
-    super(pipeline)
-    this.type = 'directory'
+  /**
+   * Pipeline type
+   */
+  readonly type = 'directory'
+
+  /**
+   * Transformation rules
+   */
+  rules = new Transform()
+
+  protected _shadows: IAsset[] = []
+  protected _globToAdd: string[] = []
+  protected _globToIgnore: string[] = []
+
+  /**
+   * Append file pattern
+   */
+  add(pattern: string, transformRule?: IDirectoryRule) {
+    this._globToAdd.push(pattern)
+    if (transformRule) this.rules.add(pattern, transformRule)
   }
 
-  add(glob: string, parameters: IDirectoryRule = {}) {
-    return super.add(glob, parameters)
+  /**
+   * Append file pattern to ignore
+   */
+  ignore(pattern: string) {
+    this._globToIgnore.push(pattern)
   }
 
-  addEntry(input: string, output: string, parameters: IDirectoryRule = {}) {
-    return super.addEntry(input, output, parameters)
+  /**
+   * Append non-existing file to the manifest. Rules are applied.
+   */
+  shadow(file: string) {
+    this._shadows.push({
+      source: '__shadow__',
+      input: file,
+      output: file,
+      cache: file,
+      tag: 'default',
+      resolved: false
+    })
   }
 
-  clone(dir: DirectoryPipeline) {
-    for (let i = 0; i < this.rules.length; i++) {
-      const glob = this.rules[i];
-      dir.rules.push( glob )
-    }
-    return dir
+  /**
+   * Clone the pipeline
+   */
+  clone(directory: DirectoryPipeline) {
+    directory._shadows = this._shadows.slice(0)
+    this.rules.clone(directory.rules)
+    return directory
   }
 
-  fetch() {
-    this._fetch()
+  fetch(pipeline: Pipeline) {
+    this._fetch(pipeline)
       .map((asset) => {
-        this.resolve(asset)
+        this.rules.resolve(pipeline, asset)
         return asset
       })
 
       .forEach((item) => {
-        const glob = this.pipeline.source.with(item.source, item.input, true) + '/**/*'
+        const glob = pipeline.source.with(item.source, item.input, true) + '/**/*'
 
         // Handle files
         fetch(glob).map((input: string) => {
-          input = this.pipeline.resolve.relative(item.source, input)
+          input = pipeline.resolve.relative(item.source, input)
 
           const pathObject = Path.parse(input)
-          pathObject.dir = this.pipeline.resolve.path(pathObject.dir)
+          pathObject.dir = pipeline.resolve.path(pathObject.dir)
           const output = Path.format(pathObject)
 
-          const rule = this.findRule(item.input) as IDirectoryRule
+          const rule = this.rules.matchingRule(item.input) as IDirectoryRule
           const asset: IAsset = {
             source: item.source,
             input: cleanPath(input),
             output: cleanPath(output),
-            cache: cleanPath(output)
+            cache: cleanPath(output),
+            tag: typeof rule.tag == 'string' ? rule.tag : 'default'
           }
 
           // Handle rules for files
           if (
-            !(this.pipeline.manifest.has(asset.input) && (this.pipeline.manifest.get(asset.input) as IAsset).resolved)
+            !(pipeline.manifest.has(asset.input) && (pipeline.manifest.get(asset.input) as IAsset).resolved)
             && rule.file_rules
             && rule.file_rules.length > 0) {
 
@@ -65,7 +99,7 @@ export class DirectoryPipeline extends FilePipeline {
               const r = rule.file_rules[i];
               if (!r.ignore && minimatch(asset.input, r.glob || asset.input)) {
                 asset.rule = r
-                this.resolve(asset)
+                this.rules.resolve(pipeline, asset)
               }
             }
 
@@ -73,9 +107,23 @@ export class DirectoryPipeline extends FilePipeline {
           }
 
           asset.resolved = true
-          this.pipeline.manifest.set(asset)
+          pipeline.manifest.set(asset)
         })
       })
+  }
+
+  protected _fetch(pipeline: Pipeline) {
+    // @ts-ignore
+    return FilePipeline.prototype._fetch.call(this, pipeline)
+  }
+
+  protected _fetcher() {
+    return function (globs: string[], ignores: string[]) {
+      try {
+        return unique(fetchDirs(globs, ignores))
+      } catch (e) { }
+      return []
+    }
   }
 
 }

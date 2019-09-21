@@ -8,62 +8,109 @@ const fs_1 = require("lol/js/node/fs");
 const file_pipeline_1 = require("./file-pipeline");
 const minimatch_1 = __importDefault(require("minimatch"));
 const path_2 = require("./utils/path");
-class DirectoryPipeline extends file_pipeline_1.FilePipeline {
-    constructor(pipeline) {
-        super(pipeline);
+const transform_1 = require("./transform");
+const array_1 = require("lol/js/array");
+class DirectoryPipeline {
+    constructor() {
+        /**
+         * Pipeline type
+         */
         this.type = 'directory';
+        /**
+         * Transformation rules
+         */
+        this.rules = new transform_1.Transform();
+        this._shadows = [];
+        this._globToAdd = [];
+        this._globToIgnore = [];
     }
-    add(glob, parameters = {}) {
-        return super.add(glob, parameters);
+    /**
+     * Append file pattern
+     */
+    add(pattern, transformRule) {
+        this._globToAdd.push(pattern);
+        if (transformRule)
+            this.rules.add(pattern, transformRule);
     }
-    addEntry(input, output, parameters = {}) {
-        return super.addEntry(input, output, parameters);
+    /**
+     * Append file pattern to ignore
+     */
+    ignore(pattern) {
+        this._globToIgnore.push(pattern);
     }
-    clone(dir) {
-        for (let i = 0; i < this.rules.length; i++) {
-            const glob = this.rules[i];
-            dir.rules.push(glob);
-        }
-        return dir;
+    /**
+     * Append non-existing file to the manifest. Rules are applied.
+     */
+    shadow(file) {
+        this._shadows.push({
+            source: '__shadow__',
+            input: file,
+            output: file,
+            cache: file,
+            tag: 'default',
+            resolved: false
+        });
     }
-    fetch() {
-        this._fetch()
+    /**
+     * Clone the pipeline
+     */
+    clone(directory) {
+        directory._shadows = this._shadows.slice(0);
+        this.rules.clone(directory.rules);
+        return directory;
+    }
+    fetch(pipeline) {
+        this._fetch(pipeline)
             .map((asset) => {
-            this.resolve(asset);
+            this.rules.resolve(pipeline, asset);
             return asset;
         })
             .forEach((item) => {
-            const glob = this.pipeline.source.with(item.source, item.input, true) + '/**/*';
+            const glob = pipeline.source.with(item.source, item.input, true) + '/**/*';
             // Handle files
             fs_1.fetch(glob).map((input) => {
-                input = this.pipeline.resolve.relative(item.source, input);
+                input = pipeline.resolve.relative(item.source, input);
                 const pathObject = path_1.default.parse(input);
-                pathObject.dir = this.pipeline.resolve.path(pathObject.dir);
+                pathObject.dir = pipeline.resolve.path(pathObject.dir);
                 const output = path_1.default.format(pathObject);
-                const rule = this.findRule(item.input);
+                const rule = this.rules.matchingRule(item.input);
                 const asset = {
                     source: item.source,
                     input: path_2.cleanPath(input),
                     output: path_2.cleanPath(output),
-                    cache: path_2.cleanPath(output)
+                    cache: path_2.cleanPath(output),
+                    tag: typeof rule.tag == 'string' ? rule.tag : 'default'
                 };
                 // Handle rules for files
-                if (!(this.pipeline.manifest.has(asset.input) && this.pipeline.manifest.get(asset.input).resolved)
+                if (!(pipeline.manifest.has(asset.input) && pipeline.manifest.get(asset.input).resolved)
                     && rule.file_rules
                     && rule.file_rules.length > 0) {
                     for (let i = 0; i < rule.file_rules.length; i++) {
                         const r = rule.file_rules[i];
                         if (!r.ignore && minimatch_1.default(asset.input, r.glob || asset.input)) {
                             asset.rule = r;
-                            this.resolve(asset);
+                            this.rules.resolve(pipeline, asset);
                         }
                     }
                     return;
                 }
                 asset.resolved = true;
-                this.pipeline.manifest.set(asset);
+                pipeline.manifest.set(asset);
             });
         });
+    }
+    _fetch(pipeline) {
+        // @ts-ignore
+        return file_pipeline_1.FilePipeline.prototype._fetch.call(this, pipeline);
+    }
+    _fetcher() {
+        return function (globs, ignores) {
+            try {
+                return array_1.unique(fs_1.fetchDirs(globs, ignores));
+            }
+            catch (e) { }
+            return [];
+        };
     }
 }
 exports.DirectoryPipeline = DirectoryPipeline;

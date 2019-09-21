@@ -1,14 +1,42 @@
-type TRenameFunction = (output: string, file: string, rules: IMatchRule) => string
+import { Transform } from "./transform";
+import { Pipeline } from "./pipeline";
+
+export interface RenameOptions {
+  input: {
+    fullpath: string,
+    root: string,
+    dir: string,
+    base: string,
+    ext: string,
+    name: string,
+    hash: string
+  },
+  output: {
+    fullpath: string,
+    root: string,
+    dir: string,
+    base: string,
+    ext: string,
+    name: string,
+    hash: string
+  },
+  rule: IMatchRule
+}
+
+export type TRenameFunction = (options: RenameOptions) => string
 
 export interface IMinimumRule {
   // Ignore matched files
   ignore?: boolean,
 
   // Cachebreak mateched files
-  cache?: boolean,
+  cache?: boolean | string | TRenameFunction,
 
   // Rename the basename or accept a function to rename full output path
-  rename?: string | TRenameFunction
+  output?: string | TRenameFunction,
+
+  // Tagname
+  tag?: string
 }
 
 export interface IFileRule extends IMinimumRule {
@@ -32,6 +60,7 @@ export interface IAsset {
   input: string,
   output: string,
   cache: string,
+  tag: string,
   resolved?: boolean,
   rule?: IFileRule | IDirectoryRule
 }
@@ -50,4 +79,18 @@ export interface IPathObject {
   full: string,
   source?: string,
   key?: string
+}
+
+export interface IOutput {
+  input: string,
+  output: {
+    path: string,
+    url: string,
+  }
+}
+
+export interface IPipeline {
+  type: "file" | "directory"
+  rules: Transform
+  fetch(pipeline: Pipeline) : void
 }

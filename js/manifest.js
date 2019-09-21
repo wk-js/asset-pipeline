@@ -80,8 +80,37 @@ class Manifest {
     set(asset) {
         this._file.assets[asset.input] = asset;
     }
-    all() {
-        return Object.keys(this._file.assets).map((key) => this._file.assets[key]);
+    all(tag) {
+        const assets = Object.keys(this._file.assets).map((key) => this._file.assets[key]);
+        if (typeof tag == 'string')
+            return assets.filter((asset) => asset.tag == tag);
+        return assets;
+    }
+    all_by_key(tag) {
+        const assets = {};
+        this.all(tag).forEach((asset) => {
+            assets[asset.input] = asset;
+        });
+        return assets;
+    }
+    all_outputs(tag) {
+        return this.all(tag).map((asset) => {
+            const input = asset.input;
+            return {
+                input,
+                output: {
+                    path: this.pipeline.resolve.path(input),
+                    url: this.pipeline.resolve.url(input),
+                }
+            };
+        });
+    }
+    all_outputs_by_key(tag) {
+        const outputs = {};
+        this.all_outputs(tag).forEach((output) => {
+            outputs[output.input] = output;
+        });
+        return outputs;
     }
 }
 exports.Manifest = Manifest;

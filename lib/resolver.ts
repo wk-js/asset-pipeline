@@ -67,8 +67,12 @@ export class Resolver {
     path = this.path(path, from)
 
     if (this.host) {
-      const url = new URL(path, this.host)
-      path = url.href
+      try {
+        const url = new URL(path, this.host)
+        return url.href
+      } catch(e) {
+        return this.host + path
+      }
     }
 
     return path
