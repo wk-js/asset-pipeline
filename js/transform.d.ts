@@ -29,4 +29,5 @@ export declare class Transform {
      */
     resolve(pipeline: Pipeline, asset: IAsset): void;
     protected resolveOutput(pipeline: Pipeline, file: string, rule: IMatchRule): void;
+    protected resolveDir(pipeline: Pipeline, output: string): string;
 }

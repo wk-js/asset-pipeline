@@ -85,7 +85,7 @@ class Transform {
         this.resolveOutput(pipeline, asset.input, object_1.clone(rule));
     }
     resolveOutput(pipeline, file, rule) {
-        let output = file, pathObject;
+        let output = file;
         // Remove path and keep basename only
         if (typeof rule.keep_path === 'boolean' && !rule.keep_path) {
             output = path_1.basename(output);
@@ -96,9 +96,7 @@ class Transform {
             output = path_1.relative(pipeline.resolve.output(), output);
         }
         // Replace dir path if needed
-        pathObject = path_1.parse(output);
-        pathObject.dir = pipeline.resolve.path(pathObject.dir);
-        output = path_1.format(pathObject);
+        output = this.resolveDir(pipeline, output);
         let cache = output;
         const hash = pipeline.cache.generateHash(output + pipeline.cache.key);
         let options = {
@@ -136,6 +134,23 @@ class Transform {
         asset.rule = rule;
         asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default';
         pipeline.manifest.set(asset);
+    }
+    resolveDir(pipeline, output) {
+        const pathObject = path_1.parse(output);
+        let dir = pathObject.dir;
+        let d = [];
+        dir = path_2.cleanPath(dir);
+        const ds = dir.split('/');
+        for (let i = 0; i < ds.length; i++) {
+            d.push(ds[i]);
+            const dd = d.join('/');
+            const ddd = pipeline.resolve.path(dd);
+            if (dd != ddd) {
+                d = ddd.split('/');
+            }
+        }
+        pathObject.dir = path_1.normalize(d.join('/'));
+        return path_1.format(pathObject);
     }
 }
 exports.Transform = Transform;

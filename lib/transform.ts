@@ -1,5 +1,5 @@
 import { Pipeline } from "./pipeline"
-import { join, relative, basename, parse, format } from "path";
+import { join, relative, basename, parse, format, normalize } from "path";
 import { template2 } from "lol/js/string/template";
 import { IFileRule, IAsset, IMatchRule, RenameOptions } from "./types";
 import { clone, flat } from "lol/js/object";
@@ -97,7 +97,7 @@ export class Transform {
   }
 
   protected resolveOutput(pipeline: Pipeline, file: string, rule: IMatchRule) {
-    let output = file, pathObject
+    let output = file
 
     // Remove path and keep basename only
     if (typeof rule.keep_path === 'boolean' && !rule.keep_path) {
@@ -111,9 +111,7 @@ export class Transform {
     }
 
     // Replace dir path if needed
-    pathObject = parse(output)
-    pathObject.dir = pipeline.resolve.path(pathObject.dir)
-    output = format(pathObject)
+    output = this.resolveDir(pipeline, output)
 
     let cache = output
 
@@ -162,6 +160,25 @@ export class Transform {
     asset.rule = rule
     asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default'
     pipeline.manifest.set(asset)
+  }
+
+  protected resolveDir(pipeline: Pipeline, output: string) {
+    const pathObject = parse(output)
+    let dir = pathObject.dir
+
+    let d: string[] = []
+    dir = cleanPath(dir)
+    const ds = dir.split('/')
+    for (let i = 0; i < ds.length; i++) {
+      d.push( ds[i] )
+      const dd = d.join('/')
+      const ddd = pipeline.resolve.path(dd)
+      if (dd != ddd) {
+        d = ddd.split('/')
+      }
+    }
+    pathObject.dir = normalize(d.join('/'))
+    return format(pathObject)
   }
 
 }
