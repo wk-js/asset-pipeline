@@ -82,6 +82,10 @@ export class Manifest {
     this._file.assets[asset.input] = asset
   }
 
+  clear() {
+    this._file.assets = {}
+  }
+
   all(tag?: string) {
     const assets = Object.keys(this._file.assets).map((key) => this._file.assets[key])
     if (typeof tag == 'string') return assets.filter((asset) => asset.tag == tag)

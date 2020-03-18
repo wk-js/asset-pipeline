@@ -80,6 +80,9 @@ class Manifest {
     set(asset) {
         this._file.assets[asset.input] = asset;
     }
+    clear() {
+        this._file.assets = {};
+    }
     all(tag) {
         const assets = Object.keys(this._file.assets).map((key) => this._file.assets[key]);
         if (typeof tag == 'string')

@@ -40,6 +40,9 @@ export class Pipeline {
     force = force ? force : !this.manifest.read
 
     if (force || !this.manifest.fileExists()) {
+      this.log('[AssetPipeline] Clear manifest')
+      this.manifest.clear()
+
       this.log('[AssetPipeline] Fetch directories')
       this.directory.fetch(this)
       this.tree.update()
