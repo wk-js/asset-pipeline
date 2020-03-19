@@ -122,13 +122,9 @@ export class Resolver {
     let relative = path
     if (is_absolute) relative = Path.relative(root, path)
 
-    // Build full path
-    const full = Path.join(root, relative)
-
     // Clean paths
     const result: IPathObject = {
       relative: cleanPath(relative),
-      full: cleanPath(full)
     }
 
     // Looking for source
@@ -138,6 +134,7 @@ export class Resolver {
     if (source) {
       result.source = cleanPath(source)
       result.key = cleanPath(Path.relative(source, result.relative))
+      result.full = cleanPath(Path.join(root, source, result.relative))
     }
 
     return result
