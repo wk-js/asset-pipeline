@@ -103,12 +103,9 @@ class Resolver {
         let relative = path;
         if (is_absolute)
             relative = path_2.default.relative(root, path);
-        // Build full path
-        const full = path_2.default.join(root, relative);
         // Clean paths
         const result = {
             relative: path_1.cleanPath(relative),
-            full: path_1.cleanPath(full)
         };
         // Looking for source
         const source = this.pipeline.source.find_from_input(result.relative);
@@ -116,6 +113,7 @@ class Resolver {
         if (source) {
             result.source = path_1.cleanPath(source);
             result.key = path_1.cleanPath(path_2.default.relative(source, result.relative));
+            result.full = path_1.cleanPath(path_2.default.join(root, source, result.relative));
         }
         return result;
     }

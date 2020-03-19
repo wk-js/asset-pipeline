@@ -59,7 +59,7 @@ export interface IManifest {
 }
 export interface IPathObject {
     relative: string;
-    full: string;
+    full?: string;
     source?: string;
     key?: string;
 }
