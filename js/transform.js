@@ -81,6 +81,7 @@ class Transform {
         if (masset && masset.resolved)
             return;
         const rule = asset.rule || this.matchingRule(asset.input);
+        asset.rule = rule;
         pipeline.manifest.set(asset);
         this.resolveOutput(pipeline, asset.input, object_1.clone(rule));
     }
@@ -131,8 +132,8 @@ class Transform {
         asset.output = path_2.cleanPath(output);
         asset.cache = path_2.cleanPath(cache);
         asset.resolved = true;
-        asset.rule = rule;
         asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default';
+        asset.rule = rule;
         pipeline.manifest.set(asset);
     }
     resolveDir(pipeline, output) {

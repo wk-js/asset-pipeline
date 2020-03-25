@@ -92,6 +92,7 @@ export class Transform {
     if (masset && masset.resolved) return;
 
     const rule = asset.rule || this.matchingRule(asset.input)
+    asset.rule = rule
     pipeline.manifest.set(asset)
     this.resolveOutput(pipeline, asset.input, clone(rule))
   }
@@ -157,8 +158,8 @@ export class Transform {
     asset.output = cleanPath(output)
     asset.cache = cleanPath(cache)
     asset.resolved = true
-    asset.rule = rule
     asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default'
+    asset.rule = rule
     pipeline.manifest.set(asset)
   }
 

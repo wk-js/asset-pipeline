@@ -95,6 +95,7 @@ class DirectoryPipeline {
                     return;
                 }
                 asset.resolved = true;
+                asset.rule = rule;
                 pipeline.manifest.set(asset);
             });
         });

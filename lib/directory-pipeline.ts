@@ -107,6 +107,7 @@ export class DirectoryPipeline implements IPipeline {
           }
 
           asset.resolved = true
+          asset.rule = rule
           pipeline.manifest.set(asset)
         })
       })
