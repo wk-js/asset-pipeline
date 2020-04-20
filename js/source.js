@@ -1,107 +1,95 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = require("./utils/path");
 const path_2 = __importDefault(require("path"));
-class Source {
-    constructor(pipeline) {
-        this.pipeline = pipeline;
-        this._sources = [];
+const file_pipeline_1 = require("./file-pipeline");
+const directory_pipeline_1 = require("./directory-pipeline");
+const file_system_1 = require("./file-system");
+class SourceMap {
+    constructor() {
+        this._paths = new Map();
     }
     clone(source) {
-        for (let i = 0; i < this._sources.length; i++) {
-            const s = this._sources[i];
-            source.add(s);
+        for (const [s, p] of this._paths) {
+            const _source = source.add(s);
+            _source.file.clone(p.file);
+            _source.directory.clone(p.directory);
         }
     }
     add(path) {
         path = path_1.cleanPath(path);
-        if (this._sources.indexOf(path) == -1)
-            this._sources.push(path);
+        if (!this._paths.has(path)) {
+            const source = new Source();
+            source.path = path;
+            source.file = new file_pipeline_1.FilePipeline(path);
+            source.directory = new directory_pipeline_1.DirectoryPipeline(path);
+            source.fs = new file_system_1.FileSystem(path);
+            this._paths.set(path, source);
+        }
+        return this._paths.get(path);
+    }
+    get(path) {
+        return this._paths.get(path);
     }
     has(path) {
         path = path_1.cleanPath(path);
-        return this._sources.indexOf(path) > -1;
+        return this._paths.has(path);
     }
     remove(path) {
-        path = path_1.cleanPath(path);
-        const index = this._sources.indexOf(path);
-        if (index > -1)
-            this._sources.splice(index, 1);
-    }
-    with(source, input, absolute = false) {
-        input = path_1.cleanPath(input);
-        const root = this.pipeline.resolve.root();
-        if (absolute && !path_2.default.isAbsolute(source)) {
-            source = path_2.default.join(root, source);
+        if (this._paths.has(path)) {
+            const item = this._paths.get(path);
+            path = path_1.cleanPath(path);
+            this._paths.delete(path);
+            return item;
         }
-        else if (!absolute && path_2.default.isAbsolute(source)) {
-            source = path_2.default.relative(root, source);
-        }
-        input = path_2.default.join(source, input);
-        return path_1.cleanPath(input);
     }
-    all(is_absolute = false) {
+    paths(resolver, is_absolute = false) {
+        const sources = [...this._paths.keys()];
         if (!is_absolute)
-            return this._sources.slice(0);
-        return this._sources.map((source) => {
-            return path_1.cleanPath(path_2.default.join(this.pipeline.resolve.root(), source));
+            return sources.slice(0);
+        return sources.map((path) => {
+            return path_1.cleanPath(path_2.default.join(resolver.root(), path));
         });
     }
-    find_from_input(input, is_absolute = false) {
-        if (path_2.default.isAbsolute(input))
-            input = this.pipeline.resolve.relative(this.pipeline.resolve.root(), input);
-        input = path_1.cleanPath(input);
-        for (let i = 0; i < this._sources.length; i++) {
-            let source = this._sources[i];
-            if (input.indexOf(source) > -1) {
-                if (is_absolute) {
-                    source = path_2.default.join(this.pipeline.resolve.root(), source);
-                }
-                return path_1.cleanPath(source);
-            }
+    fetch(pipeline, type = "file") {
+        for (const source of this._paths.values()) {
+            source[type].fetch(pipeline);
         }
-        return null;
     }
-    forEach(items, cb) {
-        this._sources.forEach((source) => {
-            items.forEach((item) => {
-                cb(item, source);
-            });
+    copy(pipeline) {
+        return __awaiter(this, void 0, void 0, function* () {
+            for (const source of this._paths.values()) {
+                yield source.fs.apply(pipeline);
+            }
         });
     }
-    map(items, cb) {
-        const new_items = [];
-        this._sources.forEach((source) => {
-            items.forEach((item) => {
-                new_items.push(cb(item, source));
-            });
-        });
-        return new_items;
-    }
-    filter(items, cb) {
-        const new_items = [];
-        this._sources.forEach((source) => {
-            items.forEach((item) => {
-                if (cb(item, source)) {
-                    new_items.push(item);
-                }
-            });
-        });
-        return new_items;
-    }
-    filter_and_map(items, cb) {
-        const new_items = [];
-        this._sources.forEach((source) => {
-            items.forEach((item) => {
-                const result = cb(item, source);
-                if (result)
-                    new_items.push(result);
-            });
-        });
-        return new_items;
+}
+exports.SourceMap = SourceMap;
+class Source {
+    join(resolver, input, absolute = false) {
+        let path = this.path;
+        input = path_1.cleanPath(input);
+        const root = resolver.root();
+        if (absolute && !path_2.default.isAbsolute(path)) {
+            path = path_2.default.join(root, path);
+        }
+        else if (!absolute && path_2.default.isAbsolute(path)) {
+            path = path_2.default.relative(root, path);
+        }
+        input = path_2.default.join(path, input);
+        return path_1.cleanPath(input);
     }
 }
 exports.Source = Source;

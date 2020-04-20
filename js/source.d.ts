@@ -1,17 +1,23 @@
 import { Pipeline } from "./pipeline";
-export declare class Source {
-    private pipeline;
-    private _sources;
-    constructor(pipeline: Pipeline);
-    clone(source: Source): void;
-    add(path: string): void;
+import { FilePipeline } from "./file-pipeline";
+import { DirectoryPipeline } from "./directory-pipeline";
+import { Resolver } from "./resolver";
+import { FileSystem } from "./file-system";
+export declare class SourceMap {
+    private _paths;
+    clone(source: SourceMap): void;
+    add(path: string): Source;
+    get(path: string): Source | undefined;
     has(path: string): boolean;
-    remove(path: string): void;
-    with(source: string, input: string, absolute?: boolean): string;
-    all(is_absolute?: boolean): string[];
-    find_from_input(input: string, is_absolute?: boolean): string | null;
-    forEach<T>(items: T[], cb: (item: T, source: string) => void): void;
-    map<T, S>(items: T[], cb: (item: T, source: string) => S): S[];
-    filter<T>(items: T[], cb: (item: T, source: string) => boolean): T[];
-    filter_and_map<T, S>(items: T[], cb: (item: T, source: string) => S | boolean): S[];
+    remove(path: string): Source | undefined;
+    paths(resolver: Resolver, is_absolute?: boolean): string[];
+    fetch(pipeline: Pipeline, type?: "file" | "directory"): void;
+    copy(pipeline: Pipeline): Promise<void>;
+}
+export declare class Source {
+    path: string;
+    file: FilePipeline;
+    directory: DirectoryPipeline;
+    fs: FileSystem;
+    join(resolver: Resolver, input: string, absolute?: boolean): string;
 }

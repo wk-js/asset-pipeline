@@ -1,18 +1,17 @@
 import { Pipeline } from "./pipeline";
-interface IManagerRuleItem {
+export interface IManagerRuleItem {
     glob: string;
     action: "move" | "copy" | "symlink" | "ignore";
 }
 export declare class FileSystem {
-    private pipeline;
+    private _source;
     globs: IManagerRuleItem[];
-    constructor(pipeline: Pipeline);
+    constructor(_source: string);
     move(glob: string): void;
     copy(glob: string): void;
     symlink(glob: string): void;
     ignore(glob: string): void;
     clone(fs: FileSystem): FileSystem;
-    apply(): Promise<void>;
-    protected _apply(type: string): Promise<void>;
+    apply(pipeline: Pipeline): Promise<void>;
+    protected _apply(pipeline: Pipeline, type: string): Promise<void>;
 }
-export {};

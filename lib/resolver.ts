@@ -107,7 +107,12 @@ export class Resolver {
     })()
 
     let input = output
-    if (asset) input = this.pipeline.source.with(asset.source, asset.input, is_absolute)
+    if (asset) {
+      const source = this.pipeline.source.get(asset.source)
+      if (source) {
+        input = source.join(this, asset.input, is_absolute)
+      }
+    }
 
     input = cleanPath(input)
 
@@ -128,13 +133,13 @@ export class Resolver {
     }
 
     // Looking for source
-    const source = this.pipeline.source.find_from_input(result.relative)
+    const source = this.source_from_input(result.relative)
 
     // Build key and clean paths
     if (source) {
       result.source = cleanPath(source)
       result.key = cleanPath(Path.relative(source, result.relative))
-      result.full = cleanPath(Path.join(root, source, result.relative))
+      result.full = cleanPath(Path.join(root, source, result.key))
     }
 
     return result
@@ -150,8 +155,21 @@ export class Resolver {
     return cleanPath(Path.relative(from, to))
   }
 
-  normalize(path: string) {
-    return Path.normalize(path)
+  source_from_input(input: string, is_absolute: boolean = false) {
+    if (Path.isAbsolute(input)) input = this.relative(this.root(), input)
+    input = cleanPath(input)
+
+    for (let path of this.pipeline.source['_paths'].keys()) {
+      if (input.indexOf(path) > -1) {
+        if (is_absolute) {
+          path = Path.join(this.root(), path)
+        }
+
+        return cleanPath(path)
+      }
+    }
+
+    return null
   }
 
   use(path: string) {

@@ -20,7 +20,7 @@ export declare class Resolver {
     source(output: string, is_absolute?: boolean, normalize?: boolean): string;
     parse(path: string): IPathObject;
     relative(from: string, to: string): string;
-    normalize(path: string): string;
+    source_from_input(input: string, is_absolute?: boolean): string | null;
     use(path: string): void;
     is_used(path: string): boolean;
     clean_used(): void;

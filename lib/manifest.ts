@@ -2,7 +2,6 @@ import { Pipeline } from "./pipeline"
 import { writeFile, isFile, readFile, remove } from "lol/js/node/fs";
 import { IAsset, IManifest, IOutput } from "./types";
 import { cleanPath } from "./utils/path";
-import { clone } from "lol/js/object";
 
 export class Manifest {
 
@@ -36,7 +35,7 @@ export class Manifest {
   async create_file() {
     this._file.key = this.pipeline.cache.key
     this._file.date = new Date
-    this._file.sources = this.pipeline.source.all()
+    this._file.sources = this.pipeline.source.paths(this.pipeline.resolve)
     this._file.output = this.pipeline.resolve.output()
     this._file.root = this.pipeline.resolve.root()
 

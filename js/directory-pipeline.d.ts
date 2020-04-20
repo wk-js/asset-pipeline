@@ -2,6 +2,7 @@ import { IAsset, IDirectoryRule, IPipeline } from "./types";
 import { Pipeline } from "./pipeline";
 import { Transform } from "./transform";
 export declare class DirectoryPipeline implements IPipeline {
+    private _source;
     /**
      * Pipeline type
      */
@@ -13,6 +14,7 @@ export declare class DirectoryPipeline implements IPipeline {
     protected _shadows: IAsset[];
     protected _globToAdd: string[];
     protected _globToIgnore: string[];
+    constructor(_source: string);
     /**
      * Append file pattern
      */

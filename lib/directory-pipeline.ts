@@ -24,6 +24,8 @@ export class DirectoryPipeline implements IPipeline {
   protected _globToAdd: string[] = []
   protected _globToIgnore: string[] = []
 
+  constructor(private _source: string) {}
+
   /**
    * Append file pattern
    */
@@ -63,6 +65,9 @@ export class DirectoryPipeline implements IPipeline {
   }
 
   fetch(pipeline: Pipeline) {
+    const source = pipeline.source.get(this._source)
+    if (!source) return
+
     this._fetch(pipeline)
       .map((asset) => {
         this.rules.resolve(pipeline, asset)
@@ -70,7 +75,7 @@ export class DirectoryPipeline implements IPipeline {
       })
 
       .forEach((item) => {
-        const glob = pipeline.source.with(item.source, item.input, true) + '/**/*'
+        const glob = source.join(pipeline.resolve, item.input, true) + '/**/*'
 
         // Handle files
         fetch(glob).map((input: string) => {

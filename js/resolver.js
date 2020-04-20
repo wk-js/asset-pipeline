@@ -91,8 +91,12 @@ class Resolver {
             }
         })();
         let input = output;
-        if (asset)
-            input = this.pipeline.source.with(asset.source, asset.input, is_absolute);
+        if (asset) {
+            const source = this.pipeline.source.get(asset.source);
+            if (source) {
+                input = source.join(this, asset.input, is_absolute);
+            }
+        }
         input = path_1.cleanPath(input);
         return normalize ? path_2.default.normalize(input) : input;
     }
@@ -108,12 +112,12 @@ class Resolver {
             relative: path_1.cleanPath(relative),
         };
         // Looking for source
-        const source = this.pipeline.source.find_from_input(result.relative);
+        const source = this.source_from_input(result.relative);
         // Build key and clean paths
         if (source) {
             result.source = path_1.cleanPath(source);
             result.key = path_1.cleanPath(path_2.default.relative(source, result.relative));
-            result.full = path_1.cleanPath(path_2.default.join(root, source, result.relative));
+            result.full = path_1.cleanPath(path_2.default.join(root, source, result.key));
         }
         return result;
     }
@@ -126,8 +130,19 @@ class Resolver {
             to = path_2.default.relative(this._root, to);
         return path_1.cleanPath(path_2.default.relative(from, to));
     }
-    normalize(path) {
-        return path_2.default.normalize(path);
+    source_from_input(input, is_absolute = false) {
+        if (path_2.default.isAbsolute(input))
+            input = this.relative(this.root(), input);
+        input = path_1.cleanPath(input);
+        for (let path of this.pipeline.source['_paths'].keys()) {
+            if (input.indexOf(path) > -1) {
+                if (is_absolute) {
+                    path = path_2.default.join(this.root(), path);
+                }
+                return path_1.cleanPath(path);
+            }
+        }
+        return null;
     }
     use(path) {
         path = path_1.cleanPath(path);

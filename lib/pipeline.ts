@@ -1,10 +1,7 @@
-import { FilePipeline } from "./file-pipeline";
-import { DirectoryPipeline } from "./directory-pipeline";
 import { Manifest } from "./manifest";
-import { FileSystem } from "./file-system";
 import { Tree } from "./tree";
 import { Resolver } from "./resolver";
-import { Source } from "./source";
+import { SourceMap } from "./source";
 import { Cache } from "./cache";
 
 export class Pipeline {
@@ -12,13 +9,10 @@ export class Pipeline {
   verbose: boolean = false
 
   cache = new Cache()
-  source = new Source(this)
-  directory = new DirectoryPipeline()
-  file = new FilePipeline()
+  source = new SourceMap()
   manifest = new Manifest(this)
   resolve = new Resolver(this)
   tree = new Tree(this)
-  fs = new FileSystem(this)
 
   constructor(key: string) {
     this.cache.key = key
@@ -28,11 +22,8 @@ export class Pipeline {
     const p = new Pipeline(key)
     this.cache.clone(p.cache)
     this.source.clone(p.source)
-    this.directory.clone(p.directory)
-    this.file.clone(p.file)
     this.manifest.clone(p.manifest)
     this.resolve.clone(p.resolve)
-    this.fs.clone(p.fs)
     return p
   }
 
@@ -44,11 +35,11 @@ export class Pipeline {
       this.manifest.clear()
 
       this.log('[AssetPipeline] Fetch directories')
-      this.directory.fetch(this)
+      this.source.fetch(this, "directory")
       this.tree.update()
 
       this.log('[AssetPipeline] Fetch files')
-      this.file.fetch(this)
+      this.source.fetch(this, "file")
       this.tree.update()
 
       this.log('[AssetPipeline] Clean resolved paths')
@@ -60,6 +51,10 @@ export class Pipeline {
       this.log('[AssetPipeline] Read manifest')
       return this.manifest.read_file()
     }
+  }
+
+  copy() {
+    return this.source.copy(this)
   }
 
   log(...args: any[]) {

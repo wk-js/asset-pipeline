@@ -11,7 +11,8 @@ const path_2 = require("./utils/path");
 const transform_1 = require("./transform");
 const array_1 = require("lol/js/array");
 class DirectoryPipeline {
-    constructor() {
+    constructor(_source) {
+        this._source = _source;
         /**
          * Pipeline type
          */
@@ -60,13 +61,16 @@ class DirectoryPipeline {
         return directory;
     }
     fetch(pipeline) {
+        const source = pipeline.source.get(this._source);
+        if (!source)
+            return;
         this._fetch(pipeline)
             .map((asset) => {
             this.rules.resolve(pipeline, asset);
             return asset;
         })
             .forEach((item) => {
-            const glob = pipeline.source.with(item.source, item.input, true) + '/**/*';
+            const glob = source.join(pipeline.resolve, item.input, true) + '/**/*';
             // Handle files
             fs_1.fetch(glob).map((input) => {
                 input = pipeline.resolve.relative(item.source, input);

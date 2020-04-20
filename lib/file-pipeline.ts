@@ -20,12 +20,15 @@ export class FilePipeline implements IPipeline {
   protected _globToAdd: string[] = []
   protected _globToIgnore: string[] = []
 
+  constructor(private _source: string) {}
+
   /**
    * Add file pattern
    */
   add(pattern: string, transformRule?: IFileRule) {
     this._globToAdd.push(pattern)
     if (transformRule) this.rules.add(pattern, transformRule)
+    return this
   }
 
   /**
@@ -33,6 +36,7 @@ export class FilePipeline implements IPipeline {
    */
   ignore(pattern: string) {
     this._globToIgnore.push(pattern)
+    return this
   }
 
   /**
@@ -48,6 +52,7 @@ export class FilePipeline implements IPipeline {
       resolved: false
     })
     if (transformRule) this.rules.add(file, transformRule)
+    return this
   }
 
   /**
@@ -66,39 +71,37 @@ export class FilePipeline implements IPipeline {
     this._fetch(pipeline).forEach((asset) => {
       this.rules.resolve(pipeline, asset)
     })
+    return this
   }
 
   protected _fetch(pipeline: Pipeline) {
     const globs: string[] = []
     const ignores: string[] = []
+    const source = pipeline.source.get(this._source)
+    if (!source) return []
 
-    pipeline.source.all(true).forEach((source) => {
-      this._globToAdd.forEach((pattern) => {
-        globs.push(pipeline.source.with(source, pattern, true))
-      })
-      this._globToIgnore.forEach((pattern) => {
-        ignores.push(pipeline.source.with(source, pattern, true))
-      })
+    this._globToAdd.forEach(pattern => {
+      const glob = source.join(pipeline.resolve, pattern, true)
+      globs.push(glob)
+    })
+
+    this._globToIgnore.forEach(pattern => {
+      const ignore = source.join(pipeline.resolve, pattern, true)
+      ignores.push(ignore)
     })
 
     const fetcher = this._fetcher()
 
     const assets = fetcher(globs, ignores)
       .map((file) => {
-        const source = pipeline.source.find_from_input(file, true)
-
-        if (source) {
-          const input = pipeline.resolve.relative(source, file)
-          return {
-            source: pipeline.resolve.relative(pipeline.resolve.root(), source),
-            input: input,
-            output: input,
-            cache: input,
-            resolved: false
-          } as IAsset
-        }
-
-        return null
+        const input = pipeline.resolve.relative(this._source, file)
+        return {
+          source: pipeline.resolve.relative(pipeline.resolve.root(), this._source),
+          input: input,
+          output: input,
+          cache: input,
+          resolved: false
+        } as IAsset
       })
     .filter((asset) => asset != null)
 

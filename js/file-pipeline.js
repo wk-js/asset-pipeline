@@ -3,7 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const transform_1 = require("./transform");
 const fs_1 = require("lol/js/node/fs");
 class FilePipeline {
-    constructor() {
+    constructor(_source) {
+        this._source = _source;
         /**
          * Pipeline type
          */
@@ -23,12 +24,14 @@ class FilePipeline {
         this._globToAdd.push(pattern);
         if (transformRule)
             this.rules.add(pattern, transformRule);
+        return this;
     }
     /**
      * Add file pattern to ignore
      */
     ignore(pattern) {
         this._globToIgnore.push(pattern);
+        return this;
     }
     /**
      * Add non-existing file to the manifest. Rules are applied.
@@ -44,6 +47,7 @@ class FilePipeline {
         });
         if (transformRule)
             this.rules.add(file, transformRule);
+        return this;
     }
     /**
      * Clone the pipeline
@@ -60,33 +64,33 @@ class FilePipeline {
         this._fetch(pipeline).forEach((asset) => {
             this.rules.resolve(pipeline, asset);
         });
+        return this;
     }
     _fetch(pipeline) {
         const globs = [];
         const ignores = [];
-        pipeline.source.all(true).forEach((source) => {
-            this._globToAdd.forEach((pattern) => {
-                globs.push(pipeline.source.with(source, pattern, true));
-            });
-            this._globToIgnore.forEach((pattern) => {
-                ignores.push(pipeline.source.with(source, pattern, true));
-            });
+        const source = pipeline.source.get(this._source);
+        if (!source)
+            return [];
+        this._globToAdd.forEach(pattern => {
+            const glob = source.join(pipeline.resolve, pattern, true);
+            globs.push(glob);
+        });
+        this._globToIgnore.forEach(pattern => {
+            const ignore = source.join(pipeline.resolve, pattern, true);
+            ignores.push(ignore);
         });
         const fetcher = this._fetcher();
         const assets = fetcher(globs, ignores)
             .map((file) => {
-            const source = pipeline.source.find_from_input(file, true);
-            if (source) {
-                const input = pipeline.resolve.relative(source, file);
-                return {
-                    source: pipeline.resolve.relative(pipeline.resolve.root(), source),
-                    input: input,
-                    output: input,
-                    cache: input,
-                    resolved: false
-                };
-            }
-            return null;
+            const input = pipeline.resolve.relative(this._source, file);
+            return {
+                source: pipeline.resolve.relative(pipeline.resolve.root(), this._source),
+                input: input,
+                output: input,
+                cache: input,
+                resolved: false
+            };
         })
             .filter((asset) => asset != null);
         return this._shadows.concat(assets);
