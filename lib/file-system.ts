@@ -1,6 +1,7 @@
 import { fetch, copy, move, fetchDirs, symlink2 } from "lol/js/node/fs";
 import { Pipeline } from "./pipeline"
 import { relative } from "path";
+import { statSync } from 'fs';
 
 export interface IManagerRuleItem {
   glob: string,
@@ -8,8 +9,8 @@ export interface IManagerRuleItem {
 }
 
 export class FileSystem {
-
   globs: IManagerRuleItem[] = []
+  mtimes = new Map<string, Date>()
 
   constructor(private _source: string) { }
 
@@ -49,7 +50,8 @@ export class FileSystem {
     return fs
   }
 
-  async apply(pipeline: Pipeline) {
+  async apply(pipeline: Pipeline, force = false) {
+    if (force) this.mtimes.clear()
     const types = ['move', 'copy', 'symlink']
     for (let i = 0; i < types.length; i++) {
       await this._apply(pipeline, types[i])
@@ -76,7 +78,7 @@ export class FileSystem {
         fetch(validGlobs, ignoredGlobs)
     )
 
-    const ios: [string, string][] = []
+    let ios: [string, string][] = []
     files.forEach(file => {
       const relative_file = resolver.relative(source.path, file)
       const input = relative(resolver.root(), file)
@@ -87,8 +89,23 @@ export class FileSystem {
       }
     })
 
+
+    ios = ios.filter(io => {
+      const { mtime } = statSync(io[0])
+
+      if (this.mtimes.has(io[0])) {
+        const prev = this.mtimes.get(io[0])!
+        if (mtime <= prev) return false
+      }
+
+      this.mtimes.set(io[0], mtime)
+      return true
+    })
+
     for (let i = 0; i < ios.length; i++) {
       const io = ios[i];
+
+      pipeline.log(type, ...io)
 
       if (type === 'copy') {
         await copy(io[0], io[1])

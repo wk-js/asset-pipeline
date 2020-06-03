@@ -5,6 +5,7 @@ import Path, { join } from "path";
 import * as assert from "assert";
 import { Pipeline } from "../lib/pipeline";
 import { toUnixPath } from "../lib/utils/path";
+import { exec } from "lol/js/node/exec"
 
 const LOAD_PATH = 'tmp/test-units'
 const DST_PATH = 'tmp/test-units-dist'
@@ -49,7 +50,7 @@ before(async () => {
 })
 
 after(async () => {
-  await removeDir(LOAD_PATH)
+  if (isDirectory(LOAD_PATH)) await removeDir(LOAD_PATH)
 })
 
 afterEach(async () => {
@@ -295,6 +296,12 @@ describe('Directory (FS)', () => {
       'tmp/test-units-dist/world/file5.txt',
       'tmp/test-units-dist/world/file6.txt',
     ])
+  })
+
+  it("Copy new only", async () => {
+    const res = await exec('node test/copy.js', { fetchStdout: true })
+    const last = res.stdout.toString('utf-8').trim().split('\n').pop()
+    assert.equal(last, '[asset-pipeline] copy lib/index.ts tmp/copy/index.ts')
   })
 
 })

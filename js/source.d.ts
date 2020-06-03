@@ -12,7 +12,7 @@ export declare class SourceMap {
     remove(path: string): Source | undefined;
     paths(resolver: Resolver, is_absolute?: boolean): string[];
     fetch(pipeline: Pipeline, type?: "file" | "directory"): void;
-    copy(pipeline: Pipeline): Promise<void>;
+    copy(pipeline: Pipeline, force?: boolean): Promise<void>;
 }
 export declare class Source {
     path: string;

@@ -68,10 +68,10 @@ class SourceMap {
             source[type].fetch(pipeline);
         }
     }
-    copy(pipeline) {
+    copy(pipeline, force = false) {
         return __awaiter(this, void 0, void 0, function* () {
             for (const source of this._paths.values()) {
-                yield source.fs.apply(pipeline);
+                yield source.fs.apply(pipeline, force);
             }
         });
     }

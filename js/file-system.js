@@ -11,10 +11,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("lol/js/node/fs");
 const path_1 = require("path");
+const fs_2 = require("fs");
 class FileSystem {
     constructor(_source) {
         this._source = _source;
         this.globs = [];
+        this.mtimes = new Map();
     }
     move(glob) {
         this.globs.push({
@@ -47,8 +49,10 @@ class FileSystem {
         }
         return fs;
     }
-    apply(pipeline) {
+    apply(pipeline, force = false) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (force)
+                this.mtimes.clear();
             const types = ['move', 'copy', 'symlink'];
             for (let i = 0; i < types.length; i++) {
                 yield this._apply(pipeline, types[i]);
@@ -71,7 +75,7 @@ class FileSystem {
                 fs_1.fetchDirs(validGlobs, ignoredGlobs)
                 :
                     fs_1.fetch(validGlobs, ignoredGlobs));
-            const ios = [];
+            let ios = [];
             files.forEach(file => {
                 const relative_file = resolver.relative(source.path, file);
                 const input = path_1.relative(resolver.root(), file);
@@ -81,8 +85,19 @@ class FileSystem {
                     return ios.push([input, output.split(/\#|\?/)[0]]);
                 }
             });
+            ios = ios.filter(io => {
+                const { mtime } = fs_2.statSync(io[0]);
+                if (this.mtimes.has(io[0])) {
+                    const prev = this.mtimes.get(io[0]);
+                    if (mtime <= prev)
+                        return false;
+                }
+                this.mtimes.set(io[0], mtime);
+                return true;
+            });
             for (let i = 0; i < ios.length; i++) {
                 const io = ios[i];
+                pipeline.log(type, ...io);
                 if (type === 'copy') {
                     yield fs_1.copy(io[0], io[1]);
                 }

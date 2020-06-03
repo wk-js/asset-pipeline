@@ -66,9 +66,9 @@ export class SourceMap {
     }
   }
 
-  async copy(pipeline: Pipeline) {
+  async copy(pipeline: Pipeline, force = false) {
     for (const source of this._paths.values()) {
-      await source.fs.apply(pipeline)
+      await source.fs.apply(pipeline, force)
     }
   }
 

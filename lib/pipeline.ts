@@ -58,7 +58,7 @@ export class Pipeline {
   }
 
   log(...args: any[]) {
-    if (this.verbose) console.log(...args)
+    if (this.verbose) console.log('[asset-pipeline]', ...args)
   }
 
 }
