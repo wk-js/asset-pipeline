@@ -31,24 +31,24 @@ export class Pipeline {
     force = force ? force : !this.manifest.read
 
     if (force || !this.manifest.fileExists()) {
-      this.log('[AssetPipeline] Clear manifest')
+      this.log('Clear manifest')
       this.manifest.clear()
 
-      this.log('[AssetPipeline] Fetch directories')
+      this.log('Fetch directories')
       this.source.fetch(this, "directory")
       this.tree.update()
 
-      this.log('[AssetPipeline] Fetch files')
+      this.log('Fetch files')
       this.source.fetch(this, "file")
       this.tree.update()
 
-      this.log('[AssetPipeline] Clean resolved paths')
+      this.log('Clean resolved paths')
       this.resolve.clean_used()
 
-      this.log('[AssetPipeline] Update manifest')
+      this.log('Update manifest')
       return this.manifest.update_file()
     } else {
-      this.log('[AssetPipeline] Read manifest')
+      this.log('Read manifest')
       return this.manifest.read_file()
     }
   }
