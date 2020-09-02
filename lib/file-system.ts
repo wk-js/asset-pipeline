@@ -3,6 +3,7 @@ import { PipelineManager } from "./pipeline"
 import { statSync } from 'fs';
 import { cleanup, normalize } from "./path";
 import * as Path from "path";
+import { chunk } from "lol/js/array";
 
 export interface IManagerRuleItem {
   glob: string,
@@ -10,8 +11,9 @@ export interface IManagerRuleItem {
 }
 
 export class FileSystem {
-  globs: IManagerRuleItem[] = []
-  mtimes = new Map<string, Date>()
+  chunkCount = 15
+  private globs: IManagerRuleItem[] = []
+  private mtimes = new Map<string, Date>()
 
   constructor(private pid: string, private sid: string) { }
 
@@ -111,19 +113,23 @@ export class FileSystem {
       return true
     })
 
-    const ps = ios.map(io => {
-      this._log(type, ...io.map(p => normalize(Path.relative(process.cwd(), p), "web")))
 
-      if (type === 'copy') {
-        return copy(io[0], io[1])
-      } else if (type === 'move') {
-        return move(io[0], io[1])
-      } else if (type === 'symlink') {
-        return symlink2(io[0], io[1])
-      }
-    })
+    for (const items of chunk(ios, this.chunkCount)) {
+      const ps = items.map(io => {
+        this._log(type, ...io.map(p => normalize(Path.relative(process.cwd(), p), "web")))
 
-    await Promise.all(ps)
+        if (type === 'copy') {
+          return copy(io[0], io[1])
+        } else if (type === 'move') {
+          return move(io[0], io[1])
+        } else if (type === 'symlink') {
+          return symlink2(io[0], io[1])
+        }
+      })
+
+      await Promise.all(ps)
+    }
+
   }
 
   private _log(...args: any[]) {

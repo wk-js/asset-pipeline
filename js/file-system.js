@@ -34,10 +34,12 @@ const pipeline_1 = require("./pipeline");
 const fs_2 = require("fs");
 const path_1 = require("./path");
 const Path = __importStar(require("path"));
+const array_1 = require("lol/js/array");
 class FileSystem {
     constructor(pid, sid) {
         this.pid = pid;
         this.sid = sid;
+        this.chunkCount = 15;
         this.globs = [];
         this.mtimes = new Map();
     }
@@ -125,19 +127,21 @@ class FileSystem {
                 this.mtimes.set(io[0], mtime);
                 return true;
             });
-            const ps = ios.map(io => {
-                this._log(type, ...io.map(p => path_1.normalize(Path.relative(process.cwd(), p), "web")));
-                if (type === 'copy') {
-                    return fs_1.copy(io[0], io[1]);
-                }
-                else if (type === 'move') {
-                    return fs_1.move(io[0], io[1]);
-                }
-                else if (type === 'symlink') {
-                    return fs_1.symlink2(io[0], io[1]);
-                }
-            });
-            yield Promise.all(ps);
+            for (const items of array_1.chunk(ios, this.chunkCount)) {
+                const ps = items.map(io => {
+                    this._log(type, ...io.map(p => path_1.normalize(Path.relative(process.cwd(), p), "web")));
+                    if (type === 'copy') {
+                        return fs_1.copy(io[0], io[1]);
+                    }
+                    else if (type === 'move') {
+                        return fs_1.move(io[0], io[1]);
+                    }
+                    else if (type === 'symlink') {
+                        return fs_1.symlink2(io[0], io[1]);
+                    }
+                });
+                yield Promise.all(ps);
+            }
         });
     }
     _log(...args) {

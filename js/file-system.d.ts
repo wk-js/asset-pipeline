@@ -5,8 +5,9 @@ export interface IManagerRuleItem {
 export declare class FileSystem {
     private pid;
     private sid;
-    globs: IManagerRuleItem[];
-    mtimes: Map<string, Date>;
+    chunkCount: number;
+    private globs;
+    private mtimes;
     constructor(pid: string, sid: string);
     get source(): import("./source").Source | undefined;
     get resolver(): import("./resolver").Resolver | undefined;
