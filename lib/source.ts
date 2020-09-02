@@ -1,74 +1,74 @@
-import { cleanPath } from "./utils/path";
-import Path from "path";
-import { Pipeline } from "./pipeline";
+import * as Path from "path";
+import { PipelineManager } from "./pipeline";
 import { FilePipeline } from "./file-pipeline";
 import { DirectoryPipeline } from "./directory-pipeline";
-import { Resolver } from "./resolver";
 import { FileSystem } from "./file-system";
+import { PathWrapper, createWrapper, normalize } from "./path";
+import { guid } from "lol/js/string/guid";
 
-export class SourceMap {
+export class SourceManager {
 
-  private _paths = new Map<string, Source>()
+  private _sources = new Map<string, Source>()
 
-  clone(source: SourceMap) {
-    for (const [s, p] of this._paths) {
+  constructor(private pid: string) { }
+
+  clone(source: SourceManager) {
+    for (const [s, p] of this._sources) {
       const _source = source.add(s)
       _source.file.clone(p.file)
       _source.directory.clone(p.directory)
+      _source.fs.clone(p.fs)
     }
   }
 
   add(path: string) {
-    path = cleanPath(path)
-
-    if (!this._paths.has(path)) {
-      const source = new Source()
-      source.path = path
-      source.file = new FilePipeline(path)
-      source.directory = new DirectoryPipeline(path)
-      source.fs = new FileSystem(path)
-      this._paths.set(path, source)
-    }
-
-    return this._paths.get(path) as Source
+    path = normalize(path, "system")
+    if (Path.isAbsolute(path)) throw new Error("Cannot an absolute path to source")
+    const source = new Source(path, this.pid)
+    this._sources.set(source.uuid, source)
+    return source
   }
 
-  get(path: string) {
-    return this._paths.get(path)
+  get(uuid: string) {
+    return this._sources.get(uuid)
   }
 
-  has(path: string) {
-    path = cleanPath(path)
-    return this._paths.has(path)
+  has(uuid: string) {
+    return this._sources.has(uuid)
   }
 
-  remove(path: string) {
-    if (this._paths.has(path)) {
-      const item = this._paths.get(path)
-      path = cleanPath(path)
-      this._paths.delete(path)
+  remove(uuid: string) {
+    if (this._sources.has(uuid)) {
+      const item = this._sources.get(uuid) as Source
+      this._sources.delete(uuid)
       return item
     }
   }
 
-  paths(resolver: Resolver, is_absolute: boolean = false) {
-    const sources = [...this._paths.keys()]
-    if (!is_absolute) return sources.slice(0)
-
-    return sources.map((path) => {
-      return cleanPath(Path.join(resolver.root(), path))
-    })
-  }
-
-  fetch(pipeline: Pipeline, type = "file" as "file" | "directory") {
-    for (const source of this._paths.values()) {
-      source[type].fetch(pipeline)
+  all(type?: "array"): Source[]
+  all(type: "object"): Record<string, Source>
+  all(type: "array" | "object" = "array"): any {
+    switch (type) {
+      case "array": return [...this._sources.values()]
+      case "object": {
+        const o: Record<string, Source> = {}
+        for (const source of this._sources.values()) {
+          o[source.uuid] = source
+        }
+        return o
+      }
     }
   }
 
-  async copy(pipeline: Pipeline, force = false) {
-    for (const source of this._paths.values()) {
-      await source.fs.apply(pipeline, force)
+  fetch(type: "file" | "directory") {
+    for (const source of this._sources.values()) {
+      source[type].fetch()
+    }
+  }
+
+  async copy(force = false) {
+    for (const source of this._sources.values()) {
+      await source.fs.apply(force)
     }
   }
 
@@ -76,25 +76,23 @@ export class SourceMap {
 
 export class Source {
 
-  path!: string
-  file!: FilePipeline
-  directory!: DirectoryPipeline
-  fs!: FileSystem
+  uuid = guid()
+  file: FilePipeline
+  directory: DirectoryPipeline
+  fs: FileSystem
+  path: PathWrapper
+  fullpath: PathWrapper
 
-  join(resolver: Resolver, input: string, absolute: boolean = false) {
-    let path = this.path
+  constructor(path: string, private pid: string) {
+    this.path = createWrapper(path)
+    this.fullpath = createWrapper(Path.isAbsolute(path) ? path : Path.join(process.cwd(), path))
+    this.file = new FilePipeline(pid, this.uuid)
+    this.directory = new DirectoryPipeline(pid, this.uuid)
+    this.fs = new FileSystem(pid, this.uuid)
+  }
 
-    input = cleanPath(input)
-    const root = resolver.root()
-
-    if (absolute && !Path.isAbsolute(path)) {
-      path = Path.join(root, path)
-    } else if (!absolute && Path.isAbsolute(path)) {
-      path = Path.relative(root, path)
-    }
-
-    input = Path.join(path, input)
-    return cleanPath(input)
+  get pipeline() {
+    return PipelineManager.get(this.pid)
   }
 
 }

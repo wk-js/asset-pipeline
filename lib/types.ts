@@ -1,5 +1,6 @@
 import { Transform } from "./transform";
 import { Pipeline } from "./pipeline";
+import { ParsedPath } from "path";
 
 export interface RenameOptions {
   input: {
@@ -25,15 +26,17 @@ export interface RenameOptions {
 
 export type TRenameFunction = (options: RenameOptions) => string
 
+export type TRenameObject = Partial<ParsedPath>
+
 export interface IMinimumRule {
   // Ignore matched files
   ignore?: boolean,
 
   // Cachebreak mateched files
-  cache?: boolean | string | TRenameFunction,
+  cache?: boolean | string | TRenameFunction | TRenameObject,
 
   // Rename the basename or accept a function to rename full output path
-  output?: string | TRenameFunction,
+  output?: string | TRenameFunction | TRenameObject,
 
   // Tagname
   tag?: string
@@ -56,7 +59,10 @@ export interface IMatchRule extends IFileRule {
 }
 
 export interface IAsset {
-  source: string,
+  source: {
+    uuid: string,
+    path: string
+  },
   input: string,
   output: string,
   cache: string,
@@ -70,8 +76,7 @@ export interface IManifest {
   date: Date,
   sources: string[],
   output: string,
-  root: string,
-  assets: Record<string, IAsset>
+  assets: Record<string, IAsset | undefined>
 }
 
 export interface IPathObject {
@@ -93,4 +98,12 @@ export interface IPipeline {
   type: "file" | "directory"
   rules: Transform
   fetch(pipeline: Pipeline) : void
+}
+
+export interface IResolvePathOptions {
+  // Set relative path
+  from: string
+
+  // Remove hash and search parameters
+  cleanup: boolean
 }

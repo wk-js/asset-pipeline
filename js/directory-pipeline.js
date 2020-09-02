@@ -1,18 +1,40 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const path_1 = __importDefault(require("path"));
+exports.DirectoryPipeline = void 0;
+const Path = __importStar(require("path"));
 const fs_1 = require("lol/js/node/fs");
 const file_pipeline_1 = require("./file-pipeline");
 const minimatch_1 = __importDefault(require("minimatch"));
-const path_2 = require("./utils/path");
+const pipeline_1 = require("./pipeline");
 const transform_1 = require("./transform");
 const array_1 = require("lol/js/array");
+const path_1 = require("./path");
 class DirectoryPipeline {
-    constructor(_source) {
-        this._source = _source;
+    constructor(pid, sid) {
+        this.pid = pid;
+        this.sid = sid;
         /**
          * Pipeline type
          */
@@ -24,6 +46,21 @@ class DirectoryPipeline {
         this._shadows = [];
         this._globToAdd = [];
         this._globToIgnore = [];
+    }
+    get pipeline() {
+        return pipeline_1.PipelineManager.get(this.pid);
+    }
+    get source() {
+        var _a;
+        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.source.get(this.sid);
+    }
+    get resolver() {
+        var _a;
+        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.resolve;
+    }
+    get manifest() {
+        var _a;
+        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.manifest;
     }
     /**
      * Append file pattern
@@ -44,7 +81,10 @@ class DirectoryPipeline {
      */
     shadow(file) {
         this._shadows.push({
-            source: '__shadow__',
+            source: {
+                uuid: '__shadow__',
+                path: '__shadow__',
+            },
             input: file,
             output: file,
             cache: file,
@@ -60,33 +100,36 @@ class DirectoryPipeline {
         this.rules.clone(directory.rules);
         return directory;
     }
-    fetch(pipeline) {
-        const source = pipeline.source.get(this._source);
-        if (!source)
+    fetch() {
+        if (!this.pipeline || !this.source || !this.resolver || !this.manifest)
             return;
-        this._fetch(pipeline)
+        const pipeline = this.pipeline;
+        const source = this.source;
+        const resolver = this.resolver;
+        const manifest = this.manifest;
+        this._fetch()
             .map((asset) => {
             this.rules.resolve(pipeline, asset);
             return asset;
         })
             .forEach((item) => {
-            const glob = source.join(pipeline.resolve, item.input, true) + '/**/*';
+            const glob = source.fullpath.join(item.input, '**/*').raw();
             // Handle files
-            fs_1.fetch(glob).map((input) => {
-                input = pipeline.resolve.relative(item.source, input);
-                const pathObject = path_1.default.parse(input);
-                pathObject.dir = pipeline.resolve.path(pathObject.dir);
-                const output = path_1.default.format(pathObject);
+            fs_1.fetch(glob).map((file) => {
+                const input = source.fullpath.relative(file);
+                const pathObject = Path.parse(input.raw());
+                pathObject.dir = resolver.getPath(pathObject.dir);
+                const output = Path.format(pathObject);
                 const rule = this.rules.matchingRule(item.input);
                 const asset = {
                     source: item.source,
-                    input: path_2.cleanPath(input),
-                    output: path_2.cleanPath(output),
-                    cache: path_2.cleanPath(output),
+                    input: input.toWeb(),
+                    output: path_1.normalize(output, "web"),
+                    cache: path_1.normalize(output, "web"),
                     tag: typeof rule.tag == 'string' ? rule.tag : 'default'
                 };
                 // Handle rules for files
-                if (!(pipeline.manifest.has(asset.input) && pipeline.manifest.get(asset.input).resolved)
+                if (!(manifest.has(asset.input) && manifest.get(asset.input).resolved)
                     && rule.file_rules
                     && rule.file_rules.length > 0) {
                     for (let i = 0; i < rule.file_rules.length; i++) {
@@ -100,13 +143,12 @@ class DirectoryPipeline {
                 }
                 asset.resolved = true;
                 asset.rule = rule;
-                pipeline.manifest.set(asset);
+                pipeline.manifest.add(asset);
             });
         });
     }
-    _fetch(pipeline) {
-        // @ts-ignore
-        return file_pipeline_1.FilePipeline.prototype._fetch.call(this, pipeline);
+    _fetch() {
+        return file_pipeline_1.FilePipeline.prototype["_fetch"].call(this);
     }
     _fetcher() {
         return function (globs, ignores) {

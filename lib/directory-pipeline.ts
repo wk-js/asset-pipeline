@@ -1,12 +1,12 @@
-import Path from "path";
+import * as Path from "path";
 import { fetch, fetchDirs } from "lol/js/node/fs";
 import { FilePipeline } from "./file-pipeline";
 import { IAsset, IDirectoryRule, IPipeline } from "./types";
 import minimatch from "minimatch";
-import { Pipeline } from "./pipeline";
-import { cleanPath } from "./utils/path";
+import { PipelineManager } from "./pipeline";
 import { Transform } from "./transform";
 import { unique } from "lol/js/array";
+import { normalize } from "./path";
 
 export class DirectoryPipeline implements IPipeline {
 
@@ -24,7 +24,23 @@ export class DirectoryPipeline implements IPipeline {
   protected _globToAdd: string[] = []
   protected _globToIgnore: string[] = []
 
-  constructor(private _source: string) {}
+  constructor(private pid: string, private sid: string) { }
+
+  get pipeline() {
+    return PipelineManager.get(this.pid)
+  }
+
+  get source() {
+    return this.pipeline?.source.get(this.sid)
+  }
+
+  get resolver() {
+    return this.pipeline?.resolve
+  }
+
+  get manifest() {
+    return this.pipeline?.manifest
+  }
 
   /**
    * Append file pattern
@@ -46,7 +62,10 @@ export class DirectoryPipeline implements IPipeline {
    */
   shadow(file: string) {
     this._shadows.push({
-      source: '__shadow__',
+      source: {
+        uuid: '__shadow__',
+        path: '__shadow__',
+      },
       input: file,
       output: file,
       cache: file,
@@ -64,39 +83,42 @@ export class DirectoryPipeline implements IPipeline {
     return directory
   }
 
-  fetch(pipeline: Pipeline) {
-    const source = pipeline.source.get(this._source)
-    if (!source) return
+  fetch() {
+    if (!this.pipeline || !this.source || !this.resolver || !this.manifest) return
+    const pipeline = this.pipeline
+    const source = this.source
+    const resolver = this.resolver
+    const manifest = this.manifest
 
-    this._fetch(pipeline)
+    this._fetch()
       .map((asset) => {
         this.rules.resolve(pipeline, asset)
         return asset
       })
 
       .forEach((item) => {
-        const glob = source.join(pipeline.resolve, item.input, true) + '/**/*'
+        const glob = source.fullpath.join(item.input, '**/*').raw()
 
         // Handle files
-        fetch(glob).map((input: string) => {
-          input = pipeline.resolve.relative(item.source, input)
+        fetch(glob).map((file: string) => {
+          const input = source.fullpath.relative(file)
 
-          const pathObject = Path.parse(input)
-          pathObject.dir = pipeline.resolve.path(pathObject.dir)
+          const pathObject = Path.parse(input.raw())
+          pathObject.dir = resolver.getPath(pathObject.dir)
           const output = Path.format(pathObject)
 
           const rule = this.rules.matchingRule(item.input) as IDirectoryRule
           const asset: IAsset = {
             source: item.source,
-            input: cleanPath(input),
-            output: cleanPath(output),
-            cache: cleanPath(output),
+            input: input.toWeb(),
+            output: normalize(output, "web"),
+            cache: normalize(output, "web"),
             tag: typeof rule.tag == 'string' ? rule.tag : 'default'
           }
 
           // Handle rules for files
           if (
-            !(pipeline.manifest.has(asset.input) && (pipeline.manifest.get(asset.input) as IAsset).resolved)
+            !(manifest.has(asset.input) && (manifest.get(asset.input) as IAsset).resolved)
             && rule.file_rules
             && rule.file_rules.length > 0) {
 
@@ -113,14 +135,13 @@ export class DirectoryPipeline implements IPipeline {
 
           asset.resolved = true
           asset.rule = rule
-          pipeline.manifest.set(asset)
+          pipeline.manifest.add(asset)
         })
       })
   }
 
-  protected _fetch(pipeline: Pipeline) {
-    // @ts-ignore
-    return FilePipeline.prototype._fetch.call(this, pipeline)
+  protected _fetch() {
+    return FilePipeline.prototype["_fetch"].call(this)
   }
 
   protected _fetcher() {

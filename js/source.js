@@ -1,4 +1,23 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,88 +27,87 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const path_1 = require("./utils/path");
-const path_2 = __importDefault(require("path"));
+exports.Source = exports.SourceManager = void 0;
+const Path = __importStar(require("path"));
+const pipeline_1 = require("./pipeline");
 const file_pipeline_1 = require("./file-pipeline");
 const directory_pipeline_1 = require("./directory-pipeline");
 const file_system_1 = require("./file-system");
-class SourceMap {
-    constructor() {
-        this._paths = new Map();
+const path_1 = require("./path");
+const guid_1 = require("lol/js/string/guid");
+class SourceManager {
+    constructor(pid) {
+        this.pid = pid;
+        this._sources = new Map();
     }
     clone(source) {
-        for (const [s, p] of this._paths) {
+        for (const [s, p] of this._sources) {
             const _source = source.add(s);
             _source.file.clone(p.file);
             _source.directory.clone(p.directory);
+            _source.fs.clone(p.fs);
         }
     }
     add(path) {
-        path = path_1.cleanPath(path);
-        if (!this._paths.has(path)) {
-            const source = new Source();
-            source.path = path;
-            source.file = new file_pipeline_1.FilePipeline(path);
-            source.directory = new directory_pipeline_1.DirectoryPipeline(path);
-            source.fs = new file_system_1.FileSystem(path);
-            this._paths.set(path, source);
-        }
-        return this._paths.get(path);
+        path = path_1.normalize(path, "system");
+        if (Path.isAbsolute(path))
+            throw new Error("Cannot an absolute path to source");
+        const source = new Source(path, this.pid);
+        this._sources.set(source.uuid, source);
+        return source;
     }
-    get(path) {
-        return this._paths.get(path);
+    get(uuid) {
+        return this._sources.get(uuid);
     }
-    has(path) {
-        path = path_1.cleanPath(path);
-        return this._paths.has(path);
+    has(uuid) {
+        return this._sources.has(uuid);
     }
-    remove(path) {
-        if (this._paths.has(path)) {
-            const item = this._paths.get(path);
-            path = path_1.cleanPath(path);
-            this._paths.delete(path);
+    remove(uuid) {
+        if (this._sources.has(uuid)) {
+            const item = this._sources.get(uuid);
+            this._sources.delete(uuid);
             return item;
         }
     }
-    paths(resolver, is_absolute = false) {
-        const sources = [...this._paths.keys()];
-        if (!is_absolute)
-            return sources.slice(0);
-        return sources.map((path) => {
-            return path_1.cleanPath(path_2.default.join(resolver.root(), path));
-        });
-    }
-    fetch(pipeline, type = "file") {
-        for (const source of this._paths.values()) {
-            source[type].fetch(pipeline);
+    all(type = "array") {
+        switch (type) {
+            case "array": return [...this._sources.values()];
+            case "object": {
+                const o = {};
+                for (const source of this._sources.values()) {
+                    o[source.uuid] = source;
+                }
+                return o;
+            }
         }
     }
-    copy(pipeline, force = false) {
+    fetch(type) {
+        for (const source of this._sources.values()) {
+            source[type].fetch();
+        }
+    }
+    copy(force = false) {
         return __awaiter(this, void 0, void 0, function* () {
-            for (const source of this._paths.values()) {
-                yield source.fs.apply(pipeline, force);
+            for (const source of this._sources.values()) {
+                yield source.fs.apply(force);
             }
         });
     }
 }
-exports.SourceMap = SourceMap;
+exports.SourceManager = SourceManager;
 class Source {
-    join(resolver, input, absolute = false) {
-        let path = this.path;
-        input = path_1.cleanPath(input);
-        const root = resolver.root();
-        if (absolute && !path_2.default.isAbsolute(path)) {
-            path = path_2.default.join(root, path);
-        }
-        else if (!absolute && path_2.default.isAbsolute(path)) {
-            path = path_2.default.relative(root, path);
-        }
-        input = path_2.default.join(path, input);
-        return path_1.cleanPath(input);
+    constructor(path, pid) {
+        this.pid = pid;
+        this.uuid = guid_1.guid();
+        this.path = path_1.createWrapper(path);
+        this.fullpath = path_1.createWrapper(Path.isAbsolute(path) ? path : Path.join(process.cwd(), path));
+        this.file = new file_pipeline_1.FilePipeline(pid, this.uuid);
+        this.directory = new directory_pipeline_1.DirectoryPipeline(pid, this.uuid);
+        this.fs = new file_system_1.FileSystem(pid, this.uuid);
+    }
+    get pipeline() {
+        return pipeline_1.PipelineManager.get(this.pid);
     }
 }
 exports.Source = Source;

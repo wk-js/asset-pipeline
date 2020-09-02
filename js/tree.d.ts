@@ -7,9 +7,13 @@ export interface TreeInterface {
     };
 }
 export declare class Tree {
-    private pipeline;
+    private pid;
     tree: TreeInterface;
-    constructor(pipeline: Pipeline);
+    constructor(pid: string);
+    get pipeline(): Pipeline | undefined;
+    get manifest(): import("./manifest").Manifest | undefined;
+    get cache(): import("./cache").Cache | undefined;
+    get resolver(): import("./resolver").Resolver | undefined;
     build(path: string): string;
     update(): void;
     resolve(path: string): TreeInterface;

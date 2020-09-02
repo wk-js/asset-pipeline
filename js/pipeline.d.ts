@@ -1,14 +1,16 @@
 import { Manifest } from "./manifest";
 import { Tree } from "./tree";
 import { Resolver } from "./resolver";
-import { SourceMap } from "./source";
+import { SourceManager } from "./source";
 import { Cache } from "./cache";
+export declare const PipelineManager: Map<string, Pipeline>;
 export declare class Pipeline {
+    uuid: string;
     verbose: boolean;
     cache: Cache;
-    source: SourceMap;
-    manifest: Manifest;
     resolve: Resolver;
+    source: SourceManager;
+    manifest: Manifest;
     tree: Tree;
     constructor(key: string);
     clone(key: string): Pipeline;

@@ -1,8 +1,10 @@
 import { Pipeline } from "./pipeline";
 import { IAsset, IFileRule, IPipeline } from "./types";
 import { Transform } from "./transform";
+import { Source } from "./source";
 export declare class FilePipeline implements IPipeline {
-    private _source;
+    private pid;
+    private sid;
     /**
      * Pipeline type
      */
@@ -14,7 +16,10 @@ export declare class FilePipeline implements IPipeline {
     protected _shadows: IAsset[];
     protected _globToAdd: string[];
     protected _globToIgnore: string[];
-    constructor(_source: string);
+    constructor(pid: string, sid: string);
+    get pipeline(): Pipeline | undefined;
+    get source(): Source | undefined;
+    get resolver(): import("./resolver").Resolver | undefined;
     /**
      * Add file pattern
      */
@@ -34,7 +39,7 @@ export declare class FilePipeline implements IPipeline {
     /**
      * Collect a list of files matching patterns, then apply transformation rules
      */
-    fetch(pipeline: Pipeline): this;
-    protected _fetch(pipeline: Pipeline): IAsset[];
+    fetch(): void;
+    protected _fetch(): IAsset[];
     private _fetcher;
 }

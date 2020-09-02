@@ -1,76 +1,80 @@
-import { cleanPath, removeSearch } from "./utils/path";
 import Path from "path";
-import { Pipeline } from "./pipeline";
-import { IPathObject } from "./types";
+import { Pipeline, PipelineManager } from "./pipeline";
+import { IPathObject, IResolvePathOptions } from "./types";
+import { createWrapper, normalize, cleanup, PathWrapper } from "./path";
 
 export class Resolver {
 
-  private _output: string = 'public'
-  private _used: string[] = []
-  private _root: string = process.cwd()
+  private _output!: PathWrapper
   public host: string = ''
 
-  constructor(private pipeline: Pipeline) { }
+  constructor(private pid: string) { }
+
+  get pipeline() {
+    return PipelineManager.get(this.pid)
+  }
+
+  get source() {
+    return this.pipeline?.source
+  }
+
+  get manifest() {
+    return this.pipeline?.manifest
+  }
+
+  get tree() {
+    return this.pipeline?.tree
+  }
 
   clone(resolve: Resolver) {
     resolve.host = this.host
-    resolve.root(this._root)
-    resolve.output(this._output)
-  }
-
-  root(path?: string) {
-    if (path) {
-      if (!Path.isAbsolute(path)) throw new Error('Root must be absolute')
-      this._root = cleanPath(path)
-    }
-    return this._root
-  }
-
-  root_with(path: string) {
-    path = Path.join(this._root, cleanPath(path))
-    return cleanPath(path)
+    resolve.output('public')
   }
 
   output(path?: string) {
-    if (path) this._output = cleanPath(path)
+    if (path) {
+      if (Path.isAbsolute(path)) {
+        this._output = createWrapper(path)
+      } else {
+        this._output = createWrapper(Path.join(process.cwd(), path))
+      }
+    }
     return this._output
   }
 
-  output_with(path: string, absolute = true) {
-    path = cleanPath(path)
-    if (absolute) {
-      path = Path.join(this._root, this._output, path)
-    } else {
-      path = Path.join(this._output, path)
+  getPath(path: string, options?: Partial<IResolvePathOptions>) {
+    if (!path) throw new Error("[asset-pipeline][Resolver] path cannot be empty")
+    if (!this.tree) return path
+    const tree = this.tree
+
+    const opts = Object.assign({
+      from: tree.tree.path,
+      cleanup: false,
+    }, options || {}) as IResolvePathOptions
+
+    opts.from = tree.build(opts.from)
+    path = tree.build(path)
+
+    const fromTree = tree.resolve(opts.from)
+
+    const output = this._output.with(fromTree.path)
+      .relative(this._output.with(path).raw())
+
+    if (opts.cleanup) {
+      return cleanup(output.toWeb())
     }
-    return cleanPath(path)
+
+    return output.toWeb()
   }
 
-  path(path: string, from: string = this.pipeline.tree.tree.path) {
-    from = cleanPath(from)
-    from = this.pipeline.tree.build(from)
-    path = cleanPath(path)
-    path = this.pipeline.tree.build(path)
-
-    const fromTree = this.pipeline.tree.resolve(from)
-    const output = this.relative(
-      this.output_with(fromTree.path),
-      this.output_with(path)
-    )
-
-    this.use(path)
-
-    return output
-  }
-
-  url(path: string, from?: string) {
-    path = this.path(path, from)
+  getUrl(path: string, options?: Partial<IResolvePathOptions>) {
+    path = this.getPath(path, options)
 
     if (this.host) {
       try {
         const url = new URL(path, this.host)
         return url.href
-      } catch(e) {
+      } catch (e) {
         return this.host + path
       }
     }
@@ -78,118 +82,88 @@ export class Resolver {
     return path
   }
 
-  clean_path(path: string, fromPath?: string) {
-    path = this.path(path, fromPath)
-    return removeSearch(path)
-  }
-
-  clean_url(path: string, fromPath?: string) {
-    path = this.url(path, fromPath)
-    return removeSearch(path)
-  }
-
-  asset(input: string) {
-    return this.pipeline.manifest.get(input)
-  }
-
-  source(output: string, is_absolute = false, normalize = false) {
-    output = cleanPath(output)
-
-    const items = this.pipeline.manifest.all()
-    const asset = (() => {
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-
-        if (item.output == output || item.cache == output) {
-          return item
-        }
+  /**
+   * Looking for source from a path by checking base directory
+   */
+  findSource(path: string) {
+    if (!this.source) return
+    const sources = this.source.all()
+    const source_paths = sources.map(p => {
+      if (Path.isAbsolute(path)) {
+        return p.fullpath.toWeb()
       }
-    })()
+      return p.path.toWeb()
+    })
 
-    let input = output
-    if (asset) {
-      const source = this.pipeline.source.get(asset.source)
-      if (source) {
-        input = source.join(this, asset.input, is_absolute)
+    path = normalize(path, "web")
+    const dir = []
+    const parts = path.split("/")
+
+    for (const part of parts) {
+      dir.push( part )
+      const dir_path = normalize(dir.join("/"), "web")
+
+      const index = source_paths.indexOf(dir_path)
+      if (index > -1) {
+        return sources[index]
       }
     }
-
-    input = cleanPath(input)
-
-    return normalize ? Path.normalize(input) : input
   }
 
+  /**
+   * Looking for a source and
+   */
   parse(path: string) {
-    const root = this._root
-    const is_absolute = Path.isAbsolute(path)
-
     // Build relative path
-    let relative = path
-    if (is_absolute) relative = Path.relative(root, path)
+    let relative = createWrapper(path)
+    if (Path.isAbsolute(path)) {
+      relative = createWrapper(Path.relative(process.cwd(), path))
+    }
 
     // Clean paths
     const result: IPathObject = {
-      relative: cleanPath(relative),
+      relative: relative.toWeb(),
     }
 
     // Looking for source
-    const source = this.source_from_input(result.relative)
+    const source = this.findSource(result.relative)
 
     // Build key and clean paths
     if (source) {
-      result.source = cleanPath(source)
-      result.key = cleanPath(Path.relative(source, result.relative))
-      result.full = cleanPath(Path.join(root, source, result.key))
+      result.source = source.path.toWeb()
+      result.key = source.path.relative(result.relative).toWeb()
+      result.full = source.fullpath.join(result.key).toWeb()
     }
 
     return result
   }
 
-  relative(from: string, to: string) {
-    from = cleanPath(from)
-    if (Path.isAbsolute(from)) from = Path.relative(this._root, from)
+  getInputFromOutput(output: string, absolute = false) {
+    if (!this.source) return
 
-    to = cleanPath(to)
-    if (Path.isAbsolute(to)) to = Path.relative(this._root, to)
+    const asset = this.getAssetFromOutput(output)
+    if (!asset) return
 
-    return cleanPath(Path.relative(from, to))
+    const source = this.source.get(asset.source.uuid)
+    if (!source) return
+
+    if (absolute) {
+      return source.fullpath.join(asset.input).toWeb()
+    }
+
+    return source.path.join(asset.input).toWeb()
   }
 
-  source_from_input(input: string, is_absolute: boolean = false) {
-    if (Path.isAbsolute(input)) input = this.relative(this.root(), input)
-    input = cleanPath(input)
+  getAssetFromOutput(output: string) {
+    if (!this.manifest) return
+    const assets = this.manifest.export()
+    for (let i = 0; i < assets.length; i++) {
+      const item = assets[i];
 
-    for (let path of this.pipeline.source['_paths'].keys()) {
-      if (input.indexOf(path) > -1) {
-        if (is_absolute) {
-          path = Path.join(this.root(), path)
-        }
-
-        return cleanPath(path)
+      if (item.output == output || item.cache == output) {
+        return item
       }
     }
-
-    return null
-  }
-
-  use(path: string) {
-    path = cleanPath(path)
-    if (this._used.indexOf(path) == -1) {
-      this._used.push(path)
-    }
-  }
-
-  is_used(path: string) {
-    path = cleanPath(path)
-    return this._used.indexOf(path) > -1
-  }
-
-  clean_used() {
-    this._used = []
-  }
-
-  all_used() {
-    return this._used.slice(0)
   }
 
 }

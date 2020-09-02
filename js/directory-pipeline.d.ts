@@ -1,8 +1,8 @@
 import { IAsset, IDirectoryRule, IPipeline } from "./types";
-import { Pipeline } from "./pipeline";
 import { Transform } from "./transform";
 export declare class DirectoryPipeline implements IPipeline {
-    private _source;
+    private pid;
+    private sid;
     /**
      * Pipeline type
      */
@@ -14,7 +14,11 @@ export declare class DirectoryPipeline implements IPipeline {
     protected _shadows: IAsset[];
     protected _globToAdd: string[];
     protected _globToIgnore: string[];
-    constructor(_source: string);
+    constructor(pid: string, sid: string);
+    get pipeline(): import("./pipeline").Pipeline | undefined;
+    get source(): import("./source").Source | undefined;
+    get resolver(): import("./resolver").Resolver | undefined;
+    get manifest(): import("./manifest").Manifest | undefined;
     /**
      * Append file pattern
      */
@@ -31,7 +35,7 @@ export declare class DirectoryPipeline implements IPipeline {
      * Clone the pipeline
      */
     clone(directory: DirectoryPipeline): DirectoryPipeline;
-    fetch(pipeline: Pipeline): void;
-    protected _fetch(pipeline: Pipeline): IAsset[];
+    fetch(): void;
+    protected _fetch(): IAsset[];
     protected _fetcher(): (globs: string[], ignores: string[]) => string[];
 }

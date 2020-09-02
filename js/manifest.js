@@ -9,59 +9,66 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Manifest = void 0;
+const pipeline_1 = require("./pipeline");
 const fs_1 = require("lol/js/node/fs");
-const path_1 = require("./utils/path");
+const path_1 = require("./path");
 class Manifest {
-    constructor(pipeline) {
-        this.pipeline = pipeline;
+    constructor(pid) {
+        this.pid = pid;
         this._file = {
             key: 'no_key',
             date: new Date,
             sources: [],
             output: './public',
-            root: process.cwd(),
             assets: {}
         };
-        this.read = false;
-        this.save = true;
+        this.readOnDisk = false;
+        this.saveOnDisk = true;
+        this.saveAtChange = false;
+    }
+    get pipeline() {
+        return pipeline_1.PipelineManager.get(this.pid);
     }
     clone(manifest) {
-        manifest.read = this.read;
-        manifest.save = this.save;
+        manifest;
+        manifest.readOnDisk = this.readOnDisk;
+        manifest.saveOnDisk = this.saveOnDisk;
+        manifest.saveAtChange = this.saveAtChange;
     }
     get manifest_path() {
+        if (!this.pipeline)
+            return `tmp/manifest.json`;
         return `tmp/manifest-${this.pipeline.cache.key}.json`;
     }
     fileExists() {
-        return this.save && fs_1.isFile(this.manifest_path);
+        return this.saveOnDisk && fs_1.isFile(this.manifest_path);
     }
-    create_file() {
+    save() {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!this.pipeline)
+                return;
             this._file.key = this.pipeline.cache.key;
             this._file.date = new Date;
-            this._file.sources = this.pipeline.source.paths(this.pipeline.resolve);
-            this._file.output = this.pipeline.resolve.output();
-            this._file.root = this.pipeline.resolve.root();
-            if (this.save) {
+            this._file.sources = this.pipeline.source.all().map(s => s.path.toWeb());
+            this._file.output = this.pipeline.resolve.output().toWeb();
+            if (this.saveOnDisk) {
                 yield fs_1.writeFile(JSON.stringify(this._file, null, 2), this.manifest_path);
             }
         });
     }
-    update_file() {
-        return this.create_file();
-    }
-    read_file() {
+    read() {
         return __awaiter(this, void 0, void 0, function* () {
             if (fs_1.isFile(this.manifest_path)) {
                 const content = yield fs_1.readFile(this.manifest_path);
                 this._file = JSON.parse(content.toString('utf-8'));
             }
-            if (this.save) {
-                yield this.create_file();
+            if (this.saveOnDisk) {
+                yield this.save();
             }
         });
     }
-    delete_file() {
+    deleteOnDisk() {
         return __awaiter(this, void 0, void 0, function* () {
             if (fs_1.isFile(this.manifest_path)) {
                 yield fs_1.remove(this.manifest_path);
@@ -69,52 +76,81 @@ class Manifest {
         });
     }
     get(input) {
-        input = path_1.cleanPath(input);
+        input = path_1.normalize(input, "web");
         input = input.split(/\#|\?/)[0];
         return this._file.assets[input];
     }
     has(input) {
-        input = path_1.cleanPath(input);
-        input = input.split(/\#|\?/)[0];
-        return !!this._file.assets[input];
+        return !!this.get(input);
     }
-    set(asset) {
+    add(asset) {
         this._file.assets[asset.input] = asset;
+        if (this.saveAtChange) {
+            this.save();
+        }
+    }
+    remove(input) {
+        let asset;
+        if (typeof input === "string") {
+            asset = this.get(input);
+        }
+        else {
+            asset = input;
+        }
+        if (asset) {
+            delete this._file.assets[asset.input];
+            if (this.saveAtChange) {
+                this.save();
+            }
+        }
     }
     clear() {
         this._file.assets = {};
+        if (this.saveAtChange) {
+            this.save();
+        }
     }
-    all(tag) {
-        const assets = Object.keys(this._file.assets).map((key) => this._file.assets[key]);
-        if (typeof tag == 'string')
-            return assets.filter((asset) => asset.tag == tag);
-        return assets;
-    }
-    all_by_key(tag) {
-        const assets = {};
-        this.all(tag).forEach((asset) => {
-            assets[asset.input] = asset;
-        });
-        return assets;
-    }
-    all_outputs(tag) {
-        return this.all(tag).map((asset) => {
-            const input = asset.input;
-            return {
-                input,
-                output: {
-                    path: this.pipeline.resolve.path(input),
-                    url: this.pipeline.resolve.url(input),
+    export(type = "asset", tag) {
+        switch (type) {
+            case "asset":
+                {
+                    const assets = Object
+                        .keys(this._file.assets)
+                        .map((key) => this._file.assets[key]);
+                    if (typeof tag == 'string')
+                        return assets.filter(a => a.tag == tag);
+                    return assets;
                 }
-            };
-        });
-    }
-    all_outputs_by_key(tag) {
-        const outputs = {};
-        this.all_outputs(tag).forEach((output) => {
-            outputs[output.input] = output;
-        });
-        return outputs;
+            case "asset_key":
+                {
+                    const assets = {};
+                    this.export("asset", tag).forEach(a => assets[a.input] = a);
+                    return assets;
+                }
+            case "output":
+                {
+                    if (!this.pipeline)
+                        return [];
+                    const pipeline = this.pipeline;
+                    const assets = this.export("asset", tag);
+                    return assets.map((asset) => {
+                        const input = asset.input;
+                        return {
+                            input,
+                            output: {
+                                path: pipeline.resolve.getPath(input),
+                                url: pipeline.resolve.getUrl(input),
+                            }
+                        };
+                    });
+                }
+            case "output_key":
+                {
+                    const outputs = {};
+                    this.export("output", tag).forEach(o => outputs[o.input] = o);
+                    return outputs;
+                }
+        }
     }
 }
 exports.Manifest = Manifest;

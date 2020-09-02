@@ -1,10 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.FilePipeline = void 0;
+const pipeline_1 = require("./pipeline");
 const transform_1 = require("./transform");
 const fs_1 = require("lol/js/node/fs");
 class FilePipeline {
-    constructor(_source) {
-        this._source = _source;
+    constructor(pid, sid) {
+        this.pid = pid;
+        this.sid = sid;
         /**
          * Pipeline type
          */
@@ -16,6 +19,17 @@ class FilePipeline {
         this._shadows = [];
         this._globToAdd = [];
         this._globToIgnore = [];
+    }
+    get pipeline() {
+        return pipeline_1.PipelineManager.get(this.pid);
+    }
+    get source() {
+        var _a;
+        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.source.get(this.sid);
+    }
+    get resolver() {
+        var _a;
+        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.resolve;
     }
     /**
      * Add file pattern
@@ -38,7 +52,10 @@ class FilePipeline {
      */
     shadow(file, transformRule) {
         this._shadows.push({
-            source: '__shadow__',
+            source: {
+                uuid: '__shadow__',
+                path: '__shadow__',
+            },
             input: file,
             output: file,
             cache: file,
@@ -60,36 +77,42 @@ class FilePipeline {
     /**
      * Collect a list of files matching patterns, then apply transformation rules
      */
-    fetch(pipeline) {
-        this._fetch(pipeline).forEach((asset) => {
+    fetch() {
+        if (!this.pipeline)
+            return;
+        const pipeline = this.pipeline;
+        this._fetch().forEach((asset) => {
             this.rules.resolve(pipeline, asset);
         });
-        return this;
     }
-    _fetch(pipeline) {
+    _fetch() {
+        if (!this.source || !this.resolver)
+            return [];
+        const source = this.source;
+        const resolver = this.resolver;
         const globs = [];
         const ignores = [];
-        const source = pipeline.source.get(this._source);
-        if (!source)
-            return [];
         this._globToAdd.forEach(pattern => {
-            const glob = source.join(pipeline.resolve, pattern, true);
+            const glob = source.fullpath.join(pattern).raw();
             globs.push(glob);
         });
         this._globToIgnore.forEach(pattern => {
-            const ignore = source.join(pipeline.resolve, pattern, true);
+            const ignore = source.fullpath.join(pattern).raw();
             ignores.push(ignore);
         });
         const fetcher = this._fetcher();
         const assets = fetcher(globs, ignores)
             .map((file) => {
-            const input = pipeline.resolve.relative(this._source, file);
+            const input = source.fullpath.relative(file);
             return {
-                source: pipeline.resolve.relative(pipeline.resolve.root(), this._source),
-                input: input,
-                output: input,
-                cache: input,
-                resolved: false
+                source: {
+                    uuid: source.uuid,
+                    path: source.path.toWeb(),
+                },
+                input: input.toWeb(),
+                output: input.toWeb(),
+                cache: input.toWeb(),
+                resolved: false,
             };
         })
             .filter((asset) => asset != null);

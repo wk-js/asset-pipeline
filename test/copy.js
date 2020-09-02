@@ -1,6 +1,5 @@
 const { AssetPipeline } = require('../js/index')
 const { removeDir, editFile } = require('lol/js/node/fs')
-const Fs = require('fs')
 
 async function main() {
   const assets = new AssetPipeline()

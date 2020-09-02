@@ -3,60 +3,67 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const path_1 = require("./utils/path");
-const path_2 = __importDefault(require("path"));
+exports.Resolver = void 0;
+const path_1 = __importDefault(require("path"));
+const pipeline_1 = require("./pipeline");
+const path_2 = require("./path");
 class Resolver {
-    constructor(pipeline) {
-        this.pipeline = pipeline;
-        this._output = 'public';
-        this._used = [];
-        this._root = process.cwd();
+    constructor(pid) {
+        this.pid = pid;
         this.host = '';
+    }
+    get pipeline() {
+        return pipeline_1.PipelineManager.get(this.pid);
+    }
+    get source() {
+        var _a;
+        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.source;
+    }
+    get manifest() {
+        var _a;
+        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.manifest;
+    }
+    get tree() {
+        var _a;
+        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.tree;
     }
     clone(resolve) {
         resolve.host = this.host;
-        resolve.root(this._root);
-        resolve.output(this._output);
-    }
-    root(path) {
-        if (path) {
-            if (!path_2.default.isAbsolute(path))
-                throw new Error('Root must be absolute');
-            this._root = path_1.cleanPath(path);
-        }
-        return this._root;
-    }
-    root_with(path) {
-        path = path_2.default.join(this._root, path_1.cleanPath(path));
-        return path_1.cleanPath(path);
+        resolve.output('public');
     }
     output(path) {
-        if (path)
-            this._output = path_1.cleanPath(path);
+        if (path) {
+            if (path_1.default.isAbsolute(path)) {
+                this._output = path_2.createWrapper(path);
+            }
+            else {
+                this._output = path_2.createWrapper(path_1.default.join(process.cwd(), path));
+            }
+        }
         return this._output;
     }
-    output_with(path, absolute = true) {
-        path = path_1.cleanPath(path);
-        if (absolute) {
-            path = path_2.default.join(this._root, this._output, path);
+    getPath(path, options) {
+        if (!path)
+            throw new Error("[asset-pipeline][Resolver] path cannot be empty");
+        if (!this.tree)
+            return path;
+        const tree = this.tree;
+        const opts = Object.assign({
+            from: tree.tree.path,
+            cleanup: false,
+        }, options || {});
+        opts.from = tree.build(opts.from);
+        path = tree.build(path);
+        const fromTree = tree.resolve(opts.from);
+        const output = this._output.with(fromTree.path)
+            .relative(this._output.with(path).raw());
+        if (opts.cleanup) {
+            return path_2.cleanup(output.toWeb());
         }
-        else {
-            path = path_2.default.join(this._output, path);
-        }
-        return path_1.cleanPath(path);
+        return output.toWeb();
     }
-    path(path, from = this.pipeline.tree.tree.path) {
-        from = path_1.cleanPath(from);
-        from = this.pipeline.tree.build(from);
-        path = path_1.cleanPath(path);
-        path = this.pipeline.tree.build(path);
-        const fromTree = this.pipeline.tree.resolve(from);
-        const output = this.relative(this.output_with(fromTree.path), this.output_with(path));
-        this.use(path);
-        return output;
-    }
-    url(path, from) {
-        path = this.path(path, from);
+    getUrl(path, options) {
+        path = this.getPath(path, options);
         if (this.host) {
             try {
                 const url = new URL(path, this.host);
@@ -68,97 +75,78 @@ class Resolver {
         }
         return path;
     }
-    clean_path(path, fromPath) {
-        path = this.path(path, fromPath);
-        return path_1.removeSearch(path);
-    }
-    clean_url(path, fromPath) {
-        path = this.url(path, fromPath);
-        return path_1.removeSearch(path);
-    }
-    asset(input) {
-        return this.pipeline.manifest.get(input);
-    }
-    source(output, is_absolute = false, normalize = false) {
-        output = path_1.cleanPath(output);
-        const items = this.pipeline.manifest.all();
-        const asset = (() => {
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (item.output == output || item.cache == output) {
-                    return item;
-                }
+    /**
+     * Looking for source from a path by checking base directory
+     */
+    findSource(path) {
+        if (!this.source)
+            return;
+        const sources = this.source.all();
+        const source_paths = sources.map(p => {
+            if (path_1.default.isAbsolute(path)) {
+                return p.fullpath.toWeb();
             }
-        })();
-        let input = output;
-        if (asset) {
-            const source = this.pipeline.source.get(asset.source);
-            if (source) {
-                input = source.join(this, asset.input, is_absolute);
+            return p.path.toWeb();
+        });
+        path = path_2.normalize(path, "web");
+        const dir = [];
+        const parts = path.split("/");
+        for (const part of parts) {
+            dir.push(part);
+            const dir_path = path_2.normalize(dir.join("/"), "web");
+            const index = source_paths.indexOf(dir_path);
+            if (index > -1) {
+                return sources[index];
             }
         }
-        input = path_1.cleanPath(input);
-        return normalize ? path_2.default.normalize(input) : input;
     }
+    /**
+     * Looking for a source and
+     */
     parse(path) {
-        const root = this._root;
-        const is_absolute = path_2.default.isAbsolute(path);
         // Build relative path
-        let relative = path;
-        if (is_absolute)
-            relative = path_2.default.relative(root, path);
+        let relative = path_2.createWrapper(path);
+        if (path_1.default.isAbsolute(path)) {
+            relative = path_2.createWrapper(path_1.default.relative(process.cwd(), path));
+        }
         // Clean paths
         const result = {
-            relative: path_1.cleanPath(relative),
+            relative: relative.toWeb(),
         };
         // Looking for source
-        const source = this.source_from_input(result.relative);
+        const source = this.findSource(result.relative);
         // Build key and clean paths
         if (source) {
-            result.source = path_1.cleanPath(source);
-            result.key = path_1.cleanPath(path_2.default.relative(source, result.relative));
-            result.full = path_1.cleanPath(path_2.default.join(root, source, result.key));
+            result.source = source.path.toWeb();
+            result.key = source.path.relative(result.relative).toWeb();
+            result.full = source.fullpath.join(result.key).toWeb();
         }
         return result;
     }
-    relative(from, to) {
-        from = path_1.cleanPath(from);
-        if (path_2.default.isAbsolute(from))
-            from = path_2.default.relative(this._root, from);
-        to = path_1.cleanPath(to);
-        if (path_2.default.isAbsolute(to))
-            to = path_2.default.relative(this._root, to);
-        return path_1.cleanPath(path_2.default.relative(from, to));
+    getInputFromOutput(output, absolute = false) {
+        if (!this.source)
+            return;
+        const asset = this.getAssetFromOutput(output);
+        if (!asset)
+            return;
+        const source = this.source.get(asset.source.uuid);
+        if (!source)
+            return;
+        if (absolute) {
+            return source.fullpath.join(asset.input).toWeb();
+        }
+        return source.path.join(asset.input).toWeb();
     }
-    source_from_input(input, is_absolute = false) {
-        if (path_2.default.isAbsolute(input))
-            input = this.relative(this.root(), input);
-        input = path_1.cleanPath(input);
-        for (let path of this.pipeline.source['_paths'].keys()) {
-            if (input.indexOf(path) > -1) {
-                if (is_absolute) {
-                    path = path_2.default.join(this.root(), path);
-                }
-                return path_1.cleanPath(path);
+    getAssetFromOutput(output) {
+        if (!this.manifest)
+            return;
+        const assets = this.manifest.export();
+        for (let i = 0; i < assets.length; i++) {
+            const item = assets[i];
+            if (item.output == output || item.cache == output) {
+                return item;
             }
         }
-        return null;
-    }
-    use(path) {
-        path = path_1.cleanPath(path);
-        if (this._used.indexOf(path) == -1) {
-            this._used.push(path);
-        }
-    }
-    is_used(path) {
-        path = path_1.cleanPath(path);
-        return this._used.indexOf(path) > -1;
-    }
-    clean_used() {
-        this._used = [];
-    }
-    all_used() {
-        return this._used.slice(0);
     }
 }
 exports.Resolver = Resolver;

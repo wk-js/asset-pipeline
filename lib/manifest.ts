@@ -1,7 +1,7 @@
-import { Pipeline } from "./pipeline"
+import { Pipeline, PipelineManager } from "./pipeline"
 import { writeFile, isFile, readFile, remove } from "lol/js/node/fs";
 import { IAsset, IManifest, IOutput } from "./types";
-import { cleanPath } from "./utils/path";
+import { normalize } from "./path";
 
 export class Manifest {
 
@@ -10,116 +10,149 @@ export class Manifest {
     date: new Date,
     sources: [],
     output: './public',
-    root: process.cwd(),
     assets: {} as { [key: string]: IAsset }
   }
 
-  read = false
-  save = true
+  readOnDisk = false
+  saveOnDisk = true
+  saveAtChange = false
 
-  constructor(private pipeline: Pipeline) { }
+  constructor(private pid: string) { }
+
+  get pipeline() {
+    return PipelineManager.get(this.pid)
+  }
 
   clone(manifest: Manifest) {
-    manifest.read = this.read
-    manifest.save = this.save
+    manifest
+    manifest.readOnDisk = this.readOnDisk
+    manifest.saveOnDisk = this.saveOnDisk
+    manifest.saveAtChange = this.saveAtChange
   }
 
   get manifest_path() {
+    if (!this.pipeline) return `tmp/manifest.json`
     return `tmp/manifest-${this.pipeline.cache.key}.json`
   }
 
   fileExists() {
-    return this.save && isFile(this.manifest_path)
+    return this.saveOnDisk && isFile(this.manifest_path)
   }
 
-  async create_file() {
+  async save() {
+    if (!this.pipeline) return
+
     this._file.key = this.pipeline.cache.key
     this._file.date = new Date
-    this._file.sources = this.pipeline.source.paths(this.pipeline.resolve)
-    this._file.output = this.pipeline.resolve.output()
-    this._file.root = this.pipeline.resolve.root()
+    this._file.sources = this.pipeline.source.all().map(s => s.path.toWeb())
+    this._file.output = this.pipeline.resolve.output().toWeb()
 
-    if (this.save) {
+    if (this.saveOnDisk) {
       await writeFile(JSON.stringify(this._file, null, 2), this.manifest_path)
     }
   }
 
-  update_file() {
-    return this.create_file()
-  }
-
-  async read_file() {
+  async read() {
     if (isFile(this.manifest_path)) {
       const content = await readFile(this.manifest_path)
       this._file = JSON.parse(content.toString('utf-8'))
     }
 
-    if (this.save) {
-      await this.create_file()
+    if (this.saveOnDisk) {
+      await this.save()
     }
   }
 
-  async delete_file() {
+  async deleteOnDisk() {
     if (isFile(this.manifest_path)) {
       await remove(this.manifest_path)
     }
   }
 
-  get(input: string): IAsset | null {
-    input = cleanPath(input)
+  get(input: string): IAsset | undefined {
+    input = normalize(input, "web")
     input = input.split(/\#|\?/)[0]
     return this._file.assets[input]
   }
 
   has(input: string) {
-    input = cleanPath(input)
-    input = input.split(/\#|\?/)[0]
-    return !!this._file.assets[input]
+    return !!this.get(input)
   }
 
-  set(asset: IAsset) {
+  add(asset: IAsset) {
     this._file.assets[asset.input] = asset
+    if (this.saveAtChange) {
+      this.save()
+    }
+  }
+
+  remove(input: string | IAsset) {
+    let asset: IAsset | undefined
+    if (typeof input === "string") {
+      asset = this.get(input)
+    } else {
+      asset = input
+    }
+
+    if (asset) {
+      delete this._file.assets[asset.input]
+
+      if (this.saveAtChange) {
+        this.save()
+      }
+    }
   }
 
   clear() {
     this._file.assets = {}
+    if (this.saveAtChange) {
+      this.save()
+    }
   }
 
-  all(tag?: string) {
-    const assets = Object.keys(this._file.assets).map((key) => this._file.assets[key])
-    if (typeof tag == 'string') return assets.filter((asset) => asset.tag == tag)
-    return assets
-  }
-
-  all_by_key(tag?: string) {
-    const assets: Record<string, IAsset> = {}
-    this.all(tag).forEach((asset) => {
-      assets[asset.input] = asset
-    })
-    return assets
-  }
-
-  all_outputs(tag?: string) {
-    return this.all(tag).map((asset) => {
-      const input = asset.input
-      return {
-        input,
-        output: {
-          path: this.pipeline.resolve.path(input),
-          url: this.pipeline.resolve.url(input),
+  export(type?: "asset", tag?: string): IAsset[];
+  export(type: "asset_key", tag?: string): Record<string, IAsset>;
+  export(type: "output", tag?: string): IOutput[];
+  export(type: "output_key", tag?: string): Record<string, IOutput>;
+  export(type: "asset" | "asset_key" | "output" | "output_key" = "asset", tag?: string): any {
+    switch (type) {
+      case "asset":
+        {
+          const assets = Object
+            .keys(this._file.assets)
+            .map((key) => this._file.assets[key]) as IAsset[]
+          if (typeof tag == 'string') return assets.filter(a => a.tag == tag)
+          return assets
         }
-      } as IOutput
-    })
-  }
-
-  all_outputs_by_key(tag?: string) {
-    const outputs: Record<string, IOutput> = {}
-
-    this.all_outputs(tag).forEach((output) => {
-      outputs[output.input] = output
-    })
-
-    return outputs
+      case "asset_key":
+        {
+          const assets: Record<string, IAsset> = {}
+          this.export("asset", tag).forEach(a => assets[a.input] = a)
+          return assets
+        }
+      case "output":
+        {
+          if (!this.pipeline) return []
+          const pipeline = this.pipeline
+          const assets = this.export("asset", tag)
+          return assets.map((asset) => {
+            const input = asset.input
+            return {
+              input,
+              output: {
+                path: pipeline.resolve.getPath(input),
+                url: pipeline.resolve.getUrl(input),
+              }
+            } as IOutput
+          })
+        }
+      case "output_key":
+        {
+          const outputs: Record<string, IOutput> = {}
+          this.export("output", tag).forEach(o => outputs[o.input] = o)
+          return outputs
+        }
+    }
   }
 
 }

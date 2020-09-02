@@ -1,5 +1,7 @@
+/// <reference types="node" />
 import { Transform } from "./transform";
 import { Pipeline } from "./pipeline";
+import { ParsedPath } from "path";
 export interface RenameOptions {
     input: {
         fullpath: string;
@@ -22,10 +24,11 @@ export interface RenameOptions {
     rule: IMatchRule;
 }
 export declare type TRenameFunction = (options: RenameOptions) => string;
+export declare type TRenameObject = Partial<ParsedPath>;
 export interface IMinimumRule {
     ignore?: boolean;
-    cache?: boolean | string | TRenameFunction;
-    output?: string | TRenameFunction;
+    cache?: boolean | string | TRenameFunction | TRenameObject;
+    output?: string | TRenameFunction | TRenameObject;
     tag?: string;
 }
 export interface IFileRule extends IMinimumRule {
@@ -41,7 +44,10 @@ export interface IMatchRule extends IFileRule {
     glob: string;
 }
 export interface IAsset {
-    source: string;
+    source: {
+        uuid: string;
+        path: string;
+    };
     input: string;
     output: string;
     cache: string;
@@ -54,8 +60,7 @@ export interface IManifest {
     date: Date;
     sources: string[];
     output: string;
-    root: string;
-    assets: Record<string, IAsset>;
+    assets: Record<string, IAsset | undefined>;
 }
 export interface IPathObject {
     relative: string;
@@ -74,4 +79,8 @@ export interface IPipeline {
     type: "file" | "directory";
     rules: Transform;
     fetch(pipeline: Pipeline): void;
+}
+export interface IResolvePathOptions {
+    from: string;
+    cleanup: boolean;
 }

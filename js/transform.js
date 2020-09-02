@@ -3,11 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Transform = void 0;
 const path_1 = require("path");
 const template_1 = require("lol/js/string/template");
 const object_1 = require("lol/js/object");
 const minimatch_1 = __importDefault(require("minimatch"));
-const path_2 = require("./utils/path");
+const path_2 = require("./path");
 const TemplateOptions = {
     open: '#{',
     body: '[a-z@$#-_?!]+',
@@ -22,7 +23,7 @@ class Transform {
      * Add as transformation applied to the glob pattern
      */
     add(glob, parameters = {}) {
-        glob = path_2.cleanPath(glob);
+        glob = path_2.normalize(glob, "web");
         const params = parameters = Object.assign({
             glob: glob
         }, parameters);
@@ -43,7 +44,7 @@ class Transform {
      * Add as transformation applied to the glob pattern
      */
     ignore(glob) {
-        glob = path_2.cleanPath(glob);
+        glob = path_2.normalize(glob, "web");
         const parameters = {
             glob: glob,
             ignore: true
@@ -82,7 +83,7 @@ class Transform {
             return;
         const rule = asset.rule || this.matchingRule(asset.input);
         asset.rule = rule;
-        pipeline.manifest.set(asset);
+        pipeline.manifest.add(asset);
         this.resolveOutput(pipeline, asset.input, object_1.clone(rule));
     }
     resolveOutput(pipeline, file, rule) {
@@ -93,8 +94,8 @@ class Transform {
         }
         // Add base_dir
         if (typeof rule.base_dir === 'string') {
-            output = path_1.join(pipeline.resolve.output(), rule.base_dir, output);
-            output = path_1.relative(pipeline.resolve.output(), output);
+            const base_dir = pipeline.resolve.output().join(rule.base_dir, output);
+            output = pipeline.resolve.output().relative(base_dir.raw()).raw();
         }
         // Replace dir path if needed
         output = this.resolveDir(pipeline, output);
@@ -109,48 +110,68 @@ class Transform {
             rule.output = output = cache = rule.output(options);
         }
         else if (typeof rule.output === 'string') {
-            output = cache = template_1.template2(rule.output, object_1.flat(options), TemplateOptions);
+            rule.output = output = cache = template_1.template2(rule.output, object_1.flat(options), TemplateOptions);
+        }
+        else if (typeof rule.output === 'object') {
+            const parsed = Object.assign(path_1.parse(options.output.fullpath), rule.output);
+            if ("ext" in rule.output || "name" in rule.output) {
+                parsed.base = `${parsed.name}${parsed.ext}`;
+            }
+            for (const key of Object.keys(parsed)) {
+                parsed[key] = template_1.template2(parsed[key], object_1.flat(options), TemplateOptions);
+            }
+            rule.output = output = cache = path_1.format(parsed);
         }
         if (typeof rule.cache == 'function') {
             rule.cache = cache = rule.cache(options);
         }
         else if (typeof rule.cache === 'string') {
-            cache = template_1.template2(rule.cache, object_1.flat(options), TemplateOptions);
+            rule.cache = cache = template_1.template2(rule.cache, object_1.flat(options), TemplateOptions);
+        }
+        else if (typeof rule.cache === 'object') {
+            const parsed = Object.assign(path_1.parse(cache), rule.cache);
+            if ("ext" in rule.cache || "name" in rule.cache) {
+                parsed.base = `${parsed.name}${parsed.ext}`;
+            }
+            for (const key of Object.keys(parsed)) {
+                parsed[key] = template_1.template2(parsed[key], object_1.flat(options), TemplateOptions);
+            }
+            rule.cache = cache = path_1.format(parsed);
         }
         else if ((typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled)
             ||
                 (typeof rule.cache != 'boolean' && pipeline.cache.enabled)) {
             if (pipeline.cache.type === 'hash') {
-                cache = pipeline.cache.hash(output);
+                rule.cache = cache = pipeline.cache.hash(output);
             }
             else if (pipeline.cache.type === 'version' && this.type === 'file') {
-                cache = pipeline.cache.version(output);
+                rule.cache = cache = pipeline.cache.version(output);
             }
         }
         const asset = pipeline.manifest.get(file);
-        asset.input = path_2.cleanPath(asset.input);
-        asset.output = path_2.cleanPath(output);
-        asset.cache = path_2.cleanPath(cache);
+        asset.input = path_2.normalize(asset.input, "web");
+        asset.output = path_2.normalize(output, "web");
+        asset.cache = path_2.normalize(cache, "web");
         asset.resolved = true;
         asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default';
         asset.rule = rule;
-        pipeline.manifest.set(asset);
+        pipeline.manifest.add(asset);
     }
     resolveDir(pipeline, output) {
         const pathObject = path_1.parse(output);
         let dir = pathObject.dir;
         let d = [];
-        dir = path_2.cleanPath(dir);
-        const ds = dir.split('/');
+        dir = path_2.normalize(dir, "web");
+        const ds = dir.split('/').filter(part => !!part);
         for (let i = 0; i < ds.length; i++) {
             d.push(ds[i]);
             const dd = d.join('/');
-            const ddd = pipeline.resolve.path(dd);
+            const ddd = pipeline.resolve.getPath(dd);
             if (dd != ddd) {
                 d = ddd.split('/');
             }
         }
-        pathObject.dir = path_1.normalize(d.join('/'));
+        pathObject.dir = d.join('/');
         return path_1.format(pathObject);
     }
 }

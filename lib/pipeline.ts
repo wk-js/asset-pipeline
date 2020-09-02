@@ -1,21 +1,26 @@
 import { Manifest } from "./manifest";
 import { Tree } from "./tree";
 import { Resolver } from "./resolver";
-import { SourceMap } from "./source";
+import { SourceManager } from "./source";
 import { Cache } from "./cache";
+import { guid } from "lol/js/string/guid";
+
+export const PipelineManager = new Map<string, Pipeline>()
 
 export class Pipeline {
 
+  uuid = guid()
   verbose: boolean = false
 
   cache = new Cache()
-  source = new SourceMap()
-  manifest = new Manifest(this)
-  resolve = new Resolver(this)
-  tree = new Tree(this)
+  resolve = new Resolver(this.uuid)
+  source = new SourceManager(this.uuid)
+  manifest = new Manifest(this.uuid)
+  tree = new Tree(this.uuid)
 
   constructor(key: string) {
     this.cache.key = key
+    PipelineManager.set(this.uuid, this)
   }
 
   clone(key: string) {
@@ -28,33 +33,30 @@ export class Pipeline {
   }
 
   fetch(force?: boolean) {
-    force = force ? force : !this.manifest.read
+    force = force ? force : !this.manifest.readOnDisk
 
     if (force || !this.manifest.fileExists()) {
       this.log('Clear manifest')
       this.manifest.clear()
 
       this.log('Fetch directories')
-      this.source.fetch(this, "directory")
+      this.source.fetch("directory")
       this.tree.update()
 
       this.log('Fetch files')
-      this.source.fetch(this, "file")
+      this.source.fetch("file")
       this.tree.update()
 
-      this.log('Clean resolved paths')
-      this.resolve.clean_used()
-
-      this.log('Update manifest')
-      return this.manifest.update_file()
+      this.log('Save manifest')
+      return this.manifest.save()
     } else {
       this.log('Read manifest')
-      return this.manifest.read_file()
+      return this.manifest.read()
     }
   }
 
   copy() {
-    return this.source.copy(this)
+    return this.source.copy()
   }
 
   log(...args: any[]) {

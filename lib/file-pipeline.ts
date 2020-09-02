@@ -1,8 +1,10 @@
-import { Pipeline } from "./pipeline"
+import { Pipeline, PipelineManager } from "./pipeline"
 import { IAsset, IFileRule, IPipeline } from "./types";
 import { Transform } from "./transform";
 import { fetch } from "lol/js/node/fs";
 import { merge } from "lol/js/object";
+import { PathWrapper, normalize } from "./path";
+import { Source } from "./source";
 
 export class FilePipeline implements IPipeline {
 
@@ -20,7 +22,19 @@ export class FilePipeline implements IPipeline {
   protected _globToAdd: string[] = []
   protected _globToIgnore: string[] = []
 
-  constructor(private _source: string) {}
+  constructor(private pid: string, private sid: string) {}
+
+  get pipeline() {
+    return PipelineManager.get(this.pid)
+  }
+
+  get source() {
+    return this.pipeline?.source.get(this.sid)
+  }
+
+  get resolver() {
+    return this.pipeline?.resolve
+  }
 
   /**
    * Add file pattern
@@ -44,7 +58,10 @@ export class FilePipeline implements IPipeline {
    */
   shadow(file: string, transformRule?: IFileRule) {
     this._shadows.push({
-      source: '__shadow__',
+      source: {
+        uuid: '__shadow__',
+        path: '__shadow__',
+      },
       input: file,
       output: file,
       cache: file,
@@ -67,26 +84,30 @@ export class FilePipeline implements IPipeline {
   /**
    * Collect a list of files matching patterns, then apply transformation rules
    */
-  fetch(pipeline: Pipeline) {
-    this._fetch(pipeline).forEach((asset) => {
+  fetch() {
+    if (!this.pipeline) return
+    const pipeline = this.pipeline
+    this._fetch().forEach((asset) => {
       this.rules.resolve(pipeline, asset)
     })
-    return this
   }
 
-  protected _fetch(pipeline: Pipeline) {
+  protected _fetch() {
+    if (!this.source || !this.resolver) return []
+
+    const source = this.source
+    const resolver = this.resolver
+
     const globs: string[] = []
     const ignores: string[] = []
-    const source = pipeline.source.get(this._source)
-    if (!source) return []
 
     this._globToAdd.forEach(pattern => {
-      const glob = source.join(pipeline.resolve, pattern, true)
+      const glob = source.fullpath.join(pattern).raw()
       globs.push(glob)
     })
 
     this._globToIgnore.forEach(pattern => {
-      const ignore = source.join(pipeline.resolve, pattern, true)
+      const ignore = source.fullpath.join(pattern).raw()
       ignores.push(ignore)
     })
 
@@ -94,13 +115,16 @@ export class FilePipeline implements IPipeline {
 
     const assets = fetcher(globs, ignores)
       .map((file) => {
-        const input = pipeline.resolve.relative(this._source, file)
+        const input = source.fullpath.relative(file)
         return {
-          source: pipeline.resolve.relative(pipeline.resolve.root(), this._source),
-          input: input,
-          output: input,
-          cache: input,
-          resolved: false
+          source: {
+            uuid: source.uuid,
+            path: source.path.toWeb(),
+          },
+          input: input.toWeb(),
+          output: input.toWeb(),
+          cache: input.toWeb(),
+          resolved: false,
         } as IAsset
       })
     .filter((asset) => asset != null)

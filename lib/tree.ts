@@ -1,6 +1,6 @@
-import { cleanPath, toUnixPath } from "./utils/path";
 import Path from "path";
-import { Pipeline } from "./pipeline";
+import { Pipeline, PipelineManager } from "./pipeline";
+import { normalize } from "./path";
 
 export interface TreeInterface {
   path: string,
@@ -18,10 +18,30 @@ export class Tree {
     subdirectories: {}
   }
 
-  constructor(private pipeline: Pipeline) { }
+  constructor(private pid: string) { }
+
+  get pipeline() {
+    return PipelineManager.get(this.pid)
+  }
+
+  get manifest() {
+    return this.pipeline?.manifest
+  }
+
+  get cache() {
+    return this.pipeline?.cache
+  }
+
+  get resolver() {
+    return this.pipeline?.resolve
+  }
 
   build(path: string) {
-    path = cleanPath(path)
+    if (!this.cache || !this.manifest) return path
+    const manifest = this.manifest
+    const cache = this.cache
+
+    path = normalize(path, "web")
     const extra = path.match(/\#|\?/)
     let suffix = ''
 
@@ -31,27 +51,30 @@ export class Tree {
     }
 
     let output = path
-    const asset = this.pipeline.resolve.asset(path)
+    const asset = manifest.get(path)
 
     if (asset) {
-      output = this.pipeline.cache.enabled ? asset.cache : asset.output
+      output = cache.enabled ? asset.cache : asset.output
     }
 
-    output = cleanPath(output)
-    output = process.platform === 'win32' ? toUnixPath(output) : output
+    output = normalize(output, "web")
     output = output + suffix
 
     return output
   }
 
   update() {
+    if (!this.resolver || !this.manifest) return
+    const manifest = this.manifest
+    const resolver = this.resolver
+
     const tree = {
       path: '.',
       files: [],
       subdirectories: {}
     } as TreeInterface
 
-    const keys = this.pipeline.manifest.all().map((asset) => {
+    const keys = manifest.export("asset").map((asset) => {
       return this.build(asset.input)
     })
     let currDir = tree
@@ -66,14 +89,14 @@ export class Tree {
       dirs.forEach(function (dir: string) {
         path += '/' + dir
         currDir.subdirectories[dir] = currDir.subdirectories[dir] || {
-          path: cleanPath(path),
+          path: normalize(path, "web"),
           files: [],
           subdirectories: {}
         }
         currDir = currDir.subdirectories[dir]
       })
 
-      if (Path.extname(this.pipeline.resolve.output_with(keys[i])).length > 0) {
+      if (resolver.output().with(keys[i]).ext().length > 0) {
         currDir.files.push(file)
       } else {
         currDir.subdirectories[file] = currDir.subdirectories[file] || { files: [], subdirectories: {} }
@@ -84,7 +107,7 @@ export class Tree {
   }
 
   resolve(path: string) {
-    const dirs = cleanPath(path).split('/')
+    const dirs = normalize(path, "web").split('/')
     let tree = this.tree
 
     for (let i = 0, ilen = dirs.length; i < ilen; i++) {
@@ -97,6 +120,9 @@ export class Tree {
   }
 
   view() {
+    if (!this.resolver) return ""
+    const resolver = this.resolver
+
     function ptree(tree: TreeInterface, tab: string) {
       let print = ''
 
@@ -110,7 +136,9 @@ export class Tree {
       return print
     }
 
-    return this.pipeline.resolve.output() + '\n' + ptree(this.tree, "  ").replace(/\n\s+\n/g, '\n')
+    let output = Path.relative(process.cwd(), resolver.output().raw())
+    output = normalize(output, "web")
+    return output + '\n' + ptree(this.tree, "  ").replace(/\n\s+\n/g, '\n')
   }
 
 }
