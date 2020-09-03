@@ -11,6 +11,7 @@ class Resolver {
     constructor(pid) {
         this.pid = pid;
         this.host = '';
+        this.output("public");
     }
     get pipeline() {
         return pipeline_1.PipelineManager.get(this.pid);
@@ -79,9 +80,11 @@ class Resolver {
      * Looking for source from a path by checking base directory
      */
     findSource(path) {
-        if (!this.source)
+        if (!this.source || !this.manifest)
             return;
-        const sources = this.source.all();
+        const source = this.source;
+        const manifest = this.manifest;
+        const sources = source.all();
         const source_paths = sources.map(p => {
             if (path_1.default.isAbsolute(path)) {
                 return p.fullpath.toWeb();
@@ -96,7 +99,9 @@ class Resolver {
             const dir_path = path_2.normalize(dir.join("/"), "web");
             const index = source_paths.indexOf(dir_path);
             if (index > -1) {
-                return sources[index];
+                const key = sources[index].path.relative(path).toWeb();
+                if (manifest.has(key))
+                    return sources[index];
             }
         }
     }
