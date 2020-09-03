@@ -5,7 +5,8 @@
   "main": "js/index.js",
   "types": "js",
   "scripts": {
-    "tsc": "tsc",
+    "tsc": "npx tsc",
+    "bump": "node bump.js",
     "test": "mocha -r ts-node/register ./test/**/*.spec.ts"
   },
   "author": "",
@@ -23,6 +24,7 @@
     "@types/mocha": "7.0.2",
     "@types/node": "13.13.0",
     "mocha": "8.1.3",
+    "semver": "^7.3.2",
     "ts-node": "9.0.0",
     "typescript": "4.0.2"
   }
