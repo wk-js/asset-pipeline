@@ -4,9 +4,7 @@ const { spawnSync } = require("child_process")
 
 const Options = { shell: true, stdio: 'inherit' }
 
-async function _bump(release = "minor") {
-  release = release || "minor"
-
+async function _bump(release = "patch") {
   let version = null
 
   await editFile("package.json", (buf) => {
@@ -22,11 +20,12 @@ async function _bump(release = "minor") {
   })
 
   spawnSync("npx tsc", Options)
+  spawnSync("npm install", Options)
   spawnSync(`git commit -am "Bump ${version}" && git tag ${version} && git push --tags && git push`, Options)
 }
 
 async function main() {
-  const release = process.argv[2] || "minor"
+  const release = process.argv[2] || "patch"
 
   const buf0 = await readFile("package.json")
   const pkg0 = JSON.parse(buf0.toString("utf-8"))
