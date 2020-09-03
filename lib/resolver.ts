@@ -8,7 +8,9 @@ export class Resolver {
   private _output!: PathWrapper
   public host: string = ''
 
-  constructor(private pid: string) { }
+  constructor(private pid: string) {
+    this.output("public")
+  }
 
   get pipeline() {
     return PipelineManager.get(this.pid)
@@ -86,8 +88,11 @@ export class Resolver {
    * Looking for source from a path by checking base directory
    */
   findSource(path: string) {
-    if (!this.source) return
-    const sources = this.source.all()
+    if (!this.source || !this.manifest) return
+    const source = this.source
+    const manifest = this.manifest
+
+    const sources = source.all()
     const source_paths = sources.map(p => {
       if (Path.isAbsolute(path)) {
         return p.fullpath.toWeb()
@@ -105,7 +110,8 @@ export class Resolver {
 
       const index = source_paths.indexOf(dir_path)
       if (index > -1) {
-        return sources[index]
+        const key = sources[index].path.relative(path).toWeb()
+        if (manifest.has(key)) return sources[index]
       }
     }
   }
