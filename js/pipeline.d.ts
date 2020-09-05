@@ -14,7 +14,7 @@ export declare class Pipeline {
     tree: Tree;
     constructor(key: string);
     clone(key: string): Pipeline;
-    fetch(force?: boolean): Promise<void>;
+    fetch(force?: boolean): void;
     copy(): Promise<void>;
     log(...args: any[]): void;
 }

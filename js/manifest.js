@@ -1,18 +1,10 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Manifest = void 0;
 const pipeline_1 = require("./pipeline");
 const fs_1 = require("lol/js/node/fs");
 const path_1 = require("./path");
+const fs_2 = require("fs");
 class Manifest {
     constructor(pid) {
         this.pid = pid;
@@ -45,35 +37,29 @@ class Manifest {
         return this.saveOnDisk && fs_1.isFile(this.manifest_path);
     }
     save() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this.pipeline)
-                return;
-            this._file.key = this.pipeline.cache.key;
-            this._file.date = new Date;
-            this._file.sources = this.pipeline.source.all().map(s => s.path.toWeb());
-            this._file.output = this.pipeline.resolve.output().toWeb();
-            if (this.saveOnDisk) {
-                yield fs_1.writeFile(JSON.stringify(this._file, null, 2), this.manifest_path);
-            }
-        });
+        if (!this.pipeline)
+            return;
+        this._file.key = this.pipeline.cache.key;
+        this._file.date = new Date;
+        this._file.sources = this.pipeline.source.all().map(s => s.path.toWeb());
+        this._file.output = this.pipeline.resolve.output().toWeb();
+        if (this.saveOnDisk) {
+            fs_1.writeFileSync(JSON.stringify(this._file, null, 2), this.manifest_path);
+        }
     }
     read() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (fs_1.isFile(this.manifest_path)) {
-                const content = yield fs_1.readFile(this.manifest_path);
-                this._file = JSON.parse(content.toString('utf-8'));
-            }
-            if (this.saveOnDisk) {
-                yield this.save();
-            }
-        });
+        if (fs_1.isFile(this.manifest_path)) {
+            const content = fs_2.readFileSync(this.manifest_path);
+            this._file = JSON.parse(content.toString('utf-8'));
+        }
+        if (this.saveOnDisk) {
+            this.save();
+        }
     }
     deleteOnDisk() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (fs_1.isFile(this.manifest_path)) {
-                yield fs_1.remove(this.manifest_path);
-            }
-        });
+        if (fs_1.isFile(this.manifest_path)) {
+            fs_1.removeSync(this.manifest_path);
+        }
     }
     get(input) {
         input = path_1.normalize(input, "web");

@@ -1,4 +1,3 @@
-import { Pipeline } from "./pipeline";
 import { IAsset, IOutput } from "./types";
 export declare class Manifest {
     private pid;
@@ -7,13 +6,13 @@ export declare class Manifest {
     saveOnDisk: boolean;
     saveAtChange: boolean;
     constructor(pid: string);
-    get pipeline(): Pipeline | undefined;
+    get pipeline(): import("./pipeline").Pipeline | undefined;
     clone(manifest: Manifest): void;
     get manifest_path(): string;
     fileExists(): boolean;
-    save(): Promise<void>;
-    read(): Promise<void>;
-    deleteOnDisk(): Promise<void>;
+    save(): void;
+    read(): void;
+    deleteOnDisk(): void;
     get(input: string): IAsset | undefined;
     has(input: string): boolean;
     add(asset: IAsset): void;
