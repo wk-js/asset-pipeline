@@ -16,7 +16,7 @@ async function setup(callback: (pipeline: Pipeline) => Promise<void>) {
   AP.resolve.output(DST_PATH)
   AP.manifest.saveOnDisk = false
   await callback(AP)
-  await AP.fetch()
+  AP.fetch()
   return AP
 }
 
@@ -360,7 +360,7 @@ describe('Shadow', () => {
 
     AP.source.all()[0].file.shadow('vendor.js', { cache: "common.js" })
 
-    await AP.fetch()
+    AP.fetch()
 
     const assets = AP.manifest.export()
     assert.equal(assets.length, 4)
@@ -393,7 +393,7 @@ describe('Shadow', () => {
 
     AP.source.all()[0].directory.shadow('vendors')
 
-    await AP.fetch()
+    AP.fetch()
 
     const assets = AP.manifest.export()
     assert.equal(assets.length, 4)

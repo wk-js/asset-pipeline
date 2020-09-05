@@ -1,7 +1,8 @@
-import { Pipeline, PipelineManager } from "./pipeline"
-import { writeFile, isFile, readFile, remove } from "lol/js/node/fs";
+import { PipelineManager } from "./pipeline"
+import { writeFileSync, isFile, removeSync } from "lol/js/node/fs";
 import { IAsset, IManifest, IOutput } from "./types";
 import { normalize } from "./path";
+import { readFileSync, } from "fs";
 
 export class Manifest {
 
@@ -39,7 +40,7 @@ export class Manifest {
     return this.saveOnDisk && isFile(this.manifest_path)
   }
 
-  async save() {
+  save() {
     if (!this.pipeline) return
 
     this._file.key = this.pipeline.cache.key
@@ -48,24 +49,24 @@ export class Manifest {
     this._file.output = this.pipeline.resolve.output().toWeb()
 
     if (this.saveOnDisk) {
-      await writeFile(JSON.stringify(this._file, null, 2), this.manifest_path)
+      writeFileSync(JSON.stringify(this._file, null, 2), this.manifest_path)
     }
   }
 
-  async read() {
+  read() {
     if (isFile(this.manifest_path)) {
-      const content = await readFile(this.manifest_path)
+      const content = readFileSync(this.manifest_path)
       this._file = JSON.parse(content.toString('utf-8'))
     }
 
     if (this.saveOnDisk) {
-      await this.save()
+      this.save()
     }
   }
 
-  async deleteOnDisk() {
+  deleteOnDisk() {
     if (isFile(this.manifest_path)) {
-      await remove(this.manifest_path)
+      removeSync(this.manifest_path)
     }
   }
 

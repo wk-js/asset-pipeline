@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "filelist": "github:FuriouZz/filelist",
-    "lol": "github:wk-js/lol.js#0.0.18",
+    "lol": "github:wk-js/lol.js#0.0.19",
     "minimatch": "^3.0.4"
   },
   "devDependencies": {
