@@ -71,7 +71,7 @@ class Resolver {
                 return url.href;
             }
             catch (e) {
-                return this.host + path;
+                return path_1.default.join(this.host, path);
             }
         }
         return path;

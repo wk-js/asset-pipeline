@@ -77,7 +77,7 @@ export class Resolver {
         const url = new URL(path, this.host)
         return url.href
       } catch (e) {
-        return this.host + path
+        return Path.join(this.host, path)
       }
     }
 
