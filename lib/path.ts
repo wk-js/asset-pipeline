@@ -62,7 +62,7 @@ export class PathBuilder {
   name() { return Path.basename(this.path, this.ext()) }
   dir() { return Path.dirname(this.path) }
   set(path: string) {
-    if (typeof path !== "string") throw new Error("Path should not be empty")
+    if (typeof path !== "string") throw new Error("[asset-pipeline][path] Path should not be empty")
     this.path = path
   }
 
@@ -95,7 +95,14 @@ export class URLBuilder {
   }
 
   setOrigin(origin: string) {
-    this._origin = origin
+    if (typeof origin !== "string") throw new Error(`[asset-pipeline][path] Orign should be a string. An empty string is accepted.`)
+
+    try {
+      new URL(this.pathname.os(), origin)
+      this._origin = origin
+    } catch (e) {
+      this._origin = ""
+    }
   }
 
   setPathname(path: string) {
@@ -126,7 +133,10 @@ export class URLBuilder {
   }
 
   toString() {
-    return this._origin + this.pathname.web()
+    if (this.isValidURL()) {
+      return this.toURL()
+    }
+    return this.pathname.web()
   }
 
   toURL() {
