@@ -68,46 +68,52 @@ function cleanup(path) {
 }
 exports.cleanup = cleanup;
 class PathBuilder {
-    constructor(_path) {
-        this._path = _path;
-        this._path = normalize(_path, "os");
+    constructor(path) {
+        this.path = path;
+        if (typeof path !== "string")
+            throw new Error("Path should not be empty");
+        this.path = normalize(path, "os");
     }
-    clone() { return new PathBuilder(this._path); }
-    os() { return normalize(this._path, "os"); }
-    unix() { return normalize(this._path, "unix"); }
-    web() { return normalize(this._path, "web"); }
-    ext() { return Path.extname(this._path); }
-    base() { return Path.basename(this._path); }
-    name() { return Path.basename(this._path, this.ext()); }
-    dir() { return Path.dirname(this._path); }
-    set(path) { this._path = path; }
+    clone() { return new PathBuilder(this.path); }
+    os() { return normalize(this.path, "os"); }
+    unix() { return normalize(this.path, "unix"); }
+    web() { return normalize(this.path, "web"); }
+    ext() { return Path.extname(this.path); }
+    base() { return Path.basename(this.path); }
+    name() { return Path.basename(this.path, this.ext()); }
+    dir() { return Path.dirname(this.path); }
+    set(path) {
+        if (typeof path !== "string")
+            throw new Error("Path should not be empty");
+        this.path = path;
+    }
     isAbsolute() {
-        return Path.isAbsolute(this._path);
+        return Path.isAbsolute(this.path);
     }
     join(...parts) {
-        return new PathBuilder(Path.join(this._path, ...parts));
+        return new PathBuilder(Path.join(this.path, ...parts));
     }
     with(...parts) {
         return this.join(...parts);
     }
     relative(to) {
-        return new PathBuilder(Path.relative(this._path, to));
+        return new PathBuilder(Path.relative(this.path, to));
     }
     toString(type = "os") {
-        return normalize(this._path, type);
+        return normalize(this.path, type);
     }
 }
 exports.PathBuilder = PathBuilder;
 class URLBuilder {
-    constructor(_path, _origin = "") {
+    constructor(path, _origin = "") {
         this._origin = _origin;
-        this.pathname = new PathBuilder(_path);
+        this.pathname = new PathBuilder(path);
     }
-    setOrigin(_origin) {
-        this._origin = _origin;
+    setOrigin(origin) {
+        this._origin = origin;
     }
-    setPathname(_path) {
-        this.pathname["_path"] = _path;
+    setPathname(path) {
+        this.pathname.set(path);
     }
     isValidURL() {
         try {

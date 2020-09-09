@@ -15,8 +15,8 @@ export declare function getNormalizedPaths(path: string): {
  */
 export declare function cleanup(path: string): string;
 export declare class PathBuilder {
-    private _path;
-    constructor(_path: string);
+    private path;
+    constructor(path: string);
     clone(): PathBuilder;
     os(): string;
     unix(): string;
@@ -35,9 +35,9 @@ export declare class PathBuilder {
 export declare class URLBuilder {
     private _origin;
     pathname: PathBuilder;
-    constructor(_path: string, _origin?: string);
-    setOrigin(_origin: string): void;
-    setPathname(_path: string): void;
+    constructor(path: string, _origin?: string);
+    setOrigin(origin: string): void;
+    setPathname(path: string): void;
     isValidURL(): boolean;
     clone(): URLBuilder;
     join(...parts: string[]): URLBuilder;
