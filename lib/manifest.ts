@@ -77,6 +77,22 @@ export class Manifest {
     return this._file.assets[input]
   }
 
+  getWithSource(input: string): IAssetWithSource | undefined {
+    if (!this.pipeline) return undefined
+    const { source } = this.pipeline
+
+    input = normalize(input, "web")
+    input = input.split(/\#|\?/)[0]
+
+    const asset = this._file.assets[input]
+    if (!asset || !source.has(asset.source.uuid)) return undefined
+
+    return {
+      source: source.get(asset.source.uuid)!,
+      ...omit<Omit<IAsset, "source">>(asset, "source")
+    } as IAssetWithSource
+  }
+
   has(input: string) {
     return !!this.get(input)
   }
