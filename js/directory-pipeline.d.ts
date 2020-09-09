@@ -16,9 +16,6 @@ export declare class DirectoryPipeline implements IPipeline {
     protected _globToIgnore: string[];
     constructor(pid: string, sid: string);
     get pipeline(): import("./pipeline").Pipeline | undefined;
-    get source(): import("./source").Source | undefined;
-    get resolver(): import("./resolver").Resolver | undefined;
-    get manifest(): import("./manifest").Manifest | undefined;
     /**
      * Append file pattern
      */

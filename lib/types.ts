@@ -1,6 +1,7 @@
 import { Transform } from "./transform";
 import { Pipeline } from "./pipeline";
 import { ParsedPath } from "path";
+import { Source } from "./source";
 
 export interface RenameOptions {
   input: {
@@ -69,6 +70,10 @@ export interface IAsset {
   tag: string,
   resolved?: boolean,
   rule?: IFileRule | IDirectoryRule
+}
+
+export type IAssetWithSource = Omit<IAsset, "source"> & {
+  source: Source
 }
 
 export interface IManifest {

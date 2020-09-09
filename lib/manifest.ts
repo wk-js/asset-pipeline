@@ -1,8 +1,9 @@
 import { PipelineManager } from "./pipeline"
 import { writeFileSync, isFile, removeSync } from "lol/js/node/fs";
-import { IAsset, IManifest, IOutput } from "./types";
+import { IAsset, IManifest, IOutput, IAssetWithSource } from "./types";
 import { normalize } from "./path";
 import { readFileSync, } from "fs";
+import { omit } from "lol/js/object";
 
 export class Manifest {
 
@@ -45,8 +46,8 @@ export class Manifest {
 
     this._file.key = this.pipeline.cache.key
     this._file.date = new Date
-    this._file.sources = this.pipeline.source.all().map(s => s.path.toWeb())
-    this._file.output = this.pipeline.resolve.output().toWeb()
+    this._file.sources = this.pipeline.source.all().map(s => s.path.web())
+    this._file.output = this.pipeline.output.web()
 
     if (this.saveOnDisk) {
       writeFileSync(JSON.stringify(this._file, null, 2), this.manifest_path)
@@ -111,12 +112,14 @@ export class Manifest {
     }
   }
 
-  export(type?: "asset", tag?: string): IAsset[];
-  export(type: "asset_key", tag?: string): Record<string, IAsset>;
-  export(type: "output", tag?: string): IOutput[];
-  export(type: "output_key", tag?: string): Record<string, IOutput>;
-  export(type: "asset" | "asset_key" | "output" | "output_key" = "asset", tag?: string): any {
-    switch (type) {
+  export(exportType?: "asset", tag?: string): IAsset[];
+  export(exportType: "asset_key", tag?: string): Record<string, IAsset>;
+  export(exportType: "asset_source", tag?: string): IAssetWithSource[];
+  export(exportType: "asset_source_key", tag?: string): Record<string, IAssetWithSource>;
+  export(exportType: "output", tag?: string): IOutput[];
+  export(exportType: "output_key", tag?: string): Record<string, IOutput>;
+  export(exportType: "asset" | "asset_key" | "asset_source" | "asset_source_key" | "output" | "output_key" = "asset", tag?: string): any {
+    switch (exportType) {
       case "asset":
         {
           const assets = Object
@@ -131,6 +134,26 @@ export class Manifest {
           this.export("asset", tag).forEach(a => assets[a.input] = a)
           return assets
         }
+      case "asset_source":
+        {
+          if (!this.pipeline) return []
+          const { source } = this.pipeline
+
+          return this.export("asset", tag)
+            .filter(a => source.has(a.source.uuid))
+            .map(a => {
+              return {
+                source: source.get(a.source.uuid)!,
+                ...omit<Omit<IAsset, "source">>(a, "source")
+              } as IAssetWithSource
+            })
+        }
+      case "asset_source_key":
+        {
+          const assets: Record<string, IAssetWithSource> = {}
+          this.export("asset_source", tag).forEach(a => assets[a.input] = a)
+          return assets
+        }
       case "output":
         {
           if (!this.pipeline) return []
@@ -141,8 +164,8 @@ export class Manifest {
             return {
               input,
               output: {
-                path: pipeline.resolve.getPath(input),
-                url: pipeline.resolve.getUrl(input),
+                path: pipeline.getPath(input),
+                url: pipeline.getUrl(input),
               }
             } as IOutput
           })

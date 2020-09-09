@@ -13,7 +13,7 @@ const DST_PATH = 'tmp/test-units-dist'
 async function setup(callback: (pipeline: Pipeline) => Promise<void>) {
   const AP = new AssetPipeline("test")
   // AP.source.add( LOAD_PATH )
-  AP.resolve.output(DST_PATH)
+  AP.output.set(DST_PATH)
   AP.manifest.saveOnDisk = false
   await callback(AP)
   AP.fetch()
@@ -83,9 +83,20 @@ describe("Files", () => {
         .file.add('file7.txt', { output: 'file.txt' })
     })
 
-    AP.resolve.getPath('file7.txt')
-    assert.equal(AP.resolve.getPath('file7.txt'), 'file.txt');
-    assert.equal(AP.resolve.getInputFromOutput('file.txt'), 'tmp/test-units/sub2/file7.txt');
+    assert.equal(AP.getPath('file7.txt'), 'file.txt');
+
+    const asset = AP.getAssetFromOutput('file.txt')!
+    assert.deepEqual({
+      source: asset.source.path,
+      input: asset.input,
+      output: asset.output,
+      cache: asset.cache,
+    }, {
+      source: "tmp/test-units/sub2",
+      input: 'file7.txt',
+      output: 'file.txt',
+      cache: 'file.txt',
+    })
   })
 
   it('Ignore', async () => {
@@ -101,7 +112,7 @@ describe("Files", () => {
 
   it('Paths', async () => {
     const AP = await setup(async (AP) => {
-      AP.resolve.host = 'http://mycdn.com/'
+      AP.host.setOrigin('http://mycdn.com/')
       AP.source.add(LOAD_PATH)
         .file
         .add('file1.txt', { output: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
@@ -110,26 +121,48 @@ describe("Files", () => {
 
     AP.manifest.export().forEach((asset) => {
       if (asset.input.match(/file1\.txt/)) {
-        assert.equal(AP.resolve.getPath(asset.input), 'file1.txt?v=1')
-        assert.equal(AP.resolve.getUrl(asset.input), 'http://mycdn.com/file1.txt?v=1')
-        assert.equal(AP.resolve.getPath(asset.input, { cleanup: true }), 'file1.txt')
-        assert.equal(AP.resolve.getUrl(asset.input, { cleanup: true }), 'http://mycdn.com/file1.txt')
-        assert.equal(AP.resolve.getInputFromOutput(asset.output), 'tmp/test-units/file1.txt')
-        assert.equal(AP.resolve.getInputFromOutput(asset.output, true), normalize(join(__dirname, '../tmp/test-units/file1.txt'), "web"))
-        assert.deepEqual(AP.resolve.parse('./tmp/test-units/file1.txt'), {
+        assert.equal(AP.getPath(asset.input), 'file1.txt?v=1')
+        assert.equal(AP.getUrl(asset.input), 'http://mycdn.com/file1.txt?v=1')
+        assert.equal(AP.getPath(asset.input, { cleanup: true }), 'file1.txt')
+        assert.equal(AP.getUrl(asset.input, { cleanup: true }), 'http://mycdn.com/file1.txt')
+
+        assert.deepEqual({
+          source: asset.source.path,
+          input: asset.input,
+          output: asset.output,
+          cache: asset.cache,
+        }, {
+          source: "tmp/test-units",
+          input: 'file1.txt',
+          output: 'file1.txt?v=1',
+          cache: 'file1.txt?v=1',
+        })
+
+        assert.deepEqual(AP.getAsset('./tmp/test-units/file1.txt'), {
           relative: "tmp/test-units/file1.txt",
           full: normalize(join(__dirname, '../tmp/test-units/file1.txt'), "web"),
           source: "tmp/test-units",
           key: "file1.txt"
         })
       } else {
-        assert.equal(AP.resolve.getPath(asset.input), 'file.txt')
-        assert.equal(AP.resolve.getUrl(asset.input), 'http://mycdn.com/file.txt')
-        assert.equal(AP.resolve.getPath(asset.input, { cleanup: true }), 'file.txt')
-        assert.equal(AP.resolve.getUrl(asset.input, { cleanup: true }), 'http://mycdn.com/file.txt')
-        assert.equal(AP.resolve.getInputFromOutput(asset.output), 'tmp/test-units/file.txt.ejs')
-        assert.equal(AP.resolve.getInputFromOutput(asset.output, true), normalize(join(__dirname, '../tmp/test-units/file.txt.ejs'), "web"))
-        assert.deepEqual(AP.resolve.parse('./tmp/test-units/file.txt.ejs'), {
+        assert.equal(AP.getPath(asset.input), 'file.txt')
+        assert.equal(AP.getUrl(asset.input), 'http://mycdn.com/file.txt')
+        assert.equal(AP.getPath(asset.input, { cleanup: true }), 'file.txt')
+        assert.equal(AP.getUrl(asset.input, { cleanup: true }), 'http://mycdn.com/file.txt')
+
+        assert.deepEqual({
+          source: asset.source.path,
+          input: asset.input,
+          output: asset.output,
+          cache: asset.cache,
+        }, {
+          source: "tmp/test-units",
+          input: 'file.txt.ejs',
+          output: 'file.txt',
+          cache: 'file.txt',
+        })
+
+        assert.deepEqual(AP.getAsset('./tmp/test-units/file.txt.ejs'), {
           relative: "tmp/test-units/file.txt.ejs",
           full: normalize(join(__dirname, '../tmp/test-units/file.txt.ejs'), "web"),
           source: "tmp/test-units",
@@ -149,16 +182,16 @@ describe("Files", () => {
 
     AP0.manifest.export().forEach((asset) => {
       if (asset.input.match(/file1\.txt/)) {
-        assert.equal(AP0.resolve.getUrl(asset.input), 'file1.txt?v=1')
-        assert.equal(AP0.resolve.getUrl(asset.input, { cleanup: true }), 'file1.txt')
+        assert.equal(AP0.getUrl(asset.input), '/file1.txt?v=1')
+        assert.equal(AP0.getUrl(asset.input, { cleanup: true }), '/file1.txt')
       } else {
-        assert.equal(AP0.resolve.getUrl(asset.input), 'file.txt')
-        assert.equal(AP0.resolve.getUrl(asset.input, { cleanup: true }), 'file.txt')
+        assert.equal(AP0.getUrl(asset.input), '/file.txt')
+        assert.equal(AP0.getUrl(asset.input, { cleanup: true }), '/file.txt')
       }
     })
 
     const AP1 = await setup(async (AP1) => {
-      AP1.resolve.host = 'http://mycdn.com/'
+      AP1.host.setOrigin('http://mycdn.com/')
       AP1.source.add(LOAD_PATH)
         .file
         .add('file1.txt', { output: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
@@ -167,11 +200,11 @@ describe("Files", () => {
 
     AP1.manifest.export().forEach((asset) => {
       if (asset.input.match(/file1\.txt/)) {
-        assert.equal(AP1.resolve.getUrl(asset.input), 'http://mycdn.com/file1.txt?v=1')
-        assert.equal(AP1.resolve.getUrl(asset.input, { cleanup: true }), 'http://mycdn.com/file1.txt')
+        assert.equal(AP1.getUrl(asset.input), 'http://mycdn.com/file1.txt?v=1')
+        assert.equal(AP1.getUrl(asset.input, { cleanup: true }), 'http://mycdn.com/file1.txt')
       } else {
-        assert.equal(AP1.resolve.getUrl(asset.input), 'http://mycdn.com/file.txt')
-        assert.equal(AP1.resolve.getUrl(asset.input, { cleanup: true }), 'http://mycdn.com/file.txt')
+        assert.equal(AP1.getUrl(asset.input), 'http://mycdn.com/file.txt')
+        assert.equal(AP1.getUrl(asset.input, { cleanup: true }), 'http://mycdn.com/file.txt')
       }
     })
   })
@@ -276,7 +309,7 @@ describe("Directory", () => {
     view.push('      file8.txt?2e276386aa7ecf2755fb164b68ffbe0d')
     view.push('  file9-a753a6e8378ee3ee03118da83d861934.txt')
 
-    assert.equal(AP.tree.view(), view.join('\n'));
+    assert.equal(AP.resolver.view(), view.join('\n'));
   })
 
 })

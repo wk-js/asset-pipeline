@@ -3,7 +3,7 @@ const { removeDir, editFile } = require('lol/js/node/fs')
 
 async function main() {
   const assets = new AssetPipeline()
-  assets.resolve.output('./tmp/copy')
+  assets.output.set('./tmp/copy')
   assets.verbose = true
 
   const lib = assets.source.add('lib')

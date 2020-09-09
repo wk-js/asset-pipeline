@@ -17,12 +17,8 @@ export class FileSystem {
 
   constructor(private pid: string, private sid: string) { }
 
-  get source() {
-    return PipelineManager.get(this.pid)?.source.get(this.sid)
-  }
-
-  get resolver() {
-    return PipelineManager.get(this.pid)?.resolve
+  get pipeline() {
+    return PipelineManager.get(this.pid)
   }
 
   move(glob: string) {
@@ -70,18 +66,18 @@ export class FileSystem {
   }
 
   protected async _apply(type: string) {
-    if (!this.resolver || !this.source) return
-
-    const resolver = this.resolver
-    const source = this.source
+    if (!this.pipeline) return
+    const pipeline = this.pipeline
+    const source = this.pipeline.source.get(this.sid)
+    if (!source) return
 
     const validGlobs = this.globs
       .filter(glob => glob.action === type)
-      .map(glob => source.fullpath.join(glob.glob).toWeb())
+      .map(glob => source.fullpath.join(glob.glob).web())
 
     const ignoredGlobs = this.globs
       .filter(glob => glob.action === "ignore")
-      .map(glob => source.fullpath.join(glob.glob).toWeb())
+      .map(glob => source.fullpath.join(glob.glob).web())
 
     let files = (
       type === 'symlink' ?
@@ -92,14 +88,13 @@ export class FileSystem {
 
     let ios: [string, string][] = []
     files.forEach(file => {
-      const relative_file = source.path.relative(file).toWeb()
-      const input = source.fullpath.join(relative_file).toWeb()
-      const output = resolver.output().with(resolver.getPath(relative_file))
-      if (input !== output.toWeb()) {
-        return ios.push([input, cleanup(output.toWeb())])
+      const relative_file = source.path.relative(file).web()
+      const input = source.fullpath.join(relative_file).web()
+      const output = pipeline.output.with(pipeline.getPath(relative_file))
+      if (input !== output.web()) {
+        return ios.push([input, cleanup(output.web())])
       }
     })
-
 
     ios = ios.filter(io => {
       const { mtime } = statSync(io[0])
@@ -116,7 +111,7 @@ export class FileSystem {
 
     for (const items of chunk(ios, this.chunkCount)) {
       const ps = items.map(io => {
-        this._log(type, ...io.map(p => normalize(Path.relative(process.cwd(), p), "web")))
+        this._log(type, ...io.map(p => pipeline.cwd.relative(p).web()))
 
         if (type === 'copy') {
           return copy(io[0], io[1])

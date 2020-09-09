@@ -23,14 +23,6 @@ class FilePipeline {
     get pipeline() {
         return pipeline_1.PipelineManager.get(this.pid);
     }
-    get source() {
-        var _a;
-        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.source.get(this.sid);
-    }
-    get resolver() {
-        var _a;
-        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.resolve;
-    }
     /**
      * Add file pattern
      */
@@ -86,18 +78,20 @@ class FilePipeline {
         });
     }
     _fetch() {
-        if (!this.source || !this.resolver)
+        if (!this.pipeline)
             return [];
-        const source = this.source;
-        const resolver = this.resolver;
+        const pipeline = this.pipeline;
+        const source = pipeline.source.get(this.sid);
+        if (!source)
+            return [];
         const globs = [];
         const ignores = [];
         this._globToAdd.forEach(pattern => {
-            const glob = source.fullpath.join(pattern).raw();
+            const glob = source.fullpath.join(pattern).os();
             globs.push(glob);
         });
         this._globToIgnore.forEach(pattern => {
-            const ignore = source.fullpath.join(pattern).raw();
+            const ignore = source.fullpath.join(pattern).os();
             ignores.push(ignore);
         });
         const fetcher = this._fetcher();
@@ -107,11 +101,11 @@ class FilePipeline {
             return {
                 source: {
                     uuid: source.uuid,
-                    path: source.path.toWeb(),
+                    path: source.path.web(),
                 },
-                input: input.toWeb(),
-                output: input.toWeb(),
-                cache: input.toWeb(),
+                input: input.web(),
+                output: input.web(),
+                cache: input.web(),
                 resolved: false,
             };
         })

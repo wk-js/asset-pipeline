@@ -1,12 +1,12 @@
 /**
  * Normalize path to current os format (system), unix format (unix) or web format (web)
  */
-export declare function normalize(path: string, type?: "unix" | "web" | "system"): string;
+export declare function normalize(path: string, type?: "unix" | "web" | "os"): string;
 /**
  * Get all different normalized paths
  */
 export declare function getNormalizedPaths(path: string): {
-    system: string;
+    os: string;
     unix: string;
     web: string;
 };
@@ -14,22 +14,35 @@ export declare function getNormalizedPaths(path: string): {
  * Remove hash and search parameters
  */
 export declare function cleanup(path: string): string;
-/**
- * Create a wrapper around the path
- */
-export declare function createWrapper(path: string): PathWrapper;
-export declare class PathWrapper {
-    private path;
-    constructor(path: string);
-    clone(): PathWrapper;
-    raw(): string;
-    toWeb(): string;
+export declare class PathBuilder {
+    private _path;
+    constructor(_path: string);
+    clone(): PathBuilder;
+    os(): string;
+    unix(): string;
+    web(): string;
     ext(): string;
     base(): string;
     name(): string;
     dir(): string;
+    set(path: string): void;
     isAbsolute(): boolean;
-    join(...parts: string[]): PathWrapper;
-    with(...parts: string[]): PathWrapper;
-    relative(to: string): PathWrapper;
+    join(...parts: string[]): PathBuilder;
+    with(...parts: string[]): PathBuilder;
+    relative(to: string): PathBuilder;
+    toString(type?: "unix" | "web" | "os"): string;
+}
+export declare class URLBuilder {
+    private _origin;
+    pathname: PathBuilder;
+    constructor(_path: string, _origin?: string);
+    setOrigin(_origin: string): void;
+    setPathname(_path: string): void;
+    isValidURL(): boolean;
+    clone(): URLBuilder;
+    join(...parts: string[]): URLBuilder;
+    with(...parts: string[]): URLBuilder;
+    relative(to: string): URLBuilder;
+    toString(): string;
+    toURL(): URL;
 }

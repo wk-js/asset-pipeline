@@ -1,10 +1,7 @@
-import { Pipeline, PipelineManager } from "./pipeline"
+import { PipelineManager } from "./pipeline"
 import { IAsset, IFileRule, IPipeline } from "./types";
 import { Transform } from "./transform";
 import { fetch } from "lol/js/node/fs";
-import { merge } from "lol/js/object";
-import { PathWrapper, normalize } from "./path";
-import { Source } from "./source";
 
 export class FilePipeline implements IPipeline {
 
@@ -26,14 +23,6 @@ export class FilePipeline implements IPipeline {
 
   get pipeline() {
     return PipelineManager.get(this.pid)
-  }
-
-  get source() {
-    return this.pipeline?.source.get(this.sid)
-  }
-
-  get resolver() {
-    return this.pipeline?.resolve
   }
 
   /**
@@ -93,21 +82,21 @@ export class FilePipeline implements IPipeline {
   }
 
   protected _fetch() {
-    if (!this.source || !this.resolver) return []
-
-    const source = this.source
-    const resolver = this.resolver
+    if (!this.pipeline) return []
+    const pipeline = this.pipeline
+    const source = pipeline.source.get(this.sid)
+    if (!source) return []
 
     const globs: string[] = []
     const ignores: string[] = []
 
     this._globToAdd.forEach(pattern => {
-      const glob = source.fullpath.join(pattern).raw()
+      const glob = source.fullpath.join(pattern).os()
       globs.push(glob)
     })
 
     this._globToIgnore.forEach(pattern => {
-      const ignore = source.fullpath.join(pattern).raw()
+      const ignore = source.fullpath.join(pattern).os()
       ignores.push(ignore)
     })
 
@@ -119,11 +108,11 @@ export class FilePipeline implements IPipeline {
         return {
           source: {
             uuid: source.uuid,
-            path: source.path.toWeb(),
+            path: source.path.web(),
           },
-          input: input.toWeb(),
-          output: input.toWeb(),
-          cache: input.toWeb(),
+          input: input.web(),
+          output: input.web(),
+          cache: input.web(),
           resolved: false,
         } as IAsset
       })

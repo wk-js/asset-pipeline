@@ -1,7 +1,5 @@
-import { Pipeline } from "./pipeline";
 import { IAsset, IFileRule, IPipeline } from "./types";
 import { Transform } from "./transform";
-import { Source } from "./source";
 export declare class FilePipeline implements IPipeline {
     private pid;
     private sid;
@@ -17,9 +15,7 @@ export declare class FilePipeline implements IPipeline {
     protected _globToAdd: string[];
     protected _globToIgnore: string[];
     constructor(pid: string, sid: string);
-    get pipeline(): Pipeline | undefined;
-    get source(): Source | undefined;
-    get resolver(): import("./resolver").Resolver | undefined;
+    get pipeline(): import("./pipeline").Pipeline | undefined;
     /**
      * Add file pattern
      */

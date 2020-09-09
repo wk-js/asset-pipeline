@@ -50,7 +50,7 @@ class SourceManager {
         }
     }
     add(path) {
-        path = path_1.normalize(path, "system");
+        path = path_1.normalize(path, "os");
         if (Path.isAbsolute(path))
             throw new Error("Cannot an absolute path to source");
         const source = new Source(path, this.pid);
@@ -100,8 +100,11 @@ class Source {
     constructor(path, pid) {
         this.pid = pid;
         this.uuid = guid_1.guid();
-        this.path = path_1.createWrapper(path);
-        this.fullpath = path_1.createWrapper(Path.isAbsolute(path) ? path : Path.join(process.cwd(), path));
+        const pipeline = pipeline_1.PipelineManager.get(pid);
+        this.path = new path_1.PathBuilder(path);
+        this.fullpath = new path_1.PathBuilder(Path.isAbsolute(path) ?
+            path :
+            pipeline_1.PipelineManager.get(pid).cwd.join(path).os());
         this.file = new file_pipeline_1.FilePipeline(pid, this.uuid);
         this.directory = new directory_pipeline_1.DirectoryPipeline(pid, this.uuid);
         this.fs = new file_system_1.FileSystem(pid, this.uuid);

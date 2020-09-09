@@ -1,3 +1,1 @@
-import { Pipeline } from "./pipeline";
-
-export const AssetPipeline = Pipeline
+export { Pipeline as AssetPipeline } from "./pipeline";

@@ -9,8 +9,7 @@ export declare class FileSystem {
     private globs;
     private mtimes;
     constructor(pid: string, sid: string);
-    get source(): import("./source").Source | undefined;
-    get resolver(): import("./resolver").Resolver | undefined;
+    get pipeline(): import("./pipeline").Pipeline | undefined;
     move(glob: string): void;
     copy(glob: string): void;
     symlink(glob: string): void;

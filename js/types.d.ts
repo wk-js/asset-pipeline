@@ -2,6 +2,7 @@
 import { Transform } from "./transform";
 import { Pipeline } from "./pipeline";
 import { ParsedPath } from "path";
+import { Source } from "./source";
 export interface RenameOptions {
     input: {
         fullpath: string;
@@ -55,6 +56,9 @@ export interface IAsset {
     resolved?: boolean;
     rule?: IFileRule | IDirectoryRule;
 }
+export declare type IAssetWithSource = Omit<IAsset, "source"> & {
+    source: Source;
+};
 export interface IManifest {
     key: string | number;
     date: Date;

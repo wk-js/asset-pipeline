@@ -1,4 +1,4 @@
-import { IAsset, IOutput } from "./types";
+import { IAsset, IOutput, IAssetWithSource } from "./types";
 export declare class Manifest {
     private pid;
     private _file;
@@ -18,8 +18,10 @@ export declare class Manifest {
     add(asset: IAsset): void;
     remove(input: string | IAsset): void;
     clear(): void;
-    export(type?: "asset", tag?: string): IAsset[];
-    export(type: "asset_key", tag?: string): Record<string, IAsset>;
-    export(type: "output", tag?: string): IOutput[];
-    export(type: "output_key", tag?: string): Record<string, IOutput>;
+    export(exportType?: "asset", tag?: string): IAsset[];
+    export(exportType: "asset_key", tag?: string): Record<string, IAsset>;
+    export(exportType: "asset_source", tag?: string): IAssetWithSource[];
+    export(exportType: "asset_source_key", tag?: string): Record<string, IAssetWithSource>;
+    export(exportType: "output", tag?: string): IOutput[];
+    export(exportType: "output_key", tag?: string): Record<string, IOutput>;
 }

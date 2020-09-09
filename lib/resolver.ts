@@ -1,175 +1,130 @@
 import Path from "path";
-import { Pipeline, PipelineManager } from "./pipeline";
-import { IPathObject, IResolvePathOptions } from "./types";
-import { createWrapper, normalize, cleanup, PathWrapper } from "./path";
+import {  PipelineManager } from "./pipeline";
+import { normalize } from "./path";
+
+export interface TreeInterface {
+  path: string,
+  files: string[]
+  subdirectories: {
+    [key: string]: TreeInterface
+  }
+}
 
 export class Resolver {
 
-  private _output!: PathWrapper
-  public host: string = ''
-
-  constructor(private pid: string) {
-    this.output("public")
+  root: TreeInterface = {
+    path: '.',
+    files: [],
+    subdirectories: {}
   }
+
+  constructor(private pid: string) { }
 
   get pipeline() {
     return PipelineManager.get(this.pid)
   }
 
-  get source() {
-    return this.pipeline?.source
-  }
+  resolve(inputPath: string) {
+    if (!this.pipeline) return inputPath
+    const { cache, manifest } = this.pipeline
 
-  get manifest() {
-    return this.pipeline?.manifest
-  }
+    inputPath = normalize(inputPath, "web")
+    const extra = inputPath.match(/\#|\?/)
+    let suffix = ''
 
-  get tree() {
-    return this.pipeline?.tree
-  }
-
-  clone(resolve: Resolver) {
-    resolve.host = this.host
-    resolve.output('public')
-  }
-
-  output(path?: string) {
-    if (path) {
-      if (Path.isAbsolute(path)) {
-        this._output = createWrapper(path)
-      } else {
-        this._output = createWrapper(Path.join(process.cwd(), path))
-      }
-    }
-    return this._output
-  }
-
-  getPath(path: string, options?: Partial<IResolvePathOptions>) {
-    if (!path) throw new Error("[asset-pipeline][Resolver] path cannot be empty")
-    if (!this.tree) return path
-    const tree = this.tree
-
-    const opts = Object.assign({
-      from: tree.tree.path,
-      cleanup: false,
-    }, options || {}) as IResolvePathOptions
-
-    opts.from = tree.build(opts.from)
-    path = tree.build(path)
-
-    const fromTree = tree.resolve(opts.from)
-
-    const output = this._output.with(fromTree.path)
-      .relative(this._output.with(path).raw())
-
-    if (opts.cleanup) {
-      return cleanup(output.toWeb())
+    if (extra) {
+      suffix = extra[0] + inputPath.split(extra[0])[1]
+      inputPath = inputPath.split(extra[0])[0]
     }
 
-    return output.toWeb()
-  }
+    let output = inputPath
+    const asset = manifest.get(inputPath)
 
-  getUrl(path: string, options?: Partial<IResolvePathOptions>) {
-    path = this.getPath(path, options)
-
-    if (this.host) {
-      try {
-        const url = new URL(path, this.host)
-        return url.href
-      } catch (e) {
-        return Path.join(this.host, path)
-      }
+    if (asset) {
+      output = cache.enabled ? asset.cache : asset.output
     }
 
-    return path
+    output = normalize(output, "web")
+    output = output + suffix
+
+    return output
   }
 
-  /**
-   * Looking for source from a path by checking base directory
-   */
-  findSource(path: string) {
-    if (!this.source || !this.manifest) return
-    const source = this.source
-    const manifest = this.manifest
+  refreshTree() {
+    if (!this.pipeline) return
+    const { cache, manifest } = this.pipeline
 
-    const sources = source.all()
-    const source_paths = sources.map(p => {
-      if (Path.isAbsolute(path)) {
-        return p.fullpath.toWeb()
-      }
-      return p.path.toWeb()
+    const tree = {
+      path: '.',
+      files: [],
+      subdirectories: {}
+    } as TreeInterface
+
+    const keys = manifest.export("asset").map((asset) => {
+      return cache.enabled ? asset.cache : asset.output
     })
+    let currDir = tree
+    let path = tree.path
 
-    path = normalize(path, "web")
-    const dir = []
-    const parts = path.split("/")
+    for (let i = 0, ilen = keys.length; i < ilen; i++) {
+      const dirs = keys[i].split('/')
+      const file = dirs.pop() as string
 
-    for (const part of parts) {
-      dir.push( part )
-      const dir_path = normalize(dir.join("/"), "web")
+      currDir = tree
+      path = tree.path
+      dirs.forEach(function (dir: string) {
+        path += '/' + dir
+        currDir.subdirectories[dir] = currDir.subdirectories[dir] || {
+          path: normalize(path, "web"),
+          files: [],
+          subdirectories: {}
+        }
+        currDir = currDir.subdirectories[dir]
+      })
 
-      const index = source_paths.indexOf(dir_path)
-      if (index > -1) {
-        const key = sources[index].path.relative(path).toWeb()
-        if (manifest.has(key)) return sources[index]
+      if (this.pipeline.output.with(keys[i]).ext().length > 0) {
+        currDir.files.push(file)
+      } else {
+        currDir.subdirectories[file] = currDir.subdirectories[file] || { files: [], subdirectories: {} }
       }
     }
+
+    this.root = tree
   }
 
-  /**
-   * Looking for a source and
-   */
-  parse(path: string) {
-    // Build relative path
-    let relative = createWrapper(path)
-    if (Path.isAbsolute(path)) {
-      relative = createWrapper(Path.relative(process.cwd(), path))
-    }
+  getTree(inputPath: string) {
+    const outputPath = this.resolve(inputPath)
 
-    // Clean paths
-    const result: IPathObject = {
-      relative: relative.toWeb(),
-    }
+    const dirs = normalize(outputPath, "web").split('/')
+    let tree = this.root
 
-    // Looking for source
-    const source = this.findSource(result.relative)
-
-    // Build key and clean paths
-    if (source) {
-      result.source = source.path.toWeb()
-      result.key = source.path.relative(result.relative).toWeb()
-      result.full = source.fullpath.join(result.key).toWeb()
-    }
-
-    return result
-  }
-
-  getInputFromOutput(output: string, absolute = false) {
-    if (!this.source) return
-
-    const asset = this.getAssetFromOutput(output)
-    if (!asset) return
-
-    const source = this.source.get(asset.source.uuid)
-    if (!source) return
-
-    if (absolute) {
-      return source.fullpath.join(asset.input).toWeb()
-    }
-
-    return source.path.join(asset.input).toWeb()
-  }
-
-  getAssetFromOutput(output: string) {
-    if (!this.manifest) return
-    const assets = this.manifest.export()
-    for (let i = 0; i < assets.length; i++) {
-      const item = assets[i];
-
-      if (item.output == output || item.cache == output) {
-        return item
+    for (let i = 0, ilen = dirs.length; i < ilen; i++) {
+      if (tree.subdirectories[dirs[i]]) {
+        tree = tree.subdirectories[dirs[i]]
       }
     }
+
+    return tree
+  }
+
+  view() {
+    if (!this.pipeline) return ""
+
+    function ptree(tree: TreeInterface, tab: string) {
+      let print = ''
+
+      Object.keys(tree.subdirectories).forEach(function (dir) {
+        print += tab + dir + '\n'
+        print += ptree(tree.subdirectories[dir], tab + "  ") + '\n'
+      })
+
+      print += tab + tree.files.join(`\n${tab}`)
+
+      return print
+    }
+
+    const output = this.pipeline.cwd.relative(this.pipeline.output.os()).web()
+    return output + '\n' + ptree(this.root, "  ").replace(/\n\s+\n/g, '\n')
   }
 
 }

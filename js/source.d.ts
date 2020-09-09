@@ -1,7 +1,7 @@
 import { FilePipeline } from "./file-pipeline";
 import { DirectoryPipeline } from "./directory-pipeline";
 import { FileSystem } from "./file-system";
-import { PathWrapper } from "./path";
+import { PathBuilder } from "./path";
 export declare class SourceManager {
     private pid;
     private _sources;
@@ -22,8 +22,8 @@ export declare class Source {
     file: FilePipeline;
     directory: DirectoryPipeline;
     fs: FileSystem;
-    path: PathWrapper;
-    fullpath: PathWrapper;
+    path: PathBuilder;
+    fullpath: PathBuilder;
     constructor(path: string, pid: string);
     get pipeline(): import("./pipeline").Pipeline | undefined;
 }

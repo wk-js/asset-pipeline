@@ -107,8 +107,8 @@ export class Transform {
 
     // Add base_dir
     if (typeof rule.base_dir === 'string') {
-      const base_dir = pipeline.resolve.output().join(rule.base_dir, output)
-      output = pipeline.resolve.output().relative(base_dir.raw()).raw()
+      const base_dir = pipeline.output.join(rule.base_dir, output)
+      output = pipeline.output.relative(base_dir.os()).os()
     }
 
     // Replace dir path if needed
@@ -191,7 +191,7 @@ export class Transform {
     for (let i = 0; i < ds.length; i++) {
       d.push( ds[i] )
       const dd = d.join('/')
-      const ddd = pipeline.resolve.getPath(dd)
+      const ddd = pipeline.getPath(dd)
       if (dd != ddd) {
         d = ddd.split('/')
       }

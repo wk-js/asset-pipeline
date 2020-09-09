@@ -3,7 +3,7 @@ import { PipelineManager } from "./pipeline";
 import { FilePipeline } from "./file-pipeline";
 import { DirectoryPipeline } from "./directory-pipeline";
 import { FileSystem } from "./file-system";
-import { PathWrapper, createWrapper, normalize } from "./path";
+import { PathBuilder, normalize } from "./path";
 import { guid } from "lol/js/string/guid";
 
 export class SourceManager {
@@ -22,7 +22,7 @@ export class SourceManager {
   }
 
   add(path: string) {
-    path = normalize(path, "system")
+    path = normalize(path, "os")
     if (Path.isAbsolute(path)) throw new Error("Cannot an absolute path to source")
     const source = new Source(path, this.pid)
     this._sources.set(source.uuid, source)
@@ -80,12 +80,16 @@ export class Source {
   file: FilePipeline
   directory: DirectoryPipeline
   fs: FileSystem
-  path: PathWrapper
-  fullpath: PathWrapper
+  path: PathBuilder
+  fullpath: PathBuilder
 
   constructor(path: string, private pid: string) {
-    this.path = createWrapper(path)
-    this.fullpath = createWrapper(Path.isAbsolute(path) ? path : Path.join(process.cwd(), path))
+    const pipeline = PipelineManager.get(pid)!
+    this.path = new PathBuilder(path)
+    this.fullpath = new PathBuilder(Path.isAbsolute(path) ?
+      path :
+      PipelineManager.get(pid)!.cwd.join(path).os()
+    )
     this.file = new FilePipeline(pid, this.uuid)
     this.directory = new DirectoryPipeline(pid, this.uuid)
     this.fs = new FileSystem(pid, this.uuid)

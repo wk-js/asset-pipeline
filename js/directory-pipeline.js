@@ -50,18 +50,6 @@ class DirectoryPipeline {
     get pipeline() {
         return pipeline_1.PipelineManager.get(this.pid);
     }
-    get source() {
-        var _a;
-        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.source.get(this.sid);
-    }
-    get resolver() {
-        var _a;
-        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.resolve;
-    }
-    get manifest() {
-        var _a;
-        return (_a = this.pipeline) === null || _a === void 0 ? void 0 : _a.manifest;
-    }
     /**
      * Append file pattern
      */
@@ -101,29 +89,30 @@ class DirectoryPipeline {
         return directory;
     }
     fetch() {
-        if (!this.pipeline || !this.source || !this.resolver || !this.manifest)
+        if (!this.pipeline)
             return;
         const pipeline = this.pipeline;
-        const source = this.source;
-        const resolver = this.resolver;
-        const manifest = this.manifest;
+        const source = pipeline.source.get(this.sid);
+        if (!source)
+            return;
+        const { manifest } = this.pipeline;
         this._fetch()
             .map((asset) => {
             this.rules.resolve(pipeline, asset);
             return asset;
         })
             .forEach((item) => {
-            const glob = source.fullpath.join(item.input, '**/*').raw();
+            const glob = source.fullpath.join(item.input, '**/*').os();
             // Handle files
             fs_1.fetch(glob).map((file) => {
                 const input = source.fullpath.relative(file);
-                const pathObject = Path.parse(input.raw());
-                pathObject.dir = resolver.getPath(pathObject.dir);
+                const pathObject = Path.parse(input.os());
+                pathObject.dir = pipeline.getPath(pathObject.dir);
                 const output = Path.format(pathObject);
                 const rule = this.rules.matchingRule(item.input);
                 const asset = {
                     source: item.source,
-                    input: input.toWeb(),
+                    input: input.web(),
                     output: path_1.normalize(output, "web"),
                     cache: path_1.normalize(output, "web"),
                     tag: typeof rule.tag == 'string' ? rule.tag : 'default'
@@ -143,7 +132,7 @@ class DirectoryPipeline {
                 }
                 asset.resolved = true;
                 asset.rule = rule;
-                pipeline.manifest.add(asset);
+                manifest.add(asset);
             });
         });
     }

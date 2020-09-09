@@ -19,9 +19,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PathWrapper = exports.createWrapper = exports.cleanup = exports.getNormalizedPaths = exports.normalize = void 0;
+exports.URLBuilder = exports.PathBuilder = exports.cleanup = exports.getNormalizedPaths = exports.normalize = void 0;
 const Path = __importStar(require("path"));
-const BACKSLASH_REG = /\\/g;
+const WIN32_SEP_REG = /\\/g;
 const DOUBLE_BACKSLASH_REG = /\/\//;
 const CLEAN_URL_REG = /^\.\/|\/$/g;
 const SEARCH_HASH_REG = /\?|\#/;
@@ -30,13 +30,13 @@ const SEARCH_HASH_REG = /\?|\#/;
  */
 function normalize(path, type = "web") {
     switch (type) {
-        case "system": return Path.normalize(path);
+        case "os": return Path.normalize(path);
         case "unix":
             {
-                path = normalize(path, "system");
-                path = path.replace(BACKSLASH_REG, "/");
+                path = normalize(path, "os");
+                path = path.replace(WIN32_SEP_REG, Path.posix.sep);
                 while (path.match(DOUBLE_BACKSLASH_REG)) {
-                    path = path.replace(DOUBLE_BACKSLASH_REG, "/"); // node on windows doesn't replace doubles
+                    path = path.replace(DOUBLE_BACKSLASH_REG, Path.posix.sep); // node on windows doesn't replace doubles
                 }
                 return path;
             }
@@ -54,7 +54,7 @@ exports.normalize = normalize;
  */
 function getNormalizedPaths(path) {
     return {
-        system: normalize(path, "system"),
+        os: normalize(path, "os"),
         unix: normalize(path, "unix"),
         web: normalize(path, "web"),
     };
@@ -67,36 +67,72 @@ function cleanup(path) {
     return path.split(SEARCH_HASH_REG)[0];
 }
 exports.cleanup = cleanup;
-/**
- * Create a wrapper around the path
- */
-function createWrapper(path) {
-    return new PathWrapper(path);
-}
-exports.createWrapper = createWrapper;
-class PathWrapper {
-    constructor(path) {
-        this.path = path;
-        this.path = normalize(path, "system");
+class PathBuilder {
+    constructor(_path) {
+        this._path = _path;
+        this._path = normalize(_path, "os");
     }
-    clone() { return new PathWrapper(this.path); }
-    raw() { return this.path; }
-    toWeb() { return normalize(this.path, "web"); }
-    ext() { return Path.extname(this.path); }
-    base() { return Path.basename(this.path); }
-    name() { return Path.basename(this.path, this.ext()); }
-    dir() { return Path.dirname(this.path); }
+    clone() { return new PathBuilder(this._path); }
+    os() { return normalize(this._path, "os"); }
+    unix() { return normalize(this._path, "unix"); }
+    web() { return normalize(this._path, "web"); }
+    ext() { return Path.extname(this._path); }
+    base() { return Path.basename(this._path); }
+    name() { return Path.basename(this._path, this.ext()); }
+    dir() { return Path.dirname(this._path); }
+    set(path) { this._path = path; }
     isAbsolute() {
-        return Path.isAbsolute(this.path);
+        return Path.isAbsolute(this._path);
     }
     join(...parts) {
-        return createWrapper(Path.join(this.path, ...parts));
+        return new PathBuilder(Path.join(this._path, ...parts));
     }
     with(...parts) {
         return this.join(...parts);
     }
     relative(to) {
-        return createWrapper(Path.relative(this.path, to));
+        return new PathBuilder(Path.relative(this._path, to));
+    }
+    toString(type = "os") {
+        return normalize(this._path, type);
     }
 }
-exports.PathWrapper = PathWrapper;
+exports.PathBuilder = PathBuilder;
+class URLBuilder {
+    constructor(_path, _origin = "") {
+        this._origin = _origin;
+        this.pathname = new PathBuilder(_path);
+    }
+    setOrigin(_origin) {
+        this._origin = _origin;
+    }
+    setPathname(_path) {
+        this.pathname["_path"] = _path;
+    }
+    isValidURL() {
+        try {
+            new URL(this.pathname.toString("web"), this._origin);
+            return true;
+        }
+        catch (e) {
+            return false;
+        }
+    }
+    clone() { return new URLBuilder(this.pathname.web(), this._origin); }
+    join(...parts) {
+        return new URLBuilder(this.pathname.join(...parts).web(), this._origin);
+    }
+    with(...parts) {
+        return this.join(...parts);
+    }
+    relative(to) {
+        return new URLBuilder(this.pathname.relative(to).web(), this._origin);
+    }
+    toString() {
+        return this._origin + this.pathname.web();
+    }
+    toURL() {
+        return new URL(this.pathname.toString("web"), this._origin);
+    }
+}
+exports.URLBuilder = URLBuilder;

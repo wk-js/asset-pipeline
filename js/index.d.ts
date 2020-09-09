@@ -1,2 +1,1 @@
-import { Pipeline } from "./pipeline";
-export declare const AssetPipeline: typeof Pipeline;
+export { Pipeline as AssetPipeline } from "./pipeline";

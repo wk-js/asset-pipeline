@@ -5,6 +5,7 @@ const pipeline_1 = require("./pipeline");
 const fs_1 = require("lol/js/node/fs");
 const path_1 = require("./path");
 const fs_2 = require("fs");
+const object_1 = require("lol/js/object");
 class Manifest {
     constructor(pid) {
         this.pid = pid;
@@ -41,8 +42,8 @@ class Manifest {
             return;
         this._file.key = this.pipeline.cache.key;
         this._file.date = new Date;
-        this._file.sources = this.pipeline.source.all().map(s => s.path.toWeb());
-        this._file.output = this.pipeline.resolve.output().toWeb();
+        this._file.sources = this.pipeline.source.all().map(s => s.path.web());
+        this._file.output = this.pipeline.output.web();
         if (this.saveOnDisk) {
             fs_1.writeFileSync(JSON.stringify(this._file, null, 2), this.manifest_path);
         }
@@ -96,8 +97,8 @@ class Manifest {
             this.save();
         }
     }
-    export(type = "asset", tag) {
-        switch (type) {
+    export(exportType = "asset", tag) {
+        switch (exportType) {
             case "asset":
                 {
                     const assets = Object
@@ -113,6 +114,23 @@ class Manifest {
                     this.export("asset", tag).forEach(a => assets[a.input] = a);
                     return assets;
                 }
+            case "asset_source":
+                {
+                    if (!this.pipeline)
+                        return [];
+                    const { source } = this.pipeline;
+                    return this.export("asset", tag)
+                        .filter(a => source.has(a.source.uuid))
+                        .map(a => {
+                        return Object.assign({ source: source.get(a.source.uuid) }, object_1.omit(a, "source"));
+                    });
+                }
+            case "asset_source_key":
+                {
+                    const assets = {};
+                    this.export("asset_source", tag).forEach(a => assets[a.input] = a);
+                    return assets;
+                }
             case "output":
                 {
                     if (!this.pipeline)
@@ -124,8 +142,8 @@ class Manifest {
                         return {
                             input,
                             output: {
-                                path: pipeline.resolve.getPath(input),
-                                url: pipeline.resolve.getUrl(input),
+                                path: pipeline.getPath(input),
+                                url: pipeline.getUrl(input),
                             }
                         };
                     });

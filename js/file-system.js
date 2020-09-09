@@ -1,23 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -33,7 +14,6 @@ const fs_1 = require("lol/js/node/fs");
 const pipeline_1 = require("./pipeline");
 const fs_2 = require("fs");
 const path_1 = require("./path");
-const Path = __importStar(require("path"));
 const array_1 = require("lol/js/array");
 class FileSystem {
     constructor(pid, sid) {
@@ -43,13 +23,8 @@ class FileSystem {
         this.globs = [];
         this.mtimes = new Map();
     }
-    get source() {
-        var _a;
-        return (_a = pipeline_1.PipelineManager.get(this.pid)) === null || _a === void 0 ? void 0 : _a.source.get(this.sid);
-    }
-    get resolver() {
-        var _a;
-        return (_a = pipeline_1.PipelineManager.get(this.pid)) === null || _a === void 0 ? void 0 : _a.resolve;
+    get pipeline() {
+        return pipeline_1.PipelineManager.get(this.pid);
     }
     move(glob) {
         this.globs.push({
@@ -94,27 +69,29 @@ class FileSystem {
     }
     _apply(type) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.resolver || !this.source)
+            if (!this.pipeline)
                 return;
-            const resolver = this.resolver;
-            const source = this.source;
+            const pipeline = this.pipeline;
+            const source = this.pipeline.source.get(this.sid);
+            if (!source)
+                return;
             const validGlobs = this.globs
                 .filter(glob => glob.action === type)
-                .map(glob => source.fullpath.join(glob.glob).toWeb());
+                .map(glob => source.fullpath.join(glob.glob).web());
             const ignoredGlobs = this.globs
                 .filter(glob => glob.action === "ignore")
-                .map(glob => source.fullpath.join(glob.glob).toWeb());
+                .map(glob => source.fullpath.join(glob.glob).web());
             let files = (type === 'symlink' ?
                 fs_1.fetchDirs(validGlobs, ignoredGlobs)
                 :
                     fs_1.fetch(validGlobs, ignoredGlobs));
             let ios = [];
             files.forEach(file => {
-                const relative_file = source.path.relative(file).toWeb();
-                const input = source.fullpath.join(relative_file).toWeb();
-                const output = resolver.output().with(resolver.getPath(relative_file));
-                if (input !== output.toWeb()) {
-                    return ios.push([input, path_1.cleanup(output.toWeb())]);
+                const relative_file = source.path.relative(file).web();
+                const input = source.fullpath.join(relative_file).web();
+                const output = pipeline.output.with(pipeline.getPath(relative_file));
+                if (input !== output.web()) {
+                    return ios.push([input, path_1.cleanup(output.web())]);
                 }
             });
             ios = ios.filter(io => {
@@ -129,7 +106,7 @@ class FileSystem {
             });
             for (const items of array_1.chunk(ios, this.chunkCount)) {
                 const ps = items.map(io => {
-                    this._log(type, ...io.map(p => path_1.normalize(Path.relative(process.cwd(), p), "web")));
+                    this._log(type, ...io.map(p => pipeline.cwd.relative(p).web()));
                     if (type === 'copy') {
                         return fs_1.copy(io[0], io[1]);
                     }

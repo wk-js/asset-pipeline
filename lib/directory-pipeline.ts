@@ -30,18 +30,6 @@ export class DirectoryPipeline implements IPipeline {
     return PipelineManager.get(this.pid)
   }
 
-  get source() {
-    return this.pipeline?.source.get(this.sid)
-  }
-
-  get resolver() {
-    return this.pipeline?.resolve
-  }
-
-  get manifest() {
-    return this.pipeline?.manifest
-  }
-
   /**
    * Append file pattern
    */
@@ -84,11 +72,11 @@ export class DirectoryPipeline implements IPipeline {
   }
 
   fetch() {
-    if (!this.pipeline || !this.source || !this.resolver || !this.manifest) return
+    if (!this.pipeline) return
     const pipeline = this.pipeline
-    const source = this.source
-    const resolver = this.resolver
-    const manifest = this.manifest
+    const source = pipeline.source.get(this.sid)
+    if (!source) return
+    const { manifest } = this.pipeline
 
     this._fetch()
       .map((asset) => {
@@ -97,20 +85,20 @@ export class DirectoryPipeline implements IPipeline {
       })
 
       .forEach((item) => {
-        const glob = source.fullpath.join(item.input, '**/*').raw()
+        const glob = source.fullpath.join(item.input, '**/*').os()
 
         // Handle files
         fetch(glob).map((file: string) => {
           const input = source.fullpath.relative(file)
 
-          const pathObject = Path.parse(input.raw())
-          pathObject.dir = resolver.getPath(pathObject.dir)
+          const pathObject = Path.parse(input.os())
+          pathObject.dir = pipeline.getPath(pathObject.dir)
           const output = Path.format(pathObject)
 
           const rule = this.rules.matchingRule(item.input) as IDirectoryRule
           const asset: IAsset = {
             source: item.source,
-            input: input.toWeb(),
+            input: input.web(),
             output: normalize(output, "web"),
             cache: normalize(output, "web"),
             tag: typeof rule.tag == 'string' ? rule.tag : 'default'
@@ -135,7 +123,7 @@ export class DirectoryPipeline implements IPipeline {
 
           asset.resolved = true
           asset.rule = rule
-          pipeline.manifest.add(asset)
+          manifest.add(asset)
         })
       })
   }
