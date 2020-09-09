@@ -29,6 +29,6 @@ export declare class Pipeline {
      */
     getAsset(inputPath: string): import("./types").IAsset | undefined;
     getPath(inputPath: string, options?: Partial<IResolvePathOptions>): string;
-    getUrl(inputPath: string, options?: Partial<IResolvePathOptions>): string | URL;
+    getUrl(inputPath: string, options?: Partial<IResolvePathOptions>): string;
     getAssetFromOutput(outputPath: string): import("./types").IAsset | undefined;
 }

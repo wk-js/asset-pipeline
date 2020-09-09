@@ -134,7 +134,7 @@ export class URLBuilder {
 
   toString() {
     if (this.isValidURL()) {
-      return this.toURL()
+      return this.toURL().href
     }
     return this.pathname.web()
   }
