@@ -98,7 +98,7 @@ class DirectoryPipeline {
         const { manifest } = this.pipeline;
         this._fetch()
             .map((asset) => {
-            this.rules.resolve(pipeline, asset);
+            this.rules.transform(pipeline, asset);
             return asset;
         })
             .forEach((item) => {
@@ -125,7 +125,7 @@ class DirectoryPipeline {
                         const r = rule.file_rules[i];
                         if (!r.ignore && minimatch_1.default(asset.input, r.glob || asset.input)) {
                             asset.rule = r;
-                            this.rules.resolve(pipeline, asset);
+                            this.rules.transform(pipeline, asset);
                         }
                     }
                     return;

@@ -137,13 +137,6 @@ describe("Files", () => {
           output: 'file1.txt?v=1',
           cache: 'file1.txt?v=1',
         })
-
-        assert.deepEqual(AP.getAsset('./tmp/test-units/file1.txt'), {
-          relative: "tmp/test-units/file1.txt",
-          full: normalize(join(__dirname, '../tmp/test-units/file1.txt'), "web"),
-          source: "tmp/test-units",
-          key: "file1.txt"
-        })
       } else {
         assert.equal(AP.getPath(asset.input), 'file.txt')
         assert.equal(AP.getUrl(asset.input), 'http://mycdn.com/file.txt')
@@ -160,13 +153,6 @@ describe("Files", () => {
           input: 'file.txt.ejs',
           output: 'file.txt',
           cache: 'file.txt',
-        })
-
-        assert.deepEqual(AP.getAsset('./tmp/test-units/file.txt.ejs'), {
-          relative: "tmp/test-units/file.txt.ejs",
-          full: normalize(join(__dirname, '../tmp/test-units/file.txt.ejs'), "web"),
-          source: "tmp/test-units",
-          key: "file.txt.ejs"
         })
       }
     })

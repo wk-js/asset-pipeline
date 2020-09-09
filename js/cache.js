@@ -5,23 +5,38 @@ const path_1 = require("path");
 const crypto_1 = require("crypto");
 class Cache {
     constructor() {
+        // Toggle cache
         this.enabled = false;
+        // Set cache type "hash" | "version" (Default: "hash")
         this.type = 'hash';
+        // Set hash key
         this.key = 'no_key';
     }
+    /**
+     * Clone cache object
+     */
     clone(cache) {
         cache.enabled = this.enabled;
         cache.type = this.type;
     }
+    /**
+     * Return "anyValue-hash"
+     */
     hash(path) {
         const pathObject = path_1.parse(path);
         const hash = this.generateHash(path + this.key);
         return path_1.join(pathObject.dir, `${pathObject.name}-${hash}${pathObject.ext}`);
     }
+    /**
+     * Return "anyValue?v=hashKey"
+     */
     version(path) {
         const pathObject = path_1.parse(path);
         return path_1.join(pathObject.dir, `${pathObject.name}${pathObject.ext}?v=${this.key}`);
     }
+    /**
+     * Generate hash string
+     */
     generateHash(str) {
         return crypto_1.createHash('md5').update(str).digest('hex');
     }

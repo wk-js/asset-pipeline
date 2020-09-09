@@ -42,6 +42,9 @@ class Pipeline {
         this.cache.key = key;
         exports.PipelineManager.set(this.uuid, this);
     }
+    /**
+     * Clone pipeline
+     */
     clone(key) {
         const p = new Pipeline(key);
         this.cache.clone(p.cache);
@@ -49,6 +52,9 @@ class Pipeline {
         this.manifest.clone(p.manifest);
         return p;
     }
+    /**
+     * Fetch directories, files, update tree and update manifest
+     */
     fetch(force) {
         force = force ? force : !this.manifest.readOnDisk;
         if (force || !this.manifest.fileExists()) {
@@ -61,24 +67,37 @@ class Pipeline {
             this.source.fetch("file");
             this.resolver.refreshTree();
             this.log('Save manifest');
-            return this.manifest.save();
+            return this.manifest.saveFile();
         }
         else {
             this.log('Read manifest');
-            return this.manifest.read();
+            return this.manifest.readFile();
         }
     }
+    /**
+     * Perform copy/move/symlink
+     */
     copy() {
         return this.source.copy();
     }
+    /**
+     * Logger
+     */
     log(...args) {
         if (this.verbose)
             console.log('[asset-pipeline]', ...args);
     }
     /**
-     * Looking for source from a path by checking base directory
+     * Get Source object
      */
     getSource(inputPath) {
+        inputPath = path_1.normalize(inputPath, "web");
+        const asset = this.manifest.get(inputPath);
+        if (asset) {
+            const source = this.source.get(asset.source.uuid);
+            if (source)
+                return source;
+        }
         const sources = this.source.all();
         const source_paths = sources.map(p => {
             if (Path.isAbsolute(inputPath)) {
@@ -86,7 +105,6 @@ class Pipeline {
             }
             return p.path.web();
         });
-        inputPath = path_1.normalize(inputPath, "web");
         const dir = [];
         const parts = inputPath.split("/");
         for (const part of parts) {
@@ -101,7 +119,7 @@ class Pipeline {
         }
     }
     /**
-     * Looking for a source and
+     * Get IAsset object
      */
     getAsset(inputPath) {
         let relative = new path_1.PathBuilder(inputPath);
@@ -114,6 +132,9 @@ class Pipeline {
         }
         return this.manifest.get(inputPath);
     }
+    /**
+     * Get path
+     */
     getPath(inputPath, options) {
         if (!inputPath)
             throw new Error("[asset-pipeline] path cannot be empty");
@@ -134,6 +155,9 @@ class Pipeline {
         }
         return output.web();
     }
+    /**
+     * Get url
+     */
     getUrl(inputPath, options) {
         inputPath = this.getPath(inputPath, options);
         const url = this.host.join(inputPath);
@@ -143,6 +167,9 @@ class Pipeline {
         catch (e) { }
         return this.host.join(inputPath).toString();
     }
+    /**
+     * Get IAsset object from output
+     */
     getAssetFromOutput(outputPath) {
         if (!this.manifest)
             return;

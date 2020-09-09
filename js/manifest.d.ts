@@ -6,19 +6,52 @@ export declare class Manifest {
     saveOnDisk: boolean;
     saveAtChange: boolean;
     constructor(pid: string);
-    get pipeline(): import("./pipeline").Pipeline | undefined;
+    private get pipeline();
     clone(manifest: Manifest): void;
-    get manifest_path(): string;
+    get manifestPath(): string;
+    /**
+     * Check if manifest file is created
+     */
     fileExists(): boolean;
-    save(): void;
-    read(): void;
-    deleteOnDisk(): void;
+    /**
+     * Save manifest file
+     */
+    saveFile(): void;
+    /**
+     * Read manifest file
+     */
+    readFile(): void;
+    /**
+     * Remove manifest file
+     */
+    removeFile(): void;
+    /**
+     * Get Asset
+     */
     get(input: string): IAsset | undefined;
+    /**
+     * Get AssetWithSource object from inputPath
+     */
     getWithSource(input: string): IAssetWithSource | undefined;
+    /**
+     * Check asset exists
+     */
     has(input: string): boolean;
+    /**
+     * Add asset
+     */
     add(asset: IAsset): void;
+    /**
+     * Remove asset
+     */
     remove(input: string | IAsset): void;
+    /**
+     * Clear manifest
+     */
     clear(): void;
+    /**
+     * Export a list of all the assets
+     */
     export(exportType?: "asset", tag?: string): IAsset[];
     export(exportType: "asset_key", tag?: string): Record<string, IAsset>;
     export(exportType: "asset_source", tag?: string): IAssetWithSource[];

@@ -27,7 +27,7 @@ export declare class Transform {
     /**
      * Apply the transformation to the asset and register to the manifest
      */
-    resolve(pipeline: Pipeline, asset: IAsset): void;
-    protected resolveOutput(pipeline: Pipeline, file: string, rule: IMatchRule): void;
+    transform(pipeline: Pipeline, asset: IAsset): void;
+    protected tranformOutput(pipeline: Pipeline, file: string, rule: IMatchRule): void;
     protected resolveDir(pipeline: Pipeline, output: string): string;
 }

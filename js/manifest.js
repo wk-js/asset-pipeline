@@ -16,57 +16,77 @@ class Manifest {
             output: './public',
             assets: {}
         };
+        // Read on disk (default: false)
         this.readOnDisk = false;
+        // Save on disk (default: true)
         this.saveOnDisk = true;
+        // Save on disk at each change (default: false)
         this.saveAtChange = false;
     }
     get pipeline() {
         return pipeline_1.PipelineManager.get(this.pid);
     }
     clone(manifest) {
-        manifest;
         manifest.readOnDisk = this.readOnDisk;
         manifest.saveOnDisk = this.saveOnDisk;
         manifest.saveAtChange = this.saveAtChange;
     }
-    get manifest_path() {
+    get manifestPath() {
         if (!this.pipeline)
             return `tmp/manifest.json`;
         return `tmp/manifest-${this.pipeline.cache.key}.json`;
     }
+    /**
+     * Check if manifest file is created
+     */
     fileExists() {
-        return this.saveOnDisk && fs_1.isFile(this.manifest_path);
+        return this.saveOnDisk && fs_1.isFile(this.manifestPath);
     }
-    save() {
+    /**
+     * Save manifest file
+     */
+    saveFile() {
         if (!this.pipeline)
             return;
         this._file.key = this.pipeline.cache.key;
-        this._file.date = new Date;
+        this._file.date = new Date();
         this._file.sources = this.pipeline.source.all().map(s => s.path.web());
         this._file.output = this.pipeline.output.web();
         if (this.saveOnDisk) {
-            fs_1.writeFileSync(JSON.stringify(this._file, null, 2), this.manifest_path);
+            fs_1.writeFileSync(JSON.stringify(this._file, null, 2), this.manifestPath);
         }
     }
-    read() {
-        if (fs_1.isFile(this.manifest_path)) {
-            const content = fs_2.readFileSync(this.manifest_path);
+    /**
+     * Read manifest file
+     */
+    readFile() {
+        if (fs_1.isFile(this.manifestPath)) {
+            const content = fs_2.readFileSync(this.manifestPath);
             this._file = JSON.parse(content.toString('utf-8'));
         }
         if (this.saveOnDisk) {
-            this.save();
+            this.saveFile();
         }
     }
-    deleteOnDisk() {
-        if (fs_1.isFile(this.manifest_path)) {
-            fs_1.removeSync(this.manifest_path);
+    /**
+     * Remove manifest file
+     */
+    removeFile() {
+        if (fs_1.isFile(this.manifestPath)) {
+            fs_1.removeSync(this.manifestPath);
         }
     }
+    /**
+     * Get Asset
+     */
     get(input) {
         input = path_1.normalize(input, "web");
         input = input.split(/\#|\?/)[0];
         return this._file.assets[input];
     }
+    /**
+     * Get AssetWithSource object from inputPath
+     */
     getWithSource(input) {
         if (!this.pipeline)
             return undefined;
@@ -78,15 +98,24 @@ class Manifest {
             return undefined;
         return Object.assign({ source: source.get(asset.source.uuid) }, object_1.omit(asset, "source"));
     }
+    /**
+     * Check asset exists
+     */
     has(input) {
         return !!this.get(input);
     }
+    /**
+     * Add asset
+     */
     add(asset) {
         this._file.assets[asset.input] = asset;
         if (this.saveAtChange) {
-            this.save();
+            this.saveFile();
         }
     }
+    /**
+     * Remove asset
+     */
     remove(input) {
         let asset;
         if (typeof input === "string") {
@@ -98,14 +127,17 @@ class Manifest {
         if (asset) {
             delete this._file.assets[asset.input];
             if (this.saveAtChange) {
-                this.save();
+                this.saveFile();
             }
         }
     }
+    /**
+     * Clear manifest
+     */
     clear() {
         this._file.assets = {};
         if (this.saveAtChange) {
-            this.save();
+            this.saveFile();
         }
     }
     export(exportType = "asset", tag) {

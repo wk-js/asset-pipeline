@@ -41,6 +41,9 @@ class SourceManager {
         this.pid = pid;
         this._sources = new Map();
     }
+    /**
+     * Clone SourceMananger
+     */
     clone(source) {
         for (const [s, p] of this._sources) {
             const _source = source.add(s);
@@ -49,6 +52,9 @@ class SourceManager {
             _source.fs.clone(p.fs);
         }
     }
+    /**
+     * Add a new source path, relative to cwd
+     */
     add(path) {
         path = path_1.normalize(path, "os");
         if (Path.isAbsolute(path))
@@ -57,12 +63,21 @@ class SourceManager {
         this._sources.set(source.uuid, source);
         return source;
     }
+    /**
+     * Get the source object from source uuid
+     */
     get(uuid) {
         return this._sources.get(uuid);
     }
+    /**
+     * Check source exists
+     */
     has(uuid) {
         return this._sources.has(uuid);
     }
+    /**
+     * Remove source
+     */
     remove(uuid) {
         if (this._sources.has(uuid)) {
             const item = this._sources.get(uuid);
@@ -98,19 +113,15 @@ class SourceManager {
 exports.SourceManager = SourceManager;
 class Source {
     constructor(path, pid) {
-        this.pid = pid;
         this.uuid = guid_1.guid();
         const pipeline = pipeline_1.PipelineManager.get(pid);
         this.path = new path_1.PathBuilder(path);
         this.fullpath = new path_1.PathBuilder(Path.isAbsolute(path) ?
             path :
-            pipeline_1.PipelineManager.get(pid).cwd.join(path).os());
+            pipeline.cwd.join(path).os());
         this.file = new file_pipeline_1.FilePipeline(pid, this.uuid);
         this.directory = new directory_pipeline_1.DirectoryPipeline(pid, this.uuid);
         this.fs = new file_system_1.FileSystem(pid, this.uuid);
-    }
-    get pipeline() {
-        return pipeline_1.PipelineManager.get(this.pid);
     }
 }
 exports.Source = Source;

@@ -26,30 +26,45 @@ class FileSystem {
     get pipeline() {
         return pipeline_1.PipelineManager.get(this.pid);
     }
+    /**
+     * Register a path or a glob pattern for a move
+     */
     move(glob) {
         this.globs.push({
             glob: glob,
             action: 'move'
         });
     }
+    /**
+     * Register a path or a glob pattern for a copy
+     */
     copy(glob) {
         this.globs.push({
             glob: glob,
             action: 'copy'
         });
     }
+    /**
+     * Register a path or a glob pattern for a symlink
+     */
     symlink(glob) {
         this.globs.push({
             glob: glob,
             action: 'symlink'
         });
     }
+    /**
+     * Register a path or a glob pattern to ignore
+     */
     ignore(glob) {
         this.globs.push({
             glob: glob,
             action: 'ignore'
         });
     }
+    /**
+     * Clone FileSystem
+     */
     clone(fs) {
         for (let i = 0; i < this.globs.length; i++) {
             const glob = this.globs[i];
@@ -57,6 +72,9 @@ class FileSystem {
         }
         return fs;
     }
+    /**
+     * Perform move/copy/symlink
+     */
     apply(force = false) {
         return __awaiter(this, void 0, void 0, function* () {
             if (force)

@@ -74,7 +74,7 @@ class FilePipeline {
             return;
         const pipeline = this.pipeline;
         this._fetch().forEach((asset) => {
-            this.rules.resolve(pipeline, asset);
+            this.rules.transform(pipeline, asset);
         });
     }
     _fetch() {

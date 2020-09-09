@@ -15,6 +15,9 @@ class Resolver {
     get pipeline() {
         return pipeline_1.PipelineManager.get(this.pid);
     }
+    /**
+     * Look for outputPath
+     */
     resolve(inputPath) {
         if (!this.pipeline)
             return inputPath;
@@ -35,6 +38,9 @@ class Resolver {
         output = output + suffix;
         return output;
     }
+    /**
+     * Refresh output tree
+     */
     refreshTree() {
         if (!this.pipeline)
             return;
@@ -72,6 +78,9 @@ class Resolver {
         }
         this.root = tree;
     }
+    /**
+     * Convert inputPath to outputPath and return its directory tree
+     */
     getTree(inputPath) {
         const outputPath = this.resolve(inputPath);
         const dirs = path_1.normalize(outputPath, "web").split('/');
@@ -83,6 +92,9 @@ class Resolver {
         }
         return tree;
     }
+    /**
+     * Preview output tree
+     */
     view() {
         if (!this.pipeline)
             return "";
