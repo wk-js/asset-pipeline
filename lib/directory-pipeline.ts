@@ -26,7 +26,7 @@ export class DirectoryPipeline implements IPipeline {
 
   constructor(private pid: string, private sid: string) { }
 
-  get pipeline() {
+  private get pipeline() {
     return PipelineManager.get(this.pid)
   }
 
@@ -80,7 +80,7 @@ export class DirectoryPipeline implements IPipeline {
 
     this._fetch()
       .map((asset) => {
-        this.rules.resolve(pipeline, asset)
+        this.rules.transform(pipeline, asset)
         return asset
       })
 
@@ -114,7 +114,7 @@ export class DirectoryPipeline implements IPipeline {
               const r = rule.file_rules[i];
               if (!r.ignore && minimatch(asset.input, r.glob || asset.input)) {
                 asset.rule = r
-                this.rules.resolve(pipeline, asset)
+                this.rules.transform(pipeline, asset)
               }
             }
 

@@ -21,7 +21,7 @@ export class FilePipeline implements IPipeline {
 
   constructor(private pid: string, private sid: string) {}
 
-  get pipeline() {
+  private get pipeline() {
     return PipelineManager.get(this.pid)
   }
 
@@ -77,7 +77,7 @@ export class FilePipeline implements IPipeline {
     if (!this.pipeline) return
     const pipeline = this.pipeline
     this._fetch().forEach((asset) => {
-      this.rules.resolve(pipeline, asset)
+      this.rules.transform(pipeline, asset)
     })
   }
 

@@ -17,10 +17,13 @@ export class FileSystem {
 
   constructor(private pid: string, private sid: string) { }
 
-  get pipeline() {
+  private get pipeline() {
     return PipelineManager.get(this.pid)
   }
 
+  /**
+   * Register a path or a glob pattern for a move
+   */
   move(glob: string) {
     this.globs.push({
       glob: glob,
@@ -28,6 +31,9 @@ export class FileSystem {
     })
   }
 
+  /**
+   * Register a path or a glob pattern for a copy
+   */
   copy(glob: string) {
     this.globs.push({
       glob: glob,
@@ -35,6 +41,9 @@ export class FileSystem {
     })
   }
 
+  /**
+   * Register a path or a glob pattern for a symlink
+   */
   symlink(glob: string) {
     this.globs.push({
       glob: glob,
@@ -42,6 +51,9 @@ export class FileSystem {
     })
   }
 
+  /**
+   * Register a path or a glob pattern to ignore
+   */
   ignore(glob: string) {
     this.globs.push({
       glob: glob,
@@ -49,6 +61,9 @@ export class FileSystem {
     })
   }
 
+  /**
+   * Clone FileSystem
+   */
   clone(fs: FileSystem) {
     for (let i = 0; i < this.globs.length; i++) {
       const glob = this.globs[i];
@@ -57,6 +72,9 @@ export class FileSystem {
     return fs
   }
 
+  /**
+   * Perform move/copy/symlink
+   */
   async apply(force = false) {
     if (force) this.mtimes.clear()
     const types = ['move', 'copy', 'symlink']

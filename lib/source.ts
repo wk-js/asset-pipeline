@@ -12,6 +12,9 @@ export class SourceManager {
 
   constructor(private pid: string) { }
 
+  /**
+   * Clone SourceMananger
+   */
   clone(source: SourceManager) {
     for (const [s, p] of this._sources) {
       const _source = source.add(s)
@@ -21,6 +24,9 @@ export class SourceManager {
     }
   }
 
+  /**
+   * Add a new source path, relative to cwd
+   */
   add(path: string) {
     path = normalize(path, "os")
     if (Path.isAbsolute(path)) throw new Error("Cannot an absolute path to source")
@@ -29,14 +35,23 @@ export class SourceManager {
     return source
   }
 
+  /**
+   * Get the source object from source uuid
+   */
   get(uuid: string) {
     return this._sources.get(uuid)
   }
 
+  /**
+   * Check source exists
+   */
   has(uuid: string) {
     return this._sources.has(uuid)
   }
 
+  /**
+   * Remove source
+   */
   remove(uuid: string) {
     if (this._sources.has(uuid)) {
       const item = this._sources.get(uuid) as Source
@@ -45,6 +60,9 @@ export class SourceManager {
     }
   }
 
+  /**
+   * Return all sources
+   */
   all(type?: "array"): Source[]
   all(type: "object"): Record<string, Source>
   all(type: "array" | "object" = "array"): any {
@@ -83,20 +101,16 @@ export class Source {
   path: PathBuilder
   fullpath: PathBuilder
 
-  constructor(path: string, private pid: string) {
+  constructor(path: string, pid: string) {
     const pipeline = PipelineManager.get(pid)!
     this.path = new PathBuilder(path)
     this.fullpath = new PathBuilder(Path.isAbsolute(path) ?
       path :
-      PipelineManager.get(pid)!.cwd.join(path).os()
+      pipeline!.cwd.join(path).os()
     )
     this.file = new FilePipeline(pid, this.uuid)
     this.directory = new DirectoryPipeline(pid, this.uuid)
     this.fs = new FileSystem(pid, this.uuid)
-  }
-
-  get pipeline() {
-    return PipelineManager.get(this.pid)
   }
 
 }

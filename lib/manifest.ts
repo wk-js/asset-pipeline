@@ -15,68 +15,90 @@ export class Manifest {
     assets: {} as { [key: string]: IAsset }
   }
 
+  // Read on disk (default: false)
   readOnDisk = false
+
+  // Save on disk (default: true)
   saveOnDisk = true
+
+  // Save on disk at each change (default: false)
   saveAtChange = false
 
   constructor(private pid: string) { }
 
-  get pipeline() {
+  private get pipeline() {
     return PipelineManager.get(this.pid)
   }
 
   clone(manifest: Manifest) {
-    manifest
     manifest.readOnDisk = this.readOnDisk
     manifest.saveOnDisk = this.saveOnDisk
     manifest.saveAtChange = this.saveAtChange
   }
 
-  get manifest_path() {
+  get manifestPath() {
     if (!this.pipeline) return `tmp/manifest.json`
     return `tmp/manifest-${this.pipeline.cache.key}.json`
   }
 
+  /**
+   * Check if manifest file is created
+   */
   fileExists() {
-    return this.saveOnDisk && isFile(this.manifest_path)
+    return this.saveOnDisk && isFile(this.manifestPath)
   }
 
-  save() {
+  /**
+   * Save manifest file
+   */
+  saveFile() {
     if (!this.pipeline) return
 
     this._file.key = this.pipeline.cache.key
-    this._file.date = new Date
+    this._file.date = new Date()
     this._file.sources = this.pipeline.source.all().map(s => s.path.web())
     this._file.output = this.pipeline.output.web()
 
     if (this.saveOnDisk) {
-      writeFileSync(JSON.stringify(this._file, null, 2), this.manifest_path)
+      writeFileSync(JSON.stringify(this._file, null, 2), this.manifestPath)
     }
   }
 
-  read() {
-    if (isFile(this.manifest_path)) {
-      const content = readFileSync(this.manifest_path)
+  /**
+   * Read manifest file
+   */
+  readFile() {
+    if (isFile(this.manifestPath)) {
+      const content = readFileSync(this.manifestPath)
       this._file = JSON.parse(content.toString('utf-8'))
     }
 
     if (this.saveOnDisk) {
-      this.save()
+      this.saveFile()
     }
   }
 
-  deleteOnDisk() {
-    if (isFile(this.manifest_path)) {
-      removeSync(this.manifest_path)
+  /**
+   * Remove manifest file
+   */
+  removeFile() {
+    if (isFile(this.manifestPath)) {
+      removeSync(this.manifestPath)
     }
   }
 
+  /**
+   * Get Asset
+   */
   get(input: string): IAsset | undefined {
     input = normalize(input, "web")
     input = input.split(/\#|\?/)[0]
     return this._file.assets[input]
   }
 
+  /**
+   * Get AssetWithSource object from inputPath
+   */
   getWithSource(input: string): IAssetWithSource | undefined {
     if (!this.pipeline) return undefined
     const { source } = this.pipeline
@@ -93,17 +115,26 @@ export class Manifest {
     } as IAssetWithSource
   }
 
+  /**
+   * Check asset exists
+   */
   has(input: string) {
     return !!this.get(input)
   }
 
+  /**
+   * Add asset
+   */
   add(asset: IAsset) {
     this._file.assets[asset.input] = asset
     if (this.saveAtChange) {
-      this.save()
+      this.saveFile()
     }
   }
 
+  /**
+   * Remove asset
+   */
   remove(input: string | IAsset) {
     let asset: IAsset | undefined
     if (typeof input === "string") {
@@ -116,18 +147,24 @@ export class Manifest {
       delete this._file.assets[asset.input]
 
       if (this.saveAtChange) {
-        this.save()
+        this.saveFile()
       }
     }
   }
 
+  /**
+   * Clear manifest
+   */
   clear() {
     this._file.assets = {}
     if (this.saveAtChange) {
-      this.save()
+      this.saveFile()
     }
   }
 
+  /**
+   * Export a list of all the assets
+   */
   export(exportType?: "asset", tag?: string): IAsset[];
   export(exportType: "asset_key", tag?: string): Record<string, IAsset>;
   export(exportType: "asset_source", tag?: string): IAssetWithSource[];

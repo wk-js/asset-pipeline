@@ -20,10 +20,13 @@ export class Resolver {
 
   constructor(private pid: string) { }
 
-  get pipeline() {
+  private get pipeline() {
     return PipelineManager.get(this.pid)
   }
 
+  /**
+   * Look for outputPath
+   */
   resolve(inputPath: string) {
     if (!this.pipeline) return inputPath
     const { cache, manifest } = this.pipeline
@@ -50,6 +53,9 @@ export class Resolver {
     return output
   }
 
+  /**
+   * Refresh output tree
+   */
   refreshTree() {
     if (!this.pipeline) return
     const { cache, manifest } = this.pipeline
@@ -92,6 +98,9 @@ export class Resolver {
     this.root = tree
   }
 
+  /**
+   * Convert inputPath to outputPath and return its directory tree
+   */
   getTree(inputPath: string) {
     const outputPath = this.resolve(inputPath)
 
@@ -107,6 +116,9 @@ export class Resolver {
     return tree
   }
 
+  /**
+   * Preview output tree
+   */
   view() {
     if (!this.pipeline) return ""
 

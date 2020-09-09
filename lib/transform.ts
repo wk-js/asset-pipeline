@@ -86,7 +86,7 @@ export class Transform {
   /**
    * Apply the transformation to the asset and register to the manifest
    */
-  resolve(pipeline: Pipeline, asset: IAsset) {
+  transform(pipeline: Pipeline, asset: IAsset) {
     // Ignore files registered from directory_pipeline or from previous rules
     const masset = pipeline.manifest.get(asset.input)
     if (masset && masset.resolved) return;
@@ -94,10 +94,10 @@ export class Transform {
     const rule = asset.rule || this.matchingRule(asset.input)
     asset.rule = rule
     pipeline.manifest.add(asset)
-    this.resolveOutput(pipeline, asset.input, clone(rule))
+    this.tranformOutput(pipeline, asset.input, clone(rule))
   }
 
-  protected resolveOutput(pipeline: Pipeline, file: string, rule: IMatchRule) {
+  protected tranformOutput(pipeline: Pipeline, file: string, rule: IMatchRule) {
     let output = file
 
     // Remove path and keep basename only

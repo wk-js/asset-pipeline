@@ -5,7 +5,7 @@ import { Cache } from "./cache";
 import { guid } from "lol/js/string/guid";
 import { normalize, cleanup, PathBuilder, URLBuilder } from "./path";
 import * as Path from "path";
-import { IResolvePathOptions, IPathObject } from "./types";
+import { IResolvePathOptions } from "./types";
 
 export const PipelineManager = new Map<string, Pipeline>()
 
@@ -27,6 +27,9 @@ export class Pipeline {
     PipelineManager.set(this.uuid, this)
   }
 
+  /**
+   * Clone pipeline
+   */
   clone(key: string) {
     const p = new Pipeline(key)
     this.cache.clone(p.cache)
@@ -35,6 +38,9 @@ export class Pipeline {
     return p
   }
 
+  /**
+   * Fetch directories, files, update tree and update manifest
+   */
   fetch(force?: boolean) {
     force = force ? force : !this.manifest.readOnDisk
 
@@ -51,25 +57,40 @@ export class Pipeline {
       this.resolver.refreshTree()
 
       this.log('Save manifest')
-      return this.manifest.save()
+      return this.manifest.saveFile()
     } else {
       this.log('Read manifest')
-      return this.manifest.read()
+      return this.manifest.readFile()
     }
   }
 
+  /**
+   * Perform copy/move/symlink
+   */
   copy() {
     return this.source.copy()
   }
 
+  /**
+   * Logger
+   */
   log(...args: any[]) {
     if (this.verbose) console.log('[asset-pipeline]', ...args)
   }
 
   /**
-   * Looking for source from a path by checking base directory
+   * Get Source object
    */
   getSource(inputPath: string) {
+    inputPath = normalize(inputPath, "web")
+
+    const asset = this.manifest.get(inputPath)
+
+    if (asset) {
+      const source = this.source.get(asset.source.uuid)
+      if (source) return source
+    }
+
     const sources = this.source.all()
     const source_paths = sources.map(p => {
       if (Path.isAbsolute(inputPath)) {
@@ -78,7 +99,6 @@ export class Pipeline {
       return p.path.web()
     })
 
-    inputPath = normalize(inputPath, "web")
     const dir = []
     const parts = inputPath.split("/")
 
@@ -95,7 +115,7 @@ export class Pipeline {
   }
 
   /**
-   * Looking for a source and
+   * Get IAsset object
    */
   getAsset(inputPath: string) {
     let relative = new PathBuilder(inputPath)
@@ -111,6 +131,9 @@ export class Pipeline {
     return this.manifest.get(inputPath)
   }
 
+  /**
+   * Get path
+   */
   getPath(inputPath: string, options?: Partial<IResolvePathOptions>) {
     if (!inputPath) throw new Error("[asset-pipeline] path cannot be empty")
     const tree = this.resolver
@@ -137,6 +160,9 @@ export class Pipeline {
     return output.web()
   }
 
+  /**
+   * Get url
+   */
   getUrl(inputPath: string, options?: Partial<IResolvePathOptions>) {
     inputPath = this.getPath(inputPath, options)
 
@@ -147,6 +173,9 @@ export class Pipeline {
     return this.host.join(inputPath).toString()
   }
 
+  /**
+   * Get IAsset object from output
+   */
   getAssetFromOutput(outputPath: string) {
     if (!this.manifest) return
     const assets = this.manifest.export()
