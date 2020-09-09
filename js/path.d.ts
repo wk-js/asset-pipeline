@@ -43,6 +43,6 @@ export declare class URLBuilder {
     join(...parts: string[]): URLBuilder;
     with(...parts: string[]): URLBuilder;
     relative(to: string): URLBuilder;
-    toString(): string;
+    toString(): string | URL;
     toURL(): URL;
 }

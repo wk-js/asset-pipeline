@@ -84,7 +84,7 @@ class PathBuilder {
     dir() { return Path.dirname(this.path); }
     set(path) {
         if (typeof path !== "string")
-            throw new Error("Path should not be empty");
+            throw new Error("[asset-pipeline][path] Path should not be empty");
         this.path = path;
     }
     isAbsolute() {
@@ -110,7 +110,15 @@ class URLBuilder {
         this.pathname = new PathBuilder(path);
     }
     setOrigin(origin) {
-        this._origin = origin;
+        if (typeof origin !== "string")
+            throw new Error(`[asset-pipeline][path] Orign should be a string. An empty string is accepted.`);
+        try {
+            new URL(this.pathname.os(), origin);
+            this._origin = origin;
+        }
+        catch (e) {
+            this._origin = "";
+        }
     }
     setPathname(path) {
         this.pathname.set(path);
@@ -135,7 +143,10 @@ class URLBuilder {
         return new URLBuilder(this.pathname.relative(to).web(), this._origin);
     }
     toString() {
-        return this._origin + this.pathname.web();
+        if (this.isValidURL()) {
+            return this.toURL();
+        }
+        return this.pathname.web();
     }
     toURL() {
         return new URL(this.pathname.toString("web"), this._origin);

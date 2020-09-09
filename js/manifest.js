@@ -67,6 +67,17 @@ class Manifest {
         input = input.split(/\#|\?/)[0];
         return this._file.assets[input];
     }
+    getWithSource(input) {
+        if (!this.pipeline)
+            return undefined;
+        const { source } = this.pipeline;
+        input = path_1.normalize(input, "web");
+        input = input.split(/\#|\?/)[0];
+        const asset = this._file.assets[input];
+        if (!asset || !source.has(asset.source.uuid))
+            return undefined;
+        return Object.assign({ source: source.get(asset.source.uuid) }, object_1.omit(asset, "source"));
+    }
     has(input) {
         return !!this.get(input);
     }

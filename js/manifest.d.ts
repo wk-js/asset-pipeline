@@ -14,6 +14,7 @@ export declare class Manifest {
     read(): void;
     deleteOnDisk(): void;
     get(input: string): IAsset | undefined;
+    getWithSource(input: string): IAssetWithSource | undefined;
     has(input: string): boolean;
     add(asset: IAsset): void;
     remove(input: string | IAsset): void;
