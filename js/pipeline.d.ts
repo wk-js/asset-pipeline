@@ -3,7 +3,7 @@ import { Resolver } from "./resolver";
 import { SourceManager } from "./source";
 import { Cache } from "./cache";
 import { PathBuilder, URLBuilder } from "./path";
-import { IResolvePathOptions, IPathObject } from "./types";
+import { IResolvePathOptions } from "./types";
 export declare const PipelineManager: Map<string, Pipeline>;
 export declare class Pipeline {
     uuid: string;
@@ -27,8 +27,8 @@ export declare class Pipeline {
     /**
      * Looking for a source and
      */
-    getAsset(path: string): IPathObject;
-    getPath(path: string, options?: Partial<IResolvePathOptions>): string;
-    getUrl(path: string, options?: Partial<IResolvePathOptions>): string | URL;
-    getAssetFromOutput(output: string): import("./types").IAsset | undefined;
+    getAsset(inputPath: string): import("./types").IAsset | undefined;
+    getPath(inputPath: string, options?: Partial<IResolvePathOptions>): string;
+    getUrl(inputPath: string, options?: Partial<IResolvePathOptions>): string | URL;
+    getAssetFromOutput(outputPath: string): import("./types").IAsset | undefined;
 }

@@ -97,33 +97,22 @@ export class Pipeline {
   /**
    * Looking for a source and
    */
-  getAsset(path: string) {
-    // Build relative path
-    let relative = new PathBuilder(path)
-    if (Path.isAbsolute(path)) {
-      relative = this.cwd.relative(path)
+  getAsset(inputPath: string) {
+    let relative = new PathBuilder(inputPath)
+    if (Path.isAbsolute(inputPath)) {
+      relative = this.cwd.relative(inputPath)
+
+      const source = this.getSource(relative.web())
+      if (!source) return undefined
+
+      inputPath = source.path.relative(relative.os()).web()
     }
 
-    // Clean paths
-    const result: IPathObject = {
-      relative: relative.web(),
-    }
-
-    // Looking for source
-    const source = this.getSource(result.relative)
-
-    // Build key and clean paths
-    if (source) {
-      result.source = source.path.web()
-      result.key = source.path.relative(result.relative).web()
-      result.full = source.fullpath.join(result.key).web()
-    }
-
-    return result
+    return this.manifest.get(inputPath)
   }
 
-  getPath(path: string, options?: Partial<IResolvePathOptions>) {
-    if (!path) throw new Error("[asset-pipeline] path cannot be empty")
+  getPath(inputPath: string, options?: Partial<IResolvePathOptions>) {
+    if (!inputPath) throw new Error("[asset-pipeline] path cannot be empty")
     const tree = this.resolver
 
     const opts = Object.assign({
@@ -132,14 +121,14 @@ export class Pipeline {
     }, options || {}) as IResolvePathOptions
 
     // Cleanup path and get the output path
-    path = tree.resolve(path)
+    inputPath = tree.resolve(inputPath)
 
     // Cleanup from path and get the output tree
     const fromTree = tree.getTree(opts.from)
 
     // Get output relative to from
     const output = this.output.with(fromTree.path)
-      .relative(this.output.with(path).os())
+      .relative(this.output.with(inputPath).os())
 
     if (opts.cleanup) {
       return cleanup(output.web())
@@ -148,23 +137,23 @@ export class Pipeline {
     return output.web()
   }
 
-  getUrl(path: string, options?: Partial<IResolvePathOptions>) {
-    path = this.getPath(path, options)
+  getUrl(inputPath: string, options?: Partial<IResolvePathOptions>) {
+    inputPath = this.getPath(inputPath, options)
 
-    const url = this.host.join(path)
+    const url = this.host.join(inputPath)
     try {
       return url.toURL().href
     } catch (e) { }
-    return this.host.join(path).toString()
+    return this.host.join(inputPath).toString()
   }
 
-  getAssetFromOutput(output: string) {
+  getAssetFromOutput(outputPath: string) {
     if (!this.manifest) return
     const assets = this.manifest.export()
     for (let i = 0; i < assets.length; i++) {
       const item = assets[i];
 
-      if (item.output == output || item.cache == output) {
+      if (item.output == outputPath || item.cache == outputPath) {
         return item
       }
     }
