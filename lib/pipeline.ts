@@ -24,6 +24,7 @@ export class Pipeline {
 
   constructor(key: string) {
     this.cache.key = key
+    this.source.add("__shadow__")
     PipelineManager.set(this.uuid, this)
   }
 
