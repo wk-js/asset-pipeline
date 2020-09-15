@@ -161,11 +161,6 @@ class Pipeline {
      */
     getUrl(inputPath, options) {
         inputPath = this.getPath(inputPath, options);
-        const url = this.host.join(inputPath);
-        try {
-            return url.toURL().href;
-        }
-        catch (e) { }
         return this.host.join(inputPath).toString();
     }
     /**

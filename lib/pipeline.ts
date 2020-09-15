@@ -166,11 +166,6 @@ export class Pipeline {
    */
   getUrl(inputPath: string, options?: Partial<IResolvePathOptions>) {
     inputPath = this.getPath(inputPath, options)
-
-    const url = this.host.join(inputPath)
-    try {
-      return url.toURL().href
-    } catch (e) { }
     return this.host.join(inputPath).toString()
   }
 
