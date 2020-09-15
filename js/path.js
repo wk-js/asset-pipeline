@@ -109,12 +109,13 @@ class URLBuilder {
         this._origin = _origin;
         this.pathname = new PathBuilder(path);
     }
-    setOrigin(origin) {
+    setURL(origin) {
         if (typeof origin !== "string")
             throw new Error(`[asset-pipeline][path] Orign should be a string. An empty string is accepted.`);
         try {
-            new URL(this.pathname.os(), origin);
-            this._origin = origin;
+            const u = new URL(this.pathname.os(), origin);
+            this._origin = u.origin;
+            this.setPathname(u.pathname);
         }
         catch (e) {
             this._origin = "";

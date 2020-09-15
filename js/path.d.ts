@@ -36,7 +36,7 @@ export declare class URLBuilder {
     private _origin;
     pathname: PathBuilder;
     constructor(path: string, _origin?: string);
-    setOrigin(origin: string): void;
+    setURL(origin: string): void;
     setPathname(path: string): void;
     isValidURL(): boolean;
     clone(): URLBuilder;
