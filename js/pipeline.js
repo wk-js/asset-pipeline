@@ -40,8 +40,8 @@ class Pipeline {
         this.manifest = new manifest_1.Manifest(this.uuid);
         this.resolver = new resolver_1.Resolver(this.uuid);
         this.cache.key = key;
-        this.source.add("__shadow__");
         exports.PipelineManager.set(this.uuid, this);
+        this.source.add("__shadow__");
     }
     /**
      * Clone pipeline
@@ -154,7 +154,7 @@ class Pipeline {
         if (opts.cleanup) {
             return path_1.cleanup(output.web());
         }
-        return output.web();
+        return this.host.pathname.join(output.web()).web();
     }
     /**
      * Get url

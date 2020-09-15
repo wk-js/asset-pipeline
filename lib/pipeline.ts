@@ -24,8 +24,8 @@ export class Pipeline {
 
   constructor(key: string) {
     this.cache.key = key
-    this.source.add("__shadow__")
     PipelineManager.set(this.uuid, this)
+    this.source.add("__shadow__")
   }
 
   /**
@@ -158,7 +158,7 @@ export class Pipeline {
       return cleanup(output.web())
     }
 
-    return output.web()
+    return this.host.pathname.join(output.web()).web()
   }
 
   /**
