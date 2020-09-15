@@ -150,11 +150,11 @@ class Transform {
                 (typeof rule.cache != 'boolean' && pipeline.cache.enabled)) {
             if (pipeline.cache.type === 'hash') {
                 rule.cache = cache = pipeline.cache.hash(output);
-                rule.cache = path_2.normalize(rule.cache, "web");
+                rule.cache = path_2.normalize(cache, "web");
             }
             else if (pipeline.cache.type === 'version' && this.type === 'file') {
                 rule.cache = cache = pipeline.cache.version(output);
-                rule.cache = path_2.normalize(rule.cache, "web");
+                rule.cache = path_2.normalize(cache, "web");
             }
         }
         const asset = pipeline.manifest.get(file);

@@ -31,17 +31,16 @@ exports.PipelineManager = new Map();
 class Pipeline {
     constructor(key) {
         this.uuid = guid_1.guid();
+        exports.PipelineManager.set(this.uuid, this);
         this.verbose = false;
         this.output = new path_1.PathBuilder("public");
         this.host = new path_1.URLBuilder("/");
         this.cwd = new path_1.PathBuilder(process.cwd());
         this.cache = new cache_1.Cache();
+        this.cache.key = key;
         this.source = new source_1.SourceManager(this.uuid);
         this.manifest = new manifest_1.Manifest(this.uuid);
         this.resolver = new resolver_1.Resolver(this.uuid);
-        this.cache.key = key;
-        exports.PipelineManager.set(this.uuid, this);
-        this.source.add("__shadow__");
     }
     /**
      * Clone pipeline

@@ -10,22 +10,30 @@ import { IResolvePathOptions } from "./types";
 export const PipelineManager = new Map<string, Pipeline>()
 
 export class Pipeline {
-
-  uuid = guid()
-  verbose: boolean = false
-  output = new PathBuilder("public")
-  host = new URLBuilder("/")
-  cwd = new PathBuilder(process.cwd())
-
-  cache = new Cache()
-  source = new SourceManager(this.uuid)
-  manifest = new Manifest(this.uuid)
-  resolver = new Resolver(this.uuid)
+  uuid: string
+  cache: any;
+  verbose: any;
+  output: PathBuilder;
+  host: URLBuilder;
+  cwd: PathBuilder;
+  source: SourceManager;
+  manifest: Manifest;
+  resolver: Resolver;
 
   constructor(key: string) {
-    this.cache.key = key
+    this.uuid = guid()
     PipelineManager.set(this.uuid, this)
-    this.source.add("__shadow__")
+
+    this.verbose = false
+    this.output = new PathBuilder("public")
+    this.host = new URLBuilder("/")
+    this.cwd = new PathBuilder(process.cwd())
+
+    this.cache = new Cache()
+    this.cache.key = key
+    this.source = new SourceManager(this.uuid)
+    this.manifest = new Manifest(this.uuid)
+    this.resolver = new Resolver(this.uuid)
   }
 
   /**

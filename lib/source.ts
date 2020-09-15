@@ -10,7 +10,11 @@ export class SourceManager {
 
   private _sources = new Map<string, Source>()
 
-  constructor(private pid: string) { }
+  constructor(private pid: string) {
+    const source = new Source("__shadow__", this.pid)
+    source.uuid = "__shadow__"
+    this._sources.set(source.uuid, source)
+  }
 
   /**
    * Clone SourceMananger

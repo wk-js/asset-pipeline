@@ -40,6 +40,9 @@ class SourceManager {
     constructor(pid) {
         this.pid = pid;
         this._sources = new Map();
+        const source = new Source("__shadow__", this.pid);
+        source.uuid = "__shadow__";
+        this._sources.set(source.uuid, source);
     }
     /**
      * Clone SourceMananger

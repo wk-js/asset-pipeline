@@ -1,17 +1,16 @@
 import { Manifest } from "./manifest";
 import { Resolver } from "./resolver";
 import { SourceManager } from "./source";
-import { Cache } from "./cache";
 import { PathBuilder, URLBuilder } from "./path";
 import { IResolvePathOptions } from "./types";
 export declare const PipelineManager: Map<string, Pipeline>;
 export declare class Pipeline {
     uuid: string;
-    verbose: boolean;
+    cache: any;
+    verbose: any;
     output: PathBuilder;
     host: URLBuilder;
     cwd: PathBuilder;
-    cache: Cache;
     source: SourceManager;
     manifest: Manifest;
     resolver: Resolver;

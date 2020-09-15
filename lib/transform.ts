@@ -178,10 +178,10 @@ export class Transform {
     ) {
       if (pipeline.cache.type === 'hash') {
         rule.cache = cache = pipeline.cache.hash(output)
-        rule.cache = normalize(rule.cache, "web")
+        rule.cache = normalize(cache, "web")
       } else if (pipeline.cache.type === 'version' && this.type === 'file') {
         rule.cache = cache = pipeline.cache.version(output)
-        rule.cache = normalize(rule.cache, "web")
+        rule.cache = normalize(cache, "web")
       }
     }
 
