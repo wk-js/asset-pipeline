@@ -112,7 +112,7 @@ describe("Files", () => {
 
   it('Paths', async () => {
     const AP = await setup(async (AP) => {
-      AP.host.setOrigin('http://mycdn.com/')
+      AP.host.setURL('http://mycdn.com/')
       AP.source.add(LOAD_PATH)
         .file
         .add('file1.txt', { output: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
@@ -177,7 +177,7 @@ describe("Files", () => {
     })
 
     const AP1 = await setup(async (AP1) => {
-      AP1.host.setOrigin('http://mycdn.com/')
+      AP1.host.setURL('http://mycdn.com/')
       AP1.source.add(LOAD_PATH)
         .file
         .add('file1.txt', { output: "#{output.dir}/#{output.name}#{output.ext}?v=1" })
