@@ -133,8 +133,10 @@ export class Transform {
 
     if (typeof rule.output == 'function') {
       rule.output = output = cache = rule.output(options)
+      rule.output = normalize(rule.output, "web")
     } else if (typeof rule.output === 'string') {
       rule.output = output = cache = template2(rule.output, flat(options), TemplateOptions)
+      rule.output = normalize(rule.output, "web")
     } else if (typeof rule.output === 'object') {
       const parsed: ParsedPath = Object.assign(parse(options.output.fullpath), rule.output)
       if ("ext" in rule.output || "name" in rule.output) {
@@ -144,12 +146,21 @@ export class Transform {
         parsed[key] = template2(parsed[key], flat(options), TemplateOptions)
       }
       rule.output = output = cache = format(parsed)
+      rule.output = normalize(rule.output, "web")
+    }
+
+    options.output = {
+      hash,
+      fullpath: output,
+      ...parse(output)
     }
 
     if (typeof rule.cache == 'function') {
       rule.cache = cache = rule.cache(options)
+      rule.cache = normalize(rule.cache, "web")
     } else if (typeof rule.cache === 'string') {
       rule.cache = cache = template2(rule.cache, flat(options), TemplateOptions)
+      rule.cache = normalize(rule.cache, "web")
     } else if (typeof rule.cache === 'object') {
       const parsed: ParsedPath = Object.assign(parse(cache), rule.cache)
       if ("ext" in rule.cache || "name" in rule.cache) {
@@ -159,6 +170,7 @@ export class Transform {
         parsed[key] = template2(parsed[key], flat(options), TemplateOptions)
       }
       rule.cache = cache = format(parsed)
+      rule.cache = normalize(rule.cache, "web")
     } else if (
       (typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled)
       ||
@@ -166,8 +178,10 @@ export class Transform {
     ) {
       if (pipeline.cache.type === 'hash') {
         rule.cache = cache = pipeline.cache.hash(output)
+        rule.cache = normalize(rule.cache, "web")
       } else if (pipeline.cache.type === 'version' && this.type === 'file') {
         rule.cache = cache = pipeline.cache.version(output)
+        rule.cache = normalize(rule.cache, "web")
       }
     }
 
@@ -189,7 +203,7 @@ export class Transform {
     dir = normalize(dir, "web")
     const ds = dir.split('/').filter(part => !!part)
     for (let i = 0; i < ds.length; i++) {
-      d.push( ds[i] )
+      d.push(ds[i])
       const dd = d.join('/')
       const ddd = pipeline.getPath(dd)
       if (dd != ddd) {

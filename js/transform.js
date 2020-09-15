@@ -108,9 +108,11 @@ class Transform {
         };
         if (typeof rule.output == 'function') {
             rule.output = output = cache = rule.output(options);
+            rule.output = path_2.normalize(rule.output, "web");
         }
         else if (typeof rule.output === 'string') {
             rule.output = output = cache = template_1.template2(rule.output, object_1.flat(options), TemplateOptions);
+            rule.output = path_2.normalize(rule.output, "web");
         }
         else if (typeof rule.output === 'object') {
             const parsed = Object.assign(path_1.parse(options.output.fullpath), rule.output);
@@ -121,12 +123,16 @@ class Transform {
                 parsed[key] = template_1.template2(parsed[key], object_1.flat(options), TemplateOptions);
             }
             rule.output = output = cache = path_1.format(parsed);
+            rule.output = path_2.normalize(rule.output, "web");
         }
+        options.output = Object.assign({ hash, fullpath: output }, path_1.parse(output));
         if (typeof rule.cache == 'function') {
             rule.cache = cache = rule.cache(options);
+            rule.cache = path_2.normalize(rule.cache, "web");
         }
         else if (typeof rule.cache === 'string') {
             rule.cache = cache = template_1.template2(rule.cache, object_1.flat(options), TemplateOptions);
+            rule.cache = path_2.normalize(rule.cache, "web");
         }
         else if (typeof rule.cache === 'object') {
             const parsed = Object.assign(path_1.parse(cache), rule.cache);
@@ -137,15 +143,18 @@ class Transform {
                 parsed[key] = template_1.template2(parsed[key], object_1.flat(options), TemplateOptions);
             }
             rule.cache = cache = path_1.format(parsed);
+            rule.cache = path_2.normalize(rule.cache, "web");
         }
         else if ((typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled)
             ||
                 (typeof rule.cache != 'boolean' && pipeline.cache.enabled)) {
             if (pipeline.cache.type === 'hash') {
                 rule.cache = cache = pipeline.cache.hash(output);
+                rule.cache = path_2.normalize(rule.cache, "web");
             }
             else if (pipeline.cache.type === 'version' && this.type === 'file') {
                 rule.cache = cache = pipeline.cache.version(output);
+                rule.cache = path_2.normalize(rule.cache, "web");
             }
         }
         const asset = pipeline.manifest.get(file);
