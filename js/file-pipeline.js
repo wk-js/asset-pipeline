@@ -1,9 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FilePipeline = void 0;
 const pipeline_1 = require("./pipeline");
-const transform_1 = require("./transform");
 const fs_1 = require("lol/js/node/fs");
+const minimatch_1 = __importDefault(require("minimatch"));
+const object_1 = require("lol/js/object");
+const transform_1 = require("./transform");
 class FilePipeline {
     constructor(pid, sid) {
         this.pid = pid;
@@ -15,10 +20,7 @@ class FilePipeline {
         /**
          * Transformation rules
          */
-        this.rules = new transform_1.Transform();
-        this._shadows = [];
-        this._globToAdd = [];
-        this._globToIgnore = [];
+        this._rules = {};
     }
     get pipeline() {
         return pipeline_1.PipelineManager.get(this.pid);
@@ -27,43 +29,26 @@ class FilePipeline {
      * Add file pattern
      */
     add(pattern, transformRule) {
-        this._globToAdd.push(pattern);
-        if (transformRule)
-            this.rules.add(pattern, transformRule);
+        this._rules[pattern] = Object.assign({
+            glob: pattern
+        }, transformRule || {});
         return this;
     }
     /**
      * Add file pattern to ignore
      */
     ignore(pattern) {
-        this._globToIgnore.push(pattern);
-        return this;
-    }
-    /**
-     * Add non-existing file to the manifest. Rules are applied.
-     */
-    shadow(file, transformRule) {
-        this._shadows.push({
-            source: {
-                uuid: '__shadow__',
-                path: '__shadow__',
-            },
-            input: file,
-            output: file,
-            cache: file,
-            tag: 'default',
-            resolved: false
-        });
-        if (transformRule)
-            this.rules.add(file, transformRule);
+        this._rules[pattern] = {
+            glob: pattern,
+            ignore: true
+        };
         return this;
     }
     /**
      * Clone the pipeline
      */
     clone(file) {
-        file._shadows = this._shadows.slice(0);
-        this.rules.clone(file.rules);
+        file._rules = object_1.clone(this._rules);
         return file;
     }
     /**
@@ -73,8 +58,10 @@ class FilePipeline {
         if (!this.pipeline)
             return;
         const pipeline = this.pipeline;
-        this._fetch().forEach((asset) => {
-            this.rules.transform(pipeline, asset);
+        this._fetch().forEach(asset => {
+            const rule = asset.rule;
+            const transformed = transform_1.transform(pipeline, asset, [rule]);
+            pipeline.manifest.addAsset(transformed);
         });
     }
     _fetch() {
@@ -86,31 +73,43 @@ class FilePipeline {
             return [];
         const globs = [];
         const ignores = [];
-        this._globToAdd.forEach(pattern => {
-            const glob = source.fullpath.join(pattern).os();
-            globs.push(glob);
-        });
-        this._globToIgnore.forEach(pattern => {
-            const ignore = source.fullpath.join(pattern).os();
-            ignores.push(ignore);
-        });
+        for (const entry of Object.entries(this._rules)) {
+            if (entry[1].ignore) {
+                ignores.push(entry);
+            }
+            else {
+                const glob = source.fullpath.join(entry[0]).os();
+                globs.push([glob, entry[1]]);
+            }
+        }
+        let assets = [];
         const fetcher = this._fetcher();
-        const assets = fetcher(globs, ignores)
-            .map((file) => {
-            const input = source.fullpath.relative(file);
-            return {
-                source: {
-                    uuid: source.uuid,
-                    path: source.path.web(),
-                },
-                input: input.web(),
-                output: input.web(),
-                cache: input.web(),
-                resolved: false,
-            };
-        })
-            .filter((asset) => asset != null);
-        return this._shadows.concat(assets);
+        for (const [pattern, rule] of globs) {
+            fetcher([pattern], []).forEach(file => {
+                const input = source.fullpath.relative(file);
+                assets.push({
+                    source: {
+                        uuid: source.uuid,
+                        path: source.path.web(),
+                    },
+                    input: input.web(),
+                    output: input.web(),
+                    cache: input.web(),
+                    resolved: false,
+                    type: this.type,
+                    tag: "default",
+                    rule
+                });
+            });
+        }
+        assets = assets.filter(asset => {
+            for (const [pattern] of ignores) {
+                if (minimatch_1.default(asset.input, pattern))
+                    return false;
+            }
+            return true;
+        });
+        return assets;
     }
     _fetcher() {
         return function (globs, ignores) {

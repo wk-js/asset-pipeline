@@ -6,6 +6,7 @@ const fs_1 = require("lol/js/node/fs");
 const path_1 = require("./path");
 const fs_2 = require("fs");
 const object_1 = require("lol/js/object");
+const path_2 = require("path");
 class Manifest {
     constructor(pid) {
         this.pid = pid;
@@ -79,35 +80,42 @@ class Manifest {
     /**
      * Get Asset
      */
-    get(input) {
-        input = path_1.normalize(input, "web");
-        input = input.split(/\#|\?/)[0];
-        return this._file.assets[input];
+    getAsset(inputPath) {
+        inputPath = path_1.normalize(inputPath, "web");
+        if (path_2.isAbsolute(inputPath)) {
+            const relative = this.pipeline.cwd.relative(inputPath);
+            const source = this.findSource(relative.web());
+            if (!source)
+                return undefined;
+            inputPath = source.path.relative(relative.os()).web();
+        }
+        inputPath = inputPath.split(/\#|\?/)[0];
+        return this._file.assets[inputPath];
     }
     /**
      * Get AssetWithSource object from inputPath
      */
-    getWithSource(input) {
+    getAssetWithSource(inputPath) {
         if (!this.pipeline)
-            return undefined;
-        const { source } = this.pipeline;
-        input = path_1.normalize(input, "web");
-        input = input.split(/\#|\?/)[0];
-        const asset = this._file.assets[input];
-        if (!asset || !source.has(asset.source.uuid))
-            return undefined;
-        return Object.assign({ source: source.get(asset.source.uuid) }, object_1.omit(asset, "source"));
+            return;
+        const asset = this.getAsset(inputPath);
+        if (!asset)
+            return;
+        const source = this.pipeline.source.get(asset.source.uuid);
+        if (!source)
+            return;
+        return Object.assign({ source }, object_1.omit(asset, "source"));
     }
     /**
      * Check asset exists
      */
-    has(input) {
-        return !!this.get(input);
+    hasAsset(inputPath) {
+        return !!this.getAsset(inputPath);
     }
     /**
      * Add asset
      */
-    add(asset) {
+    addAsset(asset) {
         this._file.assets[asset.input] = asset;
         if (this.saveAtChange) {
             this.saveFile();
@@ -116,10 +124,10 @@ class Manifest {
     /**
      * Remove asset
      */
-    remove(input) {
+    removeAsset(input) {
         let asset;
         if (typeof input === "string") {
-            asset = this.get(input);
+            asset = this.getAsset(input);
         }
         else {
             asset = input;
@@ -134,10 +142,55 @@ class Manifest {
     /**
      * Clear manifest
      */
-    clear() {
+    clearAssets() {
         this._file.assets = {};
         if (this.saveAtChange) {
             this.saveFile();
+        }
+    }
+    /**
+     * Get Source object
+     */
+    findSource(inputPath) {
+        if (!this.pipeline)
+            return;
+        inputPath = path_1.normalize(inputPath, "web");
+        const asset = this.getAsset(inputPath);
+        if (asset) {
+            const source = this.pipeline.source.get(asset.source.uuid);
+            if (source)
+                return source;
+        }
+        const sources = this.pipeline.source.all();
+        const source_paths = sources.map(p => {
+            if (path_2.isAbsolute(inputPath)) {
+                return p.fullpath.web();
+            }
+            return p.path.web();
+        });
+        const dir = [];
+        const parts = inputPath.split("/");
+        for (const part of parts) {
+            dir.push(part);
+            const dir_path = path_1.normalize(dir.join("/"), "web");
+            const index = source_paths.indexOf(dir_path);
+            if (index > -1) {
+                const key = sources[index].path.relative(inputPath).web();
+                if (this.hasAsset(key))
+                    return sources[index];
+            }
+        }
+    }
+    /**
+     * Get IAsset object from output
+     */
+    findAssetFromOutput(outputPath) {
+        const assets = this.export();
+        for (let i = 0; i < assets.length; i++) {
+            const item = assets[i];
+            if (item.output == outputPath || item.cache == outputPath) {
+                return item;
+            }
         }
     }
     export(exportType = "asset", tag) {
@@ -184,6 +237,7 @@ class Manifest {
                         const input = asset.input;
                         return {
                             input,
+                            type: asset.type,
                             output: {
                                 path: pipeline.getPath(input),
                                 url: pipeline.getUrl(input),

@@ -1,3 +1,4 @@
+import { Dispatcher } from "lol/js/dispatcher";
 export interface IManagerRuleItem {
     glob: string;
     action: "move" | "copy" | "symlink" | "ignore";
@@ -6,6 +7,7 @@ export declare class FileSystem {
     private pid;
     private sid;
     chunkCount: number;
+    onNewFilesCopied: Dispatcher<[string, string][]>;
     private globs;
     private mtimes;
     constructor(pid: string, sid: string);

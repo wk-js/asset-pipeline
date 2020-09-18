@@ -1,7 +1,7 @@
 import { Pipeline } from "./pipeline"
 import { basename, parse, format, ParsedPath } from "path";
 import { template2 } from "lol/js/string/template";
-import { IFileRule, IAsset, IMatchRule, RenameOptions } from "./types";
+import { IAsset, IMatchRule, RenameOptions, IMinimumRule } from "./types";
 import { clone, flat } from "lol/js/object";
 import minimatch from "minimatch";
 import { normalize } from "./path";
@@ -12,207 +12,150 @@ const TemplateOptions = {
   close: '}'
 }
 
-export class Transform {
+/**
+ * Look for the first matching rule. If not found, a generic rule is returned.
+ */
+function matchRule(path: string, rules: IMatchRule[]) {
+  for (let i = 0, ilen = rules.length; i < ilen; i++) {
+    const rule = rules[i]
 
-  protected rules: IMatchRule[] = []
-
-  constructor(public type = "file") { }
-
-  /**
-   * Add as transformation applied to the glob pattern
-   */
-  add(glob: string, parameters: IFileRule = {}) {
-    glob = normalize(glob, "web")
-
-    const params: IMatchRule = parameters = Object.assign({
-      glob: glob
-    }, parameters)
-    params.glob = glob
-
-    this.rules.push(params)
+    if (path === rule.glob || minimatch(path, rule.glob)) {
+      return rule
+    }
   }
 
-  /**
-   * Shortcut for input/output transformation
-   */
-  addEntry(input: string, output: string, parameters: IFileRule = {}) {
-    parameters = Object.assign({
-      rename: output,
-      keep_path: false
-    }, parameters)
-    this.add(input, parameters)
+  return { glob: path } as IMatchRule
+}
+
+function resolveDir(pipeline: Pipeline, output: string) {
+  const pathObject = parse(output)
+  let dir = pathObject.dir
+
+  let d: string[] = []
+  dir = normalize(dir, "unix")
+  const ds = dir.split('/').filter(part => !!part)
+
+  for (let i = 0; i < ds.length; i++) {
+    d.push(ds[i])
+    const dd = d.join('/')
+
+    const asset = pipeline.manifest.getAsset(dd)
+    if (!asset) continue
+    const ddd = pipeline.cache.enabled ? asset.cache : asset.output
+    if (dd != ddd) {
+      d = ddd.split('/')
+    }
   }
 
-  /**
-   * Add as transformation applied to the glob pattern
-   */
-  ignore(glob: string) {
-    glob = normalize(glob, "web")
+  pathObject.dir = d.join('/')
+  return format(pathObject)
+}
 
-    const parameters = {
-      glob: glob,
-      ignore: true
-    }
+function _tranformOutput(pipeline: Pipeline, asset: IAsset, rule: IMatchRule) {
+  let output = asset.input
 
-    this.rules.push(parameters)
+  // Replace dir path if needed
+  output = resolveDir(pipeline, output)
+
+  // Remove path and keep basename only
+  if (typeof rule.keepPath === 'boolean' && !rule.keepPath) {
+    output = asset.type === "file" ? basename(output) : "."
   }
 
-  /**
-   * Clone the rules
-   */
-  clone(file: Transform) {
-    for (let i = 0; i < this.rules.length; i++) {
-      const glob = this.rules[i];
-      file.rules.push(glob)
-    }
-    return file
+  // Add base_dir
+  if (typeof rule.baseDir === 'string') {
+    const base_dir = pipeline.output.join(rule.baseDir, output)
+    output = pipeline.output.relative(base_dir.os()).os()
   }
 
-  /**
-   * Look for the first matching rule. If not found, a generic rule is returned.
-   */
-  matchingRule(path: string) {
-    for (let i = 0, ilen = this.rules.length; i < ilen; i++) {
-      const rule = this.rules[i]
+  const hash = pipeline.cache.generateHash(output + pipeline.cache.key)
 
-      if (path === rule.glob || minimatch(path, rule.glob)) {
-        return rule
-      }
-    }
-
-    return { glob: path } as IMatchRule
-  }
-
-  /**
-   * Apply the transformation to the asset and register to the manifest
-   */
-  transform(pipeline: Pipeline, asset: IAsset) {
-    // Ignore files registered from directory_pipeline or from previous rules
-    const masset = pipeline.manifest.get(asset.input)
-    if (masset && masset.resolved) return;
-
-    const rule = asset.rule || this.matchingRule(asset.input)
-    asset.rule = rule
-    pipeline.manifest.add(asset)
-    this.tranformOutput(pipeline, asset.input, clone(rule))
-  }
-
-  protected tranformOutput(pipeline: Pipeline, file: string, rule: IMatchRule) {
-    let output = file
-
-    // Remove path and keep basename only
-    if (typeof rule.keep_path === 'boolean' && !rule.keep_path) {
-      output = basename(output)
-    }
-
-    // Add base_dir
-    if (typeof rule.base_dir === 'string') {
-      const base_dir = pipeline.output.join(rule.base_dir, output)
-      output = pipeline.output.relative(base_dir.os()).os()
-    }
-
-    // Replace dir path if needed
-    output = this.resolveDir(pipeline, output)
-
-    let cache = output
-
-    const hash = pipeline.cache.generateHash(output + pipeline.cache.key)
-    let options: RenameOptions = {
-      rule,
-      input: {
-        hash,
-        fullpath: file,
-        ...parse(file)
-      },
-      output: {
-        hash,
-        fullpath: output,
-        ...parse(output)
-      }
-    }
-
-    if (typeof rule.output == 'function') {
-      rule.output = output = cache = rule.output(options)
-      rule.output = normalize(rule.output, "web")
-    } else if (typeof rule.output === 'string') {
-      rule.output = output = cache = template2(rule.output, flat(options), TemplateOptions)
-      rule.output = normalize(rule.output, "web")
-    } else if (typeof rule.output === 'object') {
-      const parsed: ParsedPath = Object.assign(parse(options.output.fullpath), rule.output)
-      if ("ext" in rule.output || "name" in rule.output) {
-        parsed.base = `${parsed.name}${parsed.ext}`
-      }
-      for (const key of Object.keys(parsed) as (keyof ParsedPath)[]) {
-        parsed[key] = template2(parsed[key], flat(options), TemplateOptions)
-      }
-      rule.output = output = cache = format(parsed)
-      rule.output = normalize(rule.output, "web")
-    }
-
-    options.output = {
+  let options: RenameOptions = {
+    rule,
+    input: {
+      hash,
+      fullpath: asset.input,
+      ...parse(asset.input)
+    },
+    output: {
       hash,
       fullpath: output,
       ...parse(output)
     }
+  }
 
-    if (typeof rule.cache == 'function') {
-      rule.cache = cache = rule.cache(options)
-      rule.cache = normalize(rule.cache, "web")
-    } else if (typeof rule.cache === 'string') {
-      rule.cache = cache = template2(rule.cache, flat(options), TemplateOptions)
-      rule.cache = normalize(rule.cache, "web")
-    } else if (typeof rule.cache === 'object') {
-      const parsed: ParsedPath = Object.assign(parse(cache), rule.cache)
-      if ("ext" in rule.cache || "name" in rule.cache) {
+  rule.output = output = _rename(output, rule.output, options)
+
+  options.output = {
+    hash,
+    fullpath: output,
+    ...parse(output)
+  }
+
+  let cache = output
+
+  if (typeof rule.cache === "function" || typeof rule.cache === "string" || typeof rule.cache === "object") {
+    rule.cache = cache = _rename(output, rule.cache, options)
+  } else if (
+    pipeline.cache.enabled &&
+    ((typeof rule.cache === "boolean" && rule.cache) || typeof rule.cache != 'boolean')
+  ) {
+    if (pipeline.cache.type === 'hash') {
+      rule.cache = cache = pipeline.cache.hash(output)
+      rule.cache = normalize(cache, "web")
+    } else if (pipeline.cache.type === 'version' && asset.type === 'file') {
+      rule.cache = cache = pipeline.cache.version(output)
+      rule.cache = normalize(cache, "web")
+    }
+  }
+
+  asset.input = normalize(asset.input, "web")
+  asset.output = normalize(output, "web")
+  asset.cache = normalize(cache, "web")
+  asset.resolved = true
+  asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default'
+  asset.rule = rule
+  return asset
+}
+
+function _rename(output: string, rename: IMinimumRule['output'], options: RenameOptions) {
+  switch (typeof rename) {
+    case "function": {
+      output = rename(options)
+      break
+    }
+
+    case "string": {
+      output = template2(rename, flat(options), TemplateOptions)
+      break
+    }
+
+    case "object": {
+      const parsed: ParsedPath = Object.assign(parse(options.output.fullpath), rename)
+      if ("ext" in rename || "name" in rename) {
         parsed.base = `${parsed.name}${parsed.ext}`
       }
       for (const key of Object.keys(parsed) as (keyof ParsedPath)[]) {
         parsed[key] = template2(parsed[key], flat(options), TemplateOptions)
       }
-      rule.cache = cache = format(parsed)
-      rule.cache = normalize(rule.cache, "web")
-    } else if (
-      (typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled)
-      ||
-      (typeof rule.cache != 'boolean' && pipeline.cache.enabled)
-    ) {
-      if (pipeline.cache.type === 'hash') {
-        rule.cache = cache = pipeline.cache.hash(output)
-        rule.cache = normalize(cache, "web")
-      } else if (pipeline.cache.type === 'version' && this.type === 'file') {
-        rule.cache = cache = pipeline.cache.version(output)
-        rule.cache = normalize(cache, "web")
-      }
+      output = format(parsed)
+      break
     }
-
-    const asset = pipeline.manifest.get(file) as IAsset
-    asset.input = normalize(asset.input, "web")
-    asset.output = normalize(output, "web")
-    asset.cache = normalize(cache, "web")
-    asset.resolved = true
-    asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default'
-    asset.rule = rule
-    pipeline.manifest.add(asset)
   }
 
-  protected resolveDir(pipeline: Pipeline, output: string) {
-    const pathObject = parse(output)
-    let dir = pathObject.dir
+  return normalize(output, "web")
+}
 
-    let d: string[] = []
-    dir = normalize(dir, "web")
-    const ds = dir.split('/').filter(part => !!part)
-    for (let i = 0; i < ds.length; i++) {
-      d.push(ds[i])
-      const dd = d.join('/')
-      const ddd = pipeline.getPath(dd)
-      if (dd != ddd) {
-        d = ddd.split('/')
-      }
-    }
 
-    pathObject.dir = d.join('/')
-    return format(pathObject)
-  }
+/**
+ * Apply output/cache transformation to the asset input
+ */
+export function transform(pipeline: Pipeline, asset: IAsset, rules: IMatchRule[]) {
+  // Ignore files registered from directory_pipeline or from previous rules
+  const masset = pipeline.manifest.getAsset(asset.input)
+  if (masset && masset.resolved) return asset
 
+  const rule = asset.rule || matchRule(asset.input, rules)
+  asset.rule = rule
+  return _tranformOutput(pipeline, asset, clone(rule))
 }

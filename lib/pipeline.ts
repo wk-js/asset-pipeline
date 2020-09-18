@@ -3,22 +3,23 @@ import { Resolver } from "./resolver";
 import { SourceManager } from "./source";
 import { Cache } from "./cache";
 import { guid } from "lol/js/string/guid";
-import { normalize, cleanup, PathBuilder, URLBuilder } from "./path";
-import * as Path from "path";
+import { PathBuilder, URLBuilder } from "./path";
 import { IResolvePathOptions } from "./types";
+import { ShadowPipeline } from "./shadow-pipeline";
 
 export const PipelineManager = new Map<string, Pipeline>()
 
 export class Pipeline {
   uuid: string
-  cache: any;
-  verbose: any;
+  cache: Cache;
+  verbose: boolean;
   output: PathBuilder;
   host: URLBuilder;
   cwd: PathBuilder;
   source: SourceManager;
   manifest: Manifest;
   resolver: Resolver;
+  shadow: ShadowPipeline;
 
   constructor(key: string) {
     this.uuid = guid()
@@ -34,6 +35,7 @@ export class Pipeline {
     this.source = new SourceManager(this.uuid)
     this.manifest = new Manifest(this.uuid)
     this.resolver = new Resolver(this.uuid)
+    this.shadow = new ShadowPipeline(this.uuid)
   }
 
   /**
@@ -55,7 +57,11 @@ export class Pipeline {
 
     if (force || !this.manifest.fileExists()) {
       this.log('Clear manifest')
-      this.manifest.clear()
+      this.manifest.clearAssets()
+
+      this.log('Fetch shadows')
+      this.shadow.fetch()
+      this.resolver.refreshTree()
 
       this.log('Fetch directories')
       this.source.fetch("directory")
@@ -88,108 +94,17 @@ export class Pipeline {
   }
 
   /**
-   * Get Source object
-   */
-  getSource(inputPath: string) {
-    inputPath = normalize(inputPath, "web")
-
-    const asset = this.manifest.get(inputPath)
-
-    if (asset) {
-      const source = this.source.get(asset.source.uuid)
-      if (source) return source
-    }
-
-    const sources = this.source.all()
-    const source_paths = sources.map(p => {
-      if (Path.isAbsolute(inputPath)) {
-        return p.fullpath.web()
-      }
-      return p.path.web()
-    })
-
-    const dir = []
-    const parts = inputPath.split("/")
-
-    for (const part of parts) {
-      dir.push(part)
-      const dir_path = normalize(dir.join("/"), "web")
-
-      const index = source_paths.indexOf(dir_path)
-      if (index > -1) {
-        const key = sources[index].path.relative(inputPath).web()
-        if (this.manifest.has(key)) return sources[index]
-      }
-    }
-  }
-
-  /**
-   * Get IAsset object
-   */
-  getAsset(inputPath: string) {
-    let relative = new PathBuilder(inputPath)
-    if (Path.isAbsolute(inputPath)) {
-      relative = this.cwd.relative(inputPath)
-
-      const source = this.getSource(relative.web())
-      if (!source) return undefined
-
-      inputPath = source.path.relative(relative.os()).web()
-    }
-
-    return this.manifest.get(inputPath)
-  }
-
-  /**
    * Get path
    */
   getPath(inputPath: string, options?: Partial<IResolvePathOptions>) {
-    if (!inputPath) throw new Error("[asset-pipeline] path cannot be empty")
-    const tree = this.resolver
-
-    const opts = Object.assign({
-      from: ".",
-      cleanup: false,
-    }, options || {}) as IResolvePathOptions
-
-    // Cleanup path and get the output path
-    inputPath = tree.resolve(inputPath)
-
-    // Cleanup from path and get the output tree
-    const fromTree = tree.getTree(opts.from)
-
-    // Get output relative to from
-    const output = this.output.with(fromTree.path)
-      .relative(this.output.with(inputPath).os())
-
-    if (opts.cleanup) {
-      return cleanup(output.web())
-    }
-
-    return this.host.pathname.join(output.web()).web()
+    return this.resolver.getPath(inputPath, options)
   }
 
   /**
    * Get url
    */
   getUrl(inputPath: string, options?: Partial<IResolvePathOptions>) {
-    inputPath = this.getPath(inputPath, options)
-    return this.host.join(inputPath).toString()
-  }
-
-  /**
-   * Get IAsset object from output
-   */
-  getAssetFromOutput(outputPath: string) {
-    if (!this.manifest) return
-    const assets = this.manifest.export()
-    for (let i = 0; i < assets.length; i++) {
-      const item = assets[i];
-
-      if (item.output == outputPath || item.cache == outputPath) {
-        return item
-      }
-    }
+    return this.resolver.getUrl(inputPath, options)
   }
 
 }

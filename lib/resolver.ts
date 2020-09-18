@@ -1,8 +1,10 @@
-import Path from "path";
+import { join } from "path";
 import {  PipelineManager } from "./pipeline";
-import { normalize } from "./path";
+import { cleanup, normalize, PathBuilder } from "./path";
+import { IResolvePathOptions } from "./types";
 
 export interface TreeInterface {
+  name: string,
   path: string,
   files: string[]
   subdirectories: {
@@ -13,7 +15,8 @@ export interface TreeInterface {
 export class Resolver {
 
   root: TreeInterface = {
-    path: '.',
+    name: ".",
+    path: ".",
     files: [],
     subdirectories: {}
   }
@@ -41,7 +44,7 @@ export class Resolver {
     }
 
     let output = inputPath
-    const asset = manifest.get(inputPath)
+    const asset = manifest.getAsset(inputPath)
 
     if (asset) {
       output = cache.enabled ? asset.cache : asset.output
@@ -61,37 +64,39 @@ export class Resolver {
     const { cache, manifest } = this.pipeline
 
     const tree = {
-      path: '.',
+      name: ".",
+      path: ".",
       files: [],
       subdirectories: {}
     } as TreeInterface
 
-    const keys = manifest.export("asset").map((asset) => {
-      return cache.enabled ? asset.cache : asset.output
-    })
+    const assets = manifest.export("asset")
     let currDir = tree
     let path = tree.path
 
-    for (let i = 0, ilen = keys.length; i < ilen; i++) {
-      const dirs = keys[i].split('/')
-      const file = dirs.pop() as string
+    for (const asset of assets) {
+      const output = cache.enabled ? asset.output : asset.cache
+      const dirs = output.split("/").map(dir => dir.length === 0 ? "." : dir)
+      const file = asset.type === "file" ? dirs.pop() : undefined
 
       currDir = tree
       path = tree.path
-      dirs.forEach(function (dir: string) {
-        path += '/' + dir
-        currDir.subdirectories[dir] = currDir.subdirectories[dir] || {
-          path: normalize(path, "web"),
-          files: [],
-          subdirectories: {}
+      for (const dir of dirs) {
+        if (currDir.name === dir) continue
+        path = normalize(join(path, dir), "unix")
+        if (!currDir.subdirectories[dir]) {
+          currDir.subdirectories[dir] = {
+            name: dir,
+            path,
+            files: [],
+            subdirectories: {}
+          }
         }
         currDir = currDir.subdirectories[dir]
-      })
+      }
 
-      if (this.pipeline.output.with(keys[i]).ext().length > 0) {
+      if (file) {
         currDir.files.push(file)
-      } else {
-        currDir.subdirectories[file] = currDir.subdirectories[file] || { files: [], subdirectories: {} }
       }
     }
 
@@ -114,6 +119,46 @@ export class Resolver {
     }
 
     return tree
+  }
+
+  /**
+   * Get path
+   */
+  getPath(inputPath: string, options?: Partial<IResolvePathOptions>) {
+    if (!inputPath) throw new Error("[asset-pipeline] path cannot be empty")
+    if (!this.pipeline) return inputPath
+    const outputDir = this.pipeline.output
+    const host = this.pipeline.host
+
+    const opts = Object.assign({
+      from: ".",
+      cleanup: false,
+    }, options || {}) as IResolvePathOptions
+
+    // Cleanup path and get the output path
+    const outputPath = this.resolve(inputPath)
+
+    // Cleanup from path and get the output tree
+    const fromTree = this.getTree(opts.from)
+
+    // Get output relative to from
+    let output = outputDir.with(fromTree.path)
+      .relative(outputDir.with(outputPath).os())
+
+    if (opts.cleanup) {
+      output = new PathBuilder(cleanup(output.os()))
+    }
+
+    return host.pathname.join(output.os()).web()
+  }
+
+  /**
+   * Get url
+   */
+  getUrl(inputPath: string, options?: Partial<IResolvePathOptions>) {
+    if (!this.pipeline) return inputPath
+    inputPath = this.getPath(inputPath, options)
+    return this.pipeline.host.join(inputPath).toString()
   }
 
   /**

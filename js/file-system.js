@@ -15,11 +15,14 @@ const pipeline_1 = require("./pipeline");
 const fs_2 = require("fs");
 const path_1 = require("./path");
 const array_1 = require("lol/js/array");
+const dispatcher_1 = require("lol/js/dispatcher");
+const path_2 = require("path");
 class FileSystem {
     constructor(pid, sid) {
         this.pid = pid;
         this.sid = sid;
         this.chunkCount = 15;
+        this.onNewFilesCopied = new dispatcher_1.Dispatcher();
         this.globs = [];
         this.mtimes = new Map();
     }
@@ -105,7 +108,7 @@ class FileSystem {
                     fs_1.fetch(validGlobs, ignoredGlobs));
             let ios = [];
             files.forEach(file => {
-                const relative_file = source.path.relative(file).web();
+                const relative_file = source.fullpath.relative(file).web();
                 const input = source.fullpath.join(relative_file).web();
                 const output = pipeline.output.with(pipeline.getPath(relative_file));
                 if (input !== output.web()) {
@@ -122,6 +125,8 @@ class FileSystem {
                 this.mtimes.set(io[0], mtime);
                 return true;
             });
+            if (ios.length === 0)
+                return;
             for (const items of array_1.chunk(ios, this.chunkCount)) {
                 const ps = items.map(io => {
                     this._log(type, ...io.map(p => pipeline.cwd.relative(p).web()));
@@ -132,11 +137,19 @@ class FileSystem {
                         return fs_1.move(io[0], io[1]);
                     }
                     else if (type === 'symlink') {
-                        return fs_1.symlink2(io[0], io[1]);
+                        try {
+                            fs_1.ensureDirSync(path_2.dirname(io[1]));
+                            fs_2.symlinkSync(io[0], io[1], "junction");
+                            return Promise.resolve(true);
+                        }
+                        catch (e) {
+                            return Promise.resolve(false);
+                        }
                     }
                 });
                 yield Promise.all(ps);
             }
+            this.onNewFilesCopied.dispatch(ios);
         });
     }
     _log(...args) {

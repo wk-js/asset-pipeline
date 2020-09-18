@@ -1,6 +1,6 @@
 import "mocha";
 import * as assert from "assert";
-import { getAsset, getAssetFromOutput, setup, setupWithSourcesAdded } from "./setup"
+import { getAsset, getAssetFromOutput, setupWithSourcesAdded, setup } from "./setup"
 
 describe("Files", () => {
 
@@ -20,7 +20,8 @@ describe("Files", () => {
         path: 'app/scripts',
       },
       resolved: true,
-      tag: 'default'
+      tag: 'default',
+      type: "file",
     })
     assert.deepEqual(getAssetFromOutput("main.js", p), {
       cache: "main.js",
@@ -34,7 +35,8 @@ describe("Files", () => {
         path: 'app/scripts',
       },
       resolved: true,
-      tag: 'default'
+      tag: 'default',
+      type: "file",
     })
   })
 
@@ -42,8 +44,30 @@ describe("Files", () => {
     const p = await setupWithSourcesAdded()
     assert.equal(p.getPath("_layout.html.ejs"), "/_layout.html.ejs")
     assert.equal(p.getUrl("_layout.html.ejs"), "/_layout.html.ejs")
-    assert.equal(p.getAsset("_layout.html.ejs"), null)
-    assert.equal(p.getAssetFromOutput("layout.html"), null)
+    assert.equal(p.manifest.getAsset("_layout.html.ejs"), null)
+    assert.equal(p.manifest.findAssetFromOutput("layout.html"), null)
+  })
+
+  it("baseDir", async () => {
+    const p = await setup(async p => {
+      const scripts = p.source.add("app/scripts")
+      scripts.file.add("main.ts", {
+        baseDir: "MyBaseDir"
+      })
+    })
+
+    assert.equal(p.getUrl("main.ts"), "/MyBaseDir/main.ts")
+  })
+
+  it("keepPath", async () => {
+    const p = await setup(async p => {
+      const app = p.source.add("app")
+      app.file.add("scripts/main.ts", {
+        keepPath: false
+      })
+    })
+
+    assert.equal(p.getUrl("scripts/main.ts"), "/main.ts")
   })
 
   it("Host", async () => {
@@ -64,7 +88,8 @@ describe("Files", () => {
         path: 'app/scripts',
       },
       resolved: true,
-      tag: 'default'
+      tag: 'default',
+      type: "file",
     })
     assert.deepEqual(getAssetFromOutput("main.js", p), {
       cache: "main.js",
@@ -78,7 +103,49 @@ describe("Files", () => {
         path: 'app/scripts',
       },
       resolved: true,
-      tag: 'default'
+      tag: 'default',
+      type: "file",
+    })
+  })
+
+  it("Shadow", async () => {
+    const p = await setupWithSourcesAdded(async p => {
+      p.host.setURL("http://mycdn.com/")
+    })
+
+    assert.equal(p.getPath("main.css"), "/main.css")
+    assert.equal(p.getUrl("main.css"), "http://mycdn.com/main.css")
+    assert.deepEqual(p.manifest.getAsset("main.css"), {
+      cache: "main.css",
+      input: "main.css",
+      output: "main.css",
+      rule: {
+        glob: 'main.css',
+        output: 'main.css',
+      },
+      source: {
+        path: '__shadow__',
+        uuid: '__shadow__'
+      },
+      resolved: true,
+      tag: 'default',
+      type: "file",
+    })
+    assert.deepEqual(p.manifest.findAssetFromOutput("main.css"), {
+      cache: "main.css",
+      input: "main.css",
+      output: "main.css",
+      rule: {
+        glob: 'main.css',
+        output: 'main.css',
+      },
+      source: {
+        path: '__shadow__',
+        uuid: '__shadow__'
+      },
+      resolved: true,
+      tag: 'default',
+      type: "file",
     })
   })
 

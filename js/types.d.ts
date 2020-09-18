@@ -1,6 +1,4 @@
 /// <reference types="node" />
-import { Transform } from "./transform";
-import { Pipeline } from "./pipeline";
 import { ParsedPath } from "path";
 import { Source } from "./source";
 export interface RenameOptions {
@@ -33,14 +31,17 @@ export interface IMinimumRule {
     tag?: string;
 }
 export interface IFileRule extends IMinimumRule {
-    keep_path?: boolean;
-    base_dir?: string;
+    keepPath?: boolean;
+    baseDir?: string;
 }
 export interface IDirectoryRule extends IFileRule {
-    file_rules?: (IMinimumRule & {
+    fileRules?: (IMinimumRule & {
         glob?: string;
     })[];
 }
+export declare type IShadowRule = IMatchRule & {
+    type: "file" | "directory";
+};
 export interface IMatchRule extends IFileRule {
     glob: string;
 }
@@ -53,6 +54,7 @@ export interface IAsset {
     output: string;
     cache: string;
     tag: string;
+    type: "file" | "directory";
     resolved?: boolean;
     rule?: IFileRule | IDirectoryRule;
 }
@@ -74,15 +76,11 @@ export interface IPathObject {
 }
 export interface IOutput {
     input: string;
+    type: "file" | "directory";
     output: {
         path: string;
         url: string;
     };
-}
-export interface IPipeline {
-    type: "file" | "directory";
-    rules: Transform;
-    fetch(pipeline: Pipeline): void;
 }
 export interface IResolvePathOptions {
     from: string;

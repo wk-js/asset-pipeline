@@ -1,13 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Resolver = void 0;
+const path_1 = require("path");
 const pipeline_1 = require("./pipeline");
-const path_1 = require("./path");
+const path_2 = require("./path");
 class Resolver {
     constructor(pid) {
         this.pid = pid;
         this.root = {
-            path: '.',
+            name: ".",
+            path: ".",
             files: [],
             subdirectories: {}
         };
@@ -22,7 +24,7 @@ class Resolver {
         if (!this.pipeline)
             return inputPath;
         const { cache, manifest } = this.pipeline;
-        inputPath = path_1.normalize(inputPath, "web");
+        inputPath = path_2.normalize(inputPath, "web");
         const extra = inputPath.match(/\#|\?/);
         let suffix = '';
         if (extra) {
@@ -30,11 +32,11 @@ class Resolver {
             inputPath = inputPath.split(extra[0])[0];
         }
         let output = inputPath;
-        const asset = manifest.get(inputPath);
+        const asset = manifest.getAsset(inputPath);
         if (asset) {
             output = cache.enabled ? asset.cache : asset.output;
         }
-        output = path_1.normalize(output, "web");
+        output = path_2.normalize(output, "web");
         output = output + suffix;
         return output;
     }
@@ -46,34 +48,36 @@ class Resolver {
             return;
         const { cache, manifest } = this.pipeline;
         const tree = {
-            path: '.',
+            name: ".",
+            path: ".",
             files: [],
             subdirectories: {}
         };
-        const keys = manifest.export("asset").map((asset) => {
-            return cache.enabled ? asset.cache : asset.output;
-        });
+        const assets = manifest.export("asset");
         let currDir = tree;
         let path = tree.path;
-        for (let i = 0, ilen = keys.length; i < ilen; i++) {
-            const dirs = keys[i].split('/');
-            const file = dirs.pop();
+        for (const asset of assets) {
+            const output = cache.enabled ? asset.output : asset.cache;
+            const dirs = output.split("/").map(dir => dir.length === 0 ? "." : dir);
+            const file = asset.type === "file" ? dirs.pop() : undefined;
             currDir = tree;
             path = tree.path;
-            dirs.forEach(function (dir) {
-                path += '/' + dir;
-                currDir.subdirectories[dir] = currDir.subdirectories[dir] || {
-                    path: path_1.normalize(path, "web"),
-                    files: [],
-                    subdirectories: {}
-                };
+            for (const dir of dirs) {
+                if (currDir.name === dir)
+                    continue;
+                path = path_2.normalize(path_1.join(path, dir), "unix");
+                if (!currDir.subdirectories[dir]) {
+                    currDir.subdirectories[dir] = {
+                        name: dir,
+                        path,
+                        files: [],
+                        subdirectories: {}
+                    };
+                }
                 currDir = currDir.subdirectories[dir];
-            });
-            if (this.pipeline.output.with(keys[i]).ext().length > 0) {
-                currDir.files.push(file);
             }
-            else {
-                currDir.subdirectories[file] = currDir.subdirectories[file] || { files: [], subdirectories: {} };
+            if (file) {
+                currDir.files.push(file);
             }
         }
         this.root = tree;
@@ -83,7 +87,7 @@ class Resolver {
      */
     getTree(inputPath) {
         const outputPath = this.resolve(inputPath);
-        const dirs = path_1.normalize(outputPath, "web").split('/');
+        const dirs = path_2.normalize(outputPath, "web").split('/');
         let tree = this.root;
         for (let i = 0, ilen = dirs.length; i < ilen; i++) {
             if (tree.subdirectories[dirs[i]]) {
@@ -91,6 +95,41 @@ class Resolver {
             }
         }
         return tree;
+    }
+    /**
+     * Get path
+     */
+    getPath(inputPath, options) {
+        if (!inputPath)
+            throw new Error("[asset-pipeline] path cannot be empty");
+        if (!this.pipeline)
+            return inputPath;
+        const outputDir = this.pipeline.output;
+        const host = this.pipeline.host;
+        const opts = Object.assign({
+            from: ".",
+            cleanup: false,
+        }, options || {});
+        // Cleanup path and get the output path
+        const outputPath = this.resolve(inputPath);
+        // Cleanup from path and get the output tree
+        const fromTree = this.getTree(opts.from);
+        // Get output relative to from
+        let output = outputDir.with(fromTree.path)
+            .relative(outputDir.with(outputPath).os());
+        if (opts.cleanup) {
+            output = new path_2.PathBuilder(path_2.cleanup(output.os()));
+        }
+        return host.pathname.join(output.os()).web();
+    }
+    /**
+     * Get url
+     */
+    getUrl(inputPath, options) {
+        if (!this.pipeline)
+            return inputPath;
+        inputPath = this.getPath(inputPath, options);
+        return this.pipeline.host.join(inputPath).toString();
     }
     /**
      * Preview output tree

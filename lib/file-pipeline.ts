@@ -1,9 +1,11 @@
 import { PipelineManager } from "./pipeline"
-import { IAsset, IFileRule, IPipeline } from "./types";
-import { Transform } from "./transform";
+import { IAsset, IFileRule, IMatchRule } from "./types";
 import { fetch } from "lol/js/node/fs";
+import minimatch from "minimatch";
+import { clone } from "lol/js/object";
+import { transform } from "./transform";
 
-export class FilePipeline implements IPipeline {
+export class FilePipeline {
 
   /**
    * Pipeline type
@@ -13,11 +15,7 @@ export class FilePipeline implements IPipeline {
   /**
    * Transformation rules
    */
-  rules = new Transform()
-
-  protected _shadows: IAsset[] = []
-  protected _globToAdd: string[] = []
-  protected _globToIgnore: string[] = []
+  protected _rules: Record<string, IMatchRule> = {}
 
   constructor(private pid: string, private sid: string) {}
 
@@ -29,8 +27,10 @@ export class FilePipeline implements IPipeline {
    * Add file pattern
    */
   add(pattern: string, transformRule?: IFileRule) {
-    this._globToAdd.push(pattern)
-    if (transformRule) this.rules.add(pattern, transformRule)
+    this._rules[pattern] = Object.assign({
+      glob: pattern
+    }, transformRule || {})
+
     return this
   }
 
@@ -38,26 +38,10 @@ export class FilePipeline implements IPipeline {
    * Add file pattern to ignore
    */
   ignore(pattern: string) {
-    this._globToIgnore.push(pattern)
-    return this
-  }
-
-  /**
-   * Add non-existing file to the manifest. Rules are applied.
-   */
-  shadow(file: string, transformRule?: IFileRule) {
-    this._shadows.push({
-      source: {
-        uuid: '__shadow__',
-        path: '__shadow__',
-      },
-      input: file,
-      output: file,
-      cache: file,
-      tag: 'default',
-      resolved: false
-    })
-    if (transformRule) this.rules.add(file, transformRule)
+    this._rules[pattern] = {
+      glob: pattern,
+      ignore: true
+    }
     return this
   }
 
@@ -65,8 +49,7 @@ export class FilePipeline implements IPipeline {
    * Clone the pipeline
    */
   clone(file: FilePipeline) {
-    file._shadows = this._shadows.slice(0)
-    this.rules.clone(file.rules)
+    file._rules = clone(this._rules)
     return file
   }
 
@@ -76,8 +59,10 @@ export class FilePipeline implements IPipeline {
   fetch() {
     if (!this.pipeline) return
     const pipeline = this.pipeline
-    this._fetch().forEach((asset) => {
-      this.rules.transform(pipeline, asset)
+    this._fetch().forEach(asset => {
+      const rule = asset.rule as IMatchRule
+      const transformed = transform(pipeline, asset, [rule])
+      pipeline.manifest.addAsset(transformed)
     })
   }
 
@@ -87,25 +72,25 @@ export class FilePipeline implements IPipeline {
     const source = pipeline.source.get(this.sid)
     if (!source) return []
 
-    const globs: string[] = []
-    const ignores: string[] = []
+    const globs: [string, IMatchRule][] = []
+    const ignores: [string, IMatchRule][] = []
 
-    this._globToAdd.forEach(pattern => {
-      const glob = source.fullpath.join(pattern).os()
-      globs.push(glob)
-    })
+    for (const entry of Object.entries(this._rules)) {
+      if (entry[1].ignore) {
+        ignores.push(entry)
+      } else {
+        const glob = source.fullpath.join(entry[0]).os()
+        globs.push([glob, entry[1]])
+      }
+    }
 
-    this._globToIgnore.forEach(pattern => {
-      const ignore = source.fullpath.join(pattern).os()
-      ignores.push(ignore)
-    })
-
+    let assets: IAsset[] = []
     const fetcher = this._fetcher()
 
-    const assets = fetcher(globs, ignores)
-      .map((file) => {
+    for (const [pattern, rule] of globs) {
+      fetcher([pattern], []).forEach(file => {
         const input = source.fullpath.relative(file)
-        return {
+        assets.push({
           source: {
             uuid: source.uuid,
             path: source.path.web(),
@@ -114,11 +99,21 @@ export class FilePipeline implements IPipeline {
           output: input.web(),
           cache: input.web(),
           resolved: false,
-        } as IAsset
+          type: this.type,
+          tag: "default",
+          rule
+        })
       })
-    .filter((asset) => asset != null)
+    }
 
-    return this._shadows.concat(assets as IAsset[])
+    assets = assets.filter(asset => {
+      for (const [pattern] of ignores) {
+        if (minimatch(asset.input, pattern)) return false
+      }
+      return true
+    })
+
+    return assets
   }
 
   private _fetcher() {

@@ -1,14 +1,15 @@
 import * as Path from "path";
 import { fetch, fetchDirs } from "lol/js/node/fs";
 import { FilePipeline } from "./file-pipeline";
-import { IAsset, IDirectoryRule, IPipeline } from "./types";
+import { IAsset, IDirectoryRule, IMatchRule } from "./types";
 import minimatch from "minimatch";
 import { PipelineManager } from "./pipeline";
-import { Transform } from "./transform";
 import { unique } from "lol/js/array";
 import { normalize } from "./path";
+import { clone } from "lol/js/object";
+import { transform } from "./transform";
 
-export class DirectoryPipeline implements IPipeline {
+export class DirectoryPipeline {
 
   /**
    * Pipeline type
@@ -18,11 +19,7 @@ export class DirectoryPipeline implements IPipeline {
   /**
    * Transformation rules
    */
-  rules = new Transform()
-
-  protected _shadows: IAsset[] = []
-  protected _globToAdd: string[] = []
-  protected _globToIgnore: string[] = []
+  protected _rules: Record<string, IMatchRule> = {}
 
   constructor(private pid: string, private sid: string) { }
 
@@ -34,40 +31,28 @@ export class DirectoryPipeline implements IPipeline {
    * Append file pattern
    */
   add(pattern: string, transformRule?: IDirectoryRule) {
-    this._globToAdd.push(pattern)
-    if (transformRule) this.rules.add(pattern, transformRule)
+    this._rules[pattern] = Object.assign({
+      glob: pattern
+    }, transformRule || {})
+    return this
   }
 
   /**
    * Append file pattern to ignore
    */
   ignore(pattern: string) {
-    this._globToIgnore.push(pattern)
-  }
-
-  /**
-   * Append non-existing file to the manifest. Rules are applied.
-   */
-  shadow(file: string) {
-    this._shadows.push({
-      source: {
-        uuid: '__shadow__',
-        path: '__shadow__',
-      },
-      input: file,
-      output: file,
-      cache: file,
-      tag: 'default',
-      resolved: false
-    })
+    this._rules[pattern] = {
+      glob: pattern,
+      ignore: true
+    }
+    return this
   }
 
   /**
    * Clone the pipeline
    */
   clone(directory: DirectoryPipeline) {
-    directory._shadows = this._shadows.slice(0)
-    this.rules.clone(directory.rules)
+    directory._rules = clone(this._rules)
     return directory
   }
 
@@ -80,50 +65,53 @@ export class DirectoryPipeline implements IPipeline {
 
     this._fetch()
       .map((asset) => {
-        this.rules.transform(pipeline, asset)
-        return asset
+        const rule = asset.rule as IMatchRule
+        const transformed = transform(pipeline, asset, [rule])
+        pipeline.manifest.addAsset(transformed)
+        return transformed
       })
 
       .forEach((item) => {
         const glob = source.fullpath.join(item.input, '**/*').os()
+        const ignore = Object.entries(this._rules)
+          .filter(e => e[1].ignore)
+          .map(e => e[0])
 
         // Handle files
-        fetch(glob).map((file: string) => {
+        fetch(glob, ignore).map((file: string) => {
           const input = source.fullpath.relative(file)
 
           const pathObject = Path.parse(input.os())
           pathObject.dir = pipeline.getPath(pathObject.dir)
           const output = Path.format(pathObject)
 
-          const rule = this.rules.matchingRule(item.input) as IDirectoryRule
+          const rule = item.rule as IDirectoryRule
           const asset: IAsset = {
             source: item.source,
             input: input.web(),
             output: normalize(output, "web"),
             cache: normalize(output, "web"),
-            tag: typeof rule.tag == 'string' ? rule.tag : 'default'
+            tag: typeof rule.tag == 'string' ? rule.tag : 'default',
+            type: "file",
           }
 
-          // Handle rules for files
+          const registered = manifest.getAsset(asset.input)
           if (
-            !(manifest.has(asset.input) && (manifest.get(asset.input) as IAsset).resolved)
-            && rule.file_rules
-            && rule.file_rules.length > 0) {
-
-            for (let i = 0; i < rule.file_rules.length; i++) {
-              const r = rule.file_rules[i];
-              if (!r.ignore && minimatch(asset.input, r.glob || asset.input)) {
-                asset.rule = r
-                this.rules.transform(pipeline, asset)
+            !(registered && registered.resolved)
+            && Array.isArray(rule.fileRules)
+            && rule.fileRules.length > 0
+          ) {
+            for (const fileRule of rule.fileRules) {
+              if (!fileRule.ignore && minimatch(asset.input, fileRule.glob || asset.input)) {
+                asset.rule = fileRule
+                const transformed = transform(pipeline, asset, [asset.rule as IMatchRule])
+                pipeline.manifest.addAsset(transformed)
               }
             }
-
-            return;
+          } else {
+            const transformed = transform(pipeline, asset, [])
+            pipeline.manifest.addAsset(transformed)
           }
-
-          asset.resolved = true
-          asset.rule = rule
-          manifest.add(asset)
         })
       })
   }

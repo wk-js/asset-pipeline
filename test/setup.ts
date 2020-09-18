@@ -2,7 +2,9 @@ import "mocha";
 import { join } from "path";
 import { AssetPipeline } from "../lib"
 import { ensureDirSync, isDirectory, removeSync, writeFileSync } from "lol/js/node/fs";
-import { omit } from "lol/js/object";
+import { deep_clone, omit } from "lol/js/object";
+import { IAsset } from "../lib/types";
+import { statSync, unlinkSync } from "fs";
 
 export const LOAD_PATH = 'tmp/test-units'
 export const DST_PATH = 'tmp/test-units-dist'
@@ -20,7 +22,6 @@ export async function setup(callback?: (p: AssetPipeline) => Promise<void>) {
 export function setupWithSourcesAdded(callback?: (p: AssetPipeline) => Promise<void>) {
   return setup(async p => {
     const scripts = p.source.add("app/scripts")
-    scripts.file.shadow("main.css")
     scripts.file.add("main.ts", {
       output: { ext: ".js" }
     })
@@ -37,25 +38,50 @@ export function setupWithSourcesAdded(callback?: (p: AssetPipeline) => Promise<v
       cache: false
     })
 
+    p.shadow.addFile("main.css")
+
     if (callback) await callback(p)
   })
 }
 
 export function getAsset(path: string, p: AssetPipeline) {
-  const asset = p.getAsset(path)
+  let asset = p.manifest.getAsset(path)
   if (!asset) return null
+  asset = deep_clone(asset) as IAsset
   asset.source = omit(asset.source, "uuid")
   return asset
+}
+
+export function manifestGetAsset(path: string, p: AssetPipeline) {
+  let asset = p.manifest.getAsset(path)
+  if (!asset) return null
+  asset = deep_clone(asset) as IAsset
+  asset.source = omit(asset.source, "uuid")
+  return asset
+}
+
+export function manifestGetAssetWithSource(path: string, p: AssetPipeline) {
+  return p.manifest.getAssetWithSource(path)
 }
 
 export function getAssetFromOutput(path: string, p: AssetPipeline) {
-  const asset = p.getAssetFromOutput(path)
-  if (!asset) return null
+  let asset = p.manifest.findAssetFromOutput(path)
+  if (!asset) return undefined
+  asset = deep_clone(asset) as IAsset
   asset.source = omit(asset.source, "uuid")
   return asset
 }
 
-before(() => {
+function isSymbolicLink(path: string) {
+  try {
+    const { isSymbolicLink } = statSync(path)
+    return isSymbolicLink()
+  } catch (e) {}
+
+  return false
+}
+
+function _before() {
   ensureDirSync(LOAD_PATH)
   writeFileSync("", join(LOAD_PATH, "app/scripts/main.ts"))
   writeFileSync("", join(LOAD_PATH, "app/styles/common.styl"))
@@ -65,8 +91,15 @@ before(() => {
   writeFileSync("", join(LOAD_PATH, "app/assets/emoji/emoji0.png"))
   writeFileSync("", join(LOAD_PATH, "app/assets/emoji/emoji1.png"))
   writeFileSync("", join(LOAD_PATH, "app/assets/emoji/emoji2.png"))
-})
+}
 
-after(() => {
+function _after() {
+  if (isSymbolicLink(join(DST_PATH, "assets"))) unlinkSync(join(DST_PATH, "assets"))
+  if (isDirectory(DST_PATH)) removeSync(DST_PATH)
   if (isDirectory(LOAD_PATH)) removeSync(LOAD_PATH)
-})
+}
+
+before(_before)
+beforeEach(_before)
+after(_after)
+afterEach(_after)

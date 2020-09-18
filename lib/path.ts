@@ -2,7 +2,8 @@ import * as Path from "path";
 
 const WIN32_SEP_REG = /\\/g
 const DOUBLE_BACKSLASH_REG = /\/\//
-const CLEAN_URL_REG = /^\.\/|\/$/g
+const CLEAN_URL_START_REG = /^\.\//
+const CLEAN_URL_END_REG = /\/$/
 const SEARCH_HASH_REG = /\?|\#/
 
 /**
@@ -23,7 +24,10 @@ export function normalize(path: string, type: "unix" | "web" | "os" = "web"): st
     case "web":
       {
         path = normalize(path, "unix")
-        path = path.replace(CLEAN_URL_REG, "")
+        path = path.replace(CLEAN_URL_START_REG, "")
+        if (!(path.length === 1 && CLEAN_URL_END_REG.test(path))) {
+          path = path.replace(CLEAN_URL_END_REG, "")
+        }
         return path
       }
   }

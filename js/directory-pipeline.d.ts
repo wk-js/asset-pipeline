@@ -1,6 +1,5 @@
-import { IAsset, IDirectoryRule, IPipeline } from "./types";
-import { Transform } from "./transform";
-export declare class DirectoryPipeline implements IPipeline {
+import { IAsset, IDirectoryRule, IMatchRule } from "./types";
+export declare class DirectoryPipeline {
     private pid;
     private sid;
     /**
@@ -10,24 +9,17 @@ export declare class DirectoryPipeline implements IPipeline {
     /**
      * Transformation rules
      */
-    rules: Transform;
-    protected _shadows: IAsset[];
-    protected _globToAdd: string[];
-    protected _globToIgnore: string[];
+    protected _rules: Record<string, IMatchRule>;
     constructor(pid: string, sid: string);
     private get pipeline();
     /**
      * Append file pattern
      */
-    add(pattern: string, transformRule?: IDirectoryRule): void;
+    add(pattern: string, transformRule?: IDirectoryRule): this;
     /**
      * Append file pattern to ignore
      */
-    ignore(pattern: string): void;
-    /**
-     * Append non-existing file to the manifest. Rules are applied.
-     */
-    shadow(file: string): void;
+    ignore(pattern: string): this;
     /**
      * Clone the pipeline
      */

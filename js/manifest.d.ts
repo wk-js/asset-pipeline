@@ -28,27 +28,35 @@ export declare class Manifest {
     /**
      * Get Asset
      */
-    get(input: string): IAsset | undefined;
+    getAsset(inputPath: string): IAsset | undefined;
     /**
      * Get AssetWithSource object from inputPath
      */
-    getWithSource(input: string): IAssetWithSource | undefined;
+    getAssetWithSource(inputPath: string): IAssetWithSource | undefined;
     /**
      * Check asset exists
      */
-    has(input: string): boolean;
+    hasAsset(inputPath: string): boolean;
     /**
      * Add asset
      */
-    add(asset: IAsset): void;
+    addAsset(asset: IAsset): void;
     /**
      * Remove asset
      */
-    remove(input: string | IAsset): void;
+    removeAsset(input: string | IAsset): void;
     /**
      * Clear manifest
      */
-    clear(): void;
+    clearAssets(): void;
+    /**
+     * Get Source object
+     */
+    findSource(inputPath: string): import("./source").Source | undefined;
+    /**
+     * Get IAsset object from output
+     */
+    findAssetFromOutput(outputPath: string): IAsset | undefined;
     /**
      * Export a list of all the assets
      */

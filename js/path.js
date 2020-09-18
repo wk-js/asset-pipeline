@@ -23,7 +23,8 @@ exports.URLBuilder = exports.PathBuilder = exports.cleanup = exports.getNormaliz
 const Path = __importStar(require("path"));
 const WIN32_SEP_REG = /\\/g;
 const DOUBLE_BACKSLASH_REG = /\/\//;
-const CLEAN_URL_REG = /^\.\/|\/$/g;
+const CLEAN_URL_START_REG = /^\.\//;
+const CLEAN_URL_END_REG = /\/$/;
 const SEARCH_HASH_REG = /\?|\#/;
 /**
  * Normalize path to current os format (system), unix format (unix) or web format (web)
@@ -43,7 +44,10 @@ function normalize(path, type = "web") {
         case "web":
             {
                 path = normalize(path, "unix");
-                path = path.replace(CLEAN_URL_REG, "");
+                path = path.replace(CLEAN_URL_START_REG, "");
+                if (!(path.length === 1 && CLEAN_URL_END_REG.test(path))) {
+                    path = path.replace(CLEAN_URL_END_REG, "");
+                }
                 return path;
             }
     }

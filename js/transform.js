@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Transform = void 0;
+exports.transform = void 0;
 const path_1 = require("path");
 const template_1 = require("lol/js/string/template");
 const object_1 = require("lol/js/object");
@@ -14,174 +14,116 @@ const TemplateOptions = {
     body: '[a-z@$#-_?!]+',
     close: '}'
 };
-class Transform {
-    constructor(type = "file") {
-        this.type = type;
-        this.rules = [];
+/**
+ * Look for the first matching rule. If not found, a generic rule is returned.
+ */
+function matchRule(path, rules) {
+    for (let i = 0, ilen = rules.length; i < ilen; i++) {
+        const rule = rules[i];
+        if (path === rule.glob || minimatch_1.default(path, rule.glob)) {
+            return rule;
+        }
     }
-    /**
-     * Add as transformation applied to the glob pattern
-     */
-    add(glob, parameters = {}) {
-        glob = path_2.normalize(glob, "web");
-        const params = parameters = Object.assign({
-            glob: glob
-        }, parameters);
-        params.glob = glob;
-        this.rules.push(params);
-    }
-    /**
-     * Shortcut for input/output transformation
-     */
-    addEntry(input, output, parameters = {}) {
-        parameters = Object.assign({
-            rename: output,
-            keep_path: false
-        }, parameters);
-        this.add(input, parameters);
-    }
-    /**
-     * Add as transformation applied to the glob pattern
-     */
-    ignore(glob) {
-        glob = path_2.normalize(glob, "web");
-        const parameters = {
-            glob: glob,
-            ignore: true
-        };
-        this.rules.push(parameters);
-    }
-    /**
-     * Clone the rules
-     */
-    clone(file) {
-        for (let i = 0; i < this.rules.length; i++) {
-            const glob = this.rules[i];
-            file.rules.push(glob);
-        }
-        return file;
-    }
-    /**
-     * Look for the first matching rule. If not found, a generic rule is returned.
-     */
-    matchingRule(path) {
-        for (let i = 0, ilen = this.rules.length; i < ilen; i++) {
-            const rule = this.rules[i];
-            if (path === rule.glob || minimatch_1.default(path, rule.glob)) {
-                return rule;
-            }
-        }
-        return { glob: path };
-    }
-    /**
-     * Apply the transformation to the asset and register to the manifest
-     */
-    transform(pipeline, asset) {
-        // Ignore files registered from directory_pipeline or from previous rules
-        const masset = pipeline.manifest.get(asset.input);
-        if (masset && masset.resolved)
-            return;
-        const rule = asset.rule || this.matchingRule(asset.input);
-        asset.rule = rule;
-        pipeline.manifest.add(asset);
-        this.tranformOutput(pipeline, asset.input, object_1.clone(rule));
-    }
-    tranformOutput(pipeline, file, rule) {
-        let output = file;
-        // Remove path and keep basename only
-        if (typeof rule.keep_path === 'boolean' && !rule.keep_path) {
-            output = path_1.basename(output);
-        }
-        // Add base_dir
-        if (typeof rule.base_dir === 'string') {
-            const base_dir = pipeline.output.join(rule.base_dir, output);
-            output = pipeline.output.relative(base_dir.os()).os();
-        }
-        // Replace dir path if needed
-        output = this.resolveDir(pipeline, output);
-        let cache = output;
-        const hash = pipeline.cache.generateHash(output + pipeline.cache.key);
-        let options = {
-            rule,
-            input: Object.assign({ hash, fullpath: file }, path_1.parse(file)),
-            output: Object.assign({ hash, fullpath: output }, path_1.parse(output))
-        };
-        if (typeof rule.output == 'function') {
-            rule.output = output = cache = rule.output(options);
-            rule.output = path_2.normalize(rule.output, "web");
-        }
-        else if (typeof rule.output === 'string') {
-            rule.output = output = cache = template_1.template2(rule.output, object_1.flat(options), TemplateOptions);
-            rule.output = path_2.normalize(rule.output, "web");
-        }
-        else if (typeof rule.output === 'object') {
-            const parsed = Object.assign(path_1.parse(options.output.fullpath), rule.output);
-            if ("ext" in rule.output || "name" in rule.output) {
-                parsed.base = `${parsed.name}${parsed.ext}`;
-            }
-            for (const key of Object.keys(parsed)) {
-                parsed[key] = template_1.template2(parsed[key], object_1.flat(options), TemplateOptions);
-            }
-            rule.output = output = cache = path_1.format(parsed);
-            rule.output = path_2.normalize(rule.output, "web");
-        }
-        options.output = Object.assign({ hash, fullpath: output }, path_1.parse(output));
-        if (typeof rule.cache == 'function') {
-            rule.cache = cache = rule.cache(options);
-            rule.cache = path_2.normalize(rule.cache, "web");
-        }
-        else if (typeof rule.cache === 'string') {
-            rule.cache = cache = template_1.template2(rule.cache, object_1.flat(options), TemplateOptions);
-            rule.cache = path_2.normalize(rule.cache, "web");
-        }
-        else if (typeof rule.cache === 'object') {
-            const parsed = Object.assign(path_1.parse(cache), rule.cache);
-            if ("ext" in rule.cache || "name" in rule.cache) {
-                parsed.base = `${parsed.name}${parsed.ext}`;
-            }
-            for (const key of Object.keys(parsed)) {
-                parsed[key] = template_1.template2(parsed[key], object_1.flat(options), TemplateOptions);
-            }
-            rule.cache = cache = path_1.format(parsed);
-            rule.cache = path_2.normalize(rule.cache, "web");
-        }
-        else if ((typeof rule.cache == 'boolean' && rule.cache && pipeline.cache.enabled)
-            ||
-                (typeof rule.cache != 'boolean' && pipeline.cache.enabled)) {
-            if (pipeline.cache.type === 'hash') {
-                rule.cache = cache = pipeline.cache.hash(output);
-                rule.cache = path_2.normalize(cache, "web");
-            }
-            else if (pipeline.cache.type === 'version' && this.type === 'file') {
-                rule.cache = cache = pipeline.cache.version(output);
-                rule.cache = path_2.normalize(cache, "web");
-            }
-        }
-        const asset = pipeline.manifest.get(file);
-        asset.input = path_2.normalize(asset.input, "web");
-        asset.output = path_2.normalize(output, "web");
-        asset.cache = path_2.normalize(cache, "web");
-        asset.resolved = true;
-        asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default';
-        asset.rule = rule;
-        pipeline.manifest.add(asset);
-    }
-    resolveDir(pipeline, output) {
-        const pathObject = path_1.parse(output);
-        let dir = pathObject.dir;
-        let d = [];
-        dir = path_2.normalize(dir, "web");
-        const ds = dir.split('/').filter(part => !!part);
-        for (let i = 0; i < ds.length; i++) {
-            d.push(ds[i]);
-            const dd = d.join('/');
-            const ddd = pipeline.getPath(dd);
-            if (dd != ddd) {
-                d = ddd.split('/');
-            }
-        }
-        pathObject.dir = d.join('/');
-        return path_1.format(pathObject);
-    }
+    return { glob: path };
 }
-exports.Transform = Transform;
+function resolveDir(pipeline, output) {
+    const pathObject = path_1.parse(output);
+    let dir = pathObject.dir;
+    let d = [];
+    dir = path_2.normalize(dir, "unix");
+    const ds = dir.split('/').filter(part => !!part);
+    for (let i = 0; i < ds.length; i++) {
+        d.push(ds[i]);
+        const dd = d.join('/');
+        const asset = pipeline.manifest.getAsset(dd);
+        if (!asset)
+            continue;
+        const ddd = pipeline.cache.enabled ? asset.cache : asset.output;
+        if (dd != ddd) {
+            d = ddd.split('/');
+        }
+    }
+    pathObject.dir = d.join('/');
+    return path_1.format(pathObject);
+}
+function _tranformOutput(pipeline, asset, rule) {
+    let output = asset.input;
+    // Replace dir path if needed
+    output = resolveDir(pipeline, output);
+    // Remove path and keep basename only
+    if (typeof rule.keepPath === 'boolean' && !rule.keepPath) {
+        output = asset.type === "file" ? path_1.basename(output) : ".";
+    }
+    // Add base_dir
+    if (typeof rule.baseDir === 'string') {
+        const base_dir = pipeline.output.join(rule.baseDir, output);
+        output = pipeline.output.relative(base_dir.os()).os();
+    }
+    const hash = pipeline.cache.generateHash(output + pipeline.cache.key);
+    let options = {
+        rule,
+        input: Object.assign({ hash, fullpath: asset.input }, path_1.parse(asset.input)),
+        output: Object.assign({ hash, fullpath: output }, path_1.parse(output))
+    };
+    rule.output = output = _rename(output, rule.output, options);
+    options.output = Object.assign({ hash, fullpath: output }, path_1.parse(output));
+    let cache = output;
+    if (typeof rule.cache === "function" || typeof rule.cache === "string" || typeof rule.cache === "object") {
+        rule.cache = cache = _rename(output, rule.cache, options);
+    }
+    else if (pipeline.cache.enabled &&
+        ((typeof rule.cache === "boolean" && rule.cache) || typeof rule.cache != 'boolean')) {
+        if (pipeline.cache.type === 'hash') {
+            rule.cache = cache = pipeline.cache.hash(output);
+            rule.cache = path_2.normalize(cache, "web");
+        }
+        else if (pipeline.cache.type === 'version' && asset.type === 'file') {
+            rule.cache = cache = pipeline.cache.version(output);
+            rule.cache = path_2.normalize(cache, "web");
+        }
+    }
+    asset.input = path_2.normalize(asset.input, "web");
+    asset.output = path_2.normalize(output, "web");
+    asset.cache = path_2.normalize(cache, "web");
+    asset.resolved = true;
+    asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default';
+    asset.rule = rule;
+    return asset;
+}
+function _rename(output, rename, options) {
+    switch (typeof rename) {
+        case "function": {
+            output = rename(options);
+            break;
+        }
+        case "string": {
+            output = template_1.template2(rename, object_1.flat(options), TemplateOptions);
+            break;
+        }
+        case "object": {
+            const parsed = Object.assign(path_1.parse(options.output.fullpath), rename);
+            if ("ext" in rename || "name" in rename) {
+                parsed.base = `${parsed.name}${parsed.ext}`;
+            }
+            for (const key of Object.keys(parsed)) {
+                parsed[key] = template_1.template2(parsed[key], object_1.flat(options), TemplateOptions);
+            }
+            output = path_1.format(parsed);
+            break;
+        }
+    }
+    return path_2.normalize(output, "web");
+}
+/**
+ * Apply output/cache transformation to the asset input
+ */
+function transform(pipeline, asset, rules) {
+    // Ignore files registered from directory_pipeline or from previous rules
+    const masset = pipeline.manifest.getAsset(asset.input);
+    if (masset && masset.resolved)
+        return asset;
+    const rule = asset.rule || matchRule(asset.input, rules);
+    asset.rule = rule;
+    return _tranformOutput(pipeline, asset, object_1.clone(rule));
+}
+exports.transform = transform;

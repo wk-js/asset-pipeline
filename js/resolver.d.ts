@@ -1,4 +1,6 @@
+import { IResolvePathOptions } from "./types";
 export interface TreeInterface {
+    name: string;
     path: string;
     files: string[];
     subdirectories: {
@@ -22,6 +24,14 @@ export declare class Resolver {
      * Convert inputPath to outputPath and return its directory tree
      */
     getTree(inputPath: string): TreeInterface;
+    /**
+     * Get path
+     */
+    getPath(inputPath: string, options?: Partial<IResolvePathOptions>): string;
+    /**
+     * Get url
+     */
+    getUrl(inputPath: string, options?: Partial<IResolvePathOptions>): string;
     /**
      * Preview output tree
      */

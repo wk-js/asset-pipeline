@@ -110,7 +110,7 @@ export class Source {
     this.path = new PathBuilder(path)
     this.fullpath = new PathBuilder(Path.isAbsolute(path) ?
       path :
-      pipeline!.cwd.join(path).os()
+      pipeline.cwd.join(path).os()
     )
     this.file = new FilePipeline(pid, this.uuid)
     this.directory = new DirectoryPipeline(pid, this.uuid)

@@ -1,9 +1,10 @@
-import { fetch, copy, move, fetchDirs, symlink2 } from "lol/js/node/fs";
+import { fetch, copy, move, fetchDirs, ensureDirSync } from "lol/js/node/fs";
 import { PipelineManager } from "./pipeline"
-import { statSync } from 'fs';
-import { cleanup, normalize } from "./path";
-import * as Path from "path";
+import { statSync, symlinkSync } from 'fs';
+import { cleanup } from "./path";
 import { chunk } from "lol/js/array";
+import { Dispatcher } from "lol/js/dispatcher";
+import { dirname } from "path";
 
 export interface IManagerRuleItem {
   glob: string,
@@ -12,6 +13,7 @@ export interface IManagerRuleItem {
 
 export class FileSystem {
   chunkCount = 15
+  onNewFilesCopied = new Dispatcher<[string, string][]>()
   private globs: IManagerRuleItem[] = []
   private mtimes = new Map<string, Date>()
 
@@ -106,9 +108,10 @@ export class FileSystem {
 
     let ios: [string, string][] = []
     files.forEach(file => {
-      const relative_file = source.path.relative(file).web()
+      const relative_file = source.fullpath.relative(file).web()
       const input = source.fullpath.join(relative_file).web()
       const output = pipeline.output.with(pipeline.getPath(relative_file))
+
       if (input !== output.web()) {
         return ios.push([input, cleanup(output.web())])
       }
@@ -126,6 +129,7 @@ export class FileSystem {
       return true
     })
 
+    if (ios.length === 0) return
 
     for (const items of chunk(ios, this.chunkCount)) {
       const ps = items.map(io => {
@@ -136,13 +140,20 @@ export class FileSystem {
         } else if (type === 'move') {
           return move(io[0], io[1])
         } else if (type === 'symlink') {
-          return symlink2(io[0], io[1])
+          try {
+            ensureDirSync(dirname(io[1]))
+            symlinkSync(io[0], io[1], "junction")
+            return Promise.resolve(true)
+          } catch (e) {
+            return Promise.resolve(false)
+          }
         }
       })
 
       await Promise.all(ps)
     }
 
+    this.onNewFilesCopied.dispatch(ios)
   }
 
   private _log(...args: any[]) {
