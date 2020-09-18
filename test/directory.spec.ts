@@ -19,30 +19,13 @@ describe("Directory", () => {
     assert.equal(p.manifest.hasAsset("assets/flags.png"), true)
   })
 
-  // it("Add directory (shadow)", async () => {
-  //   const p = await setup(async p => {
-  //     p.source.add("app")
-  //       .directory.shadow("static")
-  //   })
+  it("Add directory (shadow)", async () => {
+    const p = await setup(async p => {
+      p.shadow.addDirectory("static")
+    })
 
-  //   assert.equal(p.manifest.hasAsset("static"), true)
-  // })
-
-  // it.only("Add directory (shadow)", async () => {
-  //   const p = await setup(async p => {
-  //     writeFileSync("", join(DST_PATH, "static/hola0.png"))
-  //     writeFileSync("", join(DST_PATH, "static/hola1.png"))
-  //     writeFileSync("", join(DST_PATH, "static/hola2.png"))
-
-  //     p.source.add("app")
-  //       .directory.shadow("static")
-  //   })
-
-  //   assert.equal(p.manifest.hasAsset("static"), true)
-  //   assert.equal(p.manifest.hasAsset("static/hola0.png"), true)
-  //   assert.equal(p.manifest.hasAsset("static/hola1.png"), true)
-  //   assert.equal(p.manifest.hasAsset("static/hola2.png"), true)
-  // })
+    assert.equal(p.manifest.hasAsset("static"), true)
+  })
 
   it("Ignore directory", async () => {
     const p = await setup(async p => {
