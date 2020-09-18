@@ -159,10 +159,13 @@ pipeline.cache.type = "hash"
 
 // Clone cache object
 pipeline.cache.clone()
+
 // Return "anyValue-hash"
 pipeline.cache.hash("anyValue")
+
 // Return "anyValue?v=hashKey"
 pipeline.cache.version("anyValue")
+
 // Generate hash string
 pipeline.cache.generateHash("anyValue")
 ```
