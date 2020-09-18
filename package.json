@@ -1,6 +1,6 @@
 {
   "name": "asset-pipeline",
-  "version": "4.0.2",
+  "version": "4.1.0",
   "description": "Asset pipeline",
   "main": "js/index.js",
   "types": "js",
