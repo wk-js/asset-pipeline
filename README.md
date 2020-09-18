@@ -4,6 +4,15 @@ Handle your assets like a boss
 
 - [Example](#example)
 - [Documentation](#documentation)
+  - [Pipeline](#pipeline)
+  - [Cache](#cache)
+  - [Manifest](#manifest)
+  - [Resolver](#resolver)
+  - [Source](#source)
+  - [File pipeline](#file-pipeline)
+  - [Directory pipeline](#directory-pipeline)
+  - [Shadow pipeline](#shadow-pipeline)
+  - [File System](#file-system)
 - [More examples](#more-examples)
 
 ## Example
@@ -72,7 +81,7 @@ app.directory.add('assets', {
   output: 'resources',
 
   // Apply rules to files or subdirectories, you can only set cache, output and ignore fields
-  file_rules: [
+  fileRules: [
     {
       glob: "**/*.jpg",
       cache: true
@@ -91,18 +100,17 @@ await pipeline.copy()
 
 console.log(pipeline.getPath("main.ts")) // main.js
 console.log(pipeline.getURL("main.ts")) // http://mycdn.com/main.js
-console.log(pipeline.getAsset("main.ts")) // IAsset object
-console.log(pipeline.getAssetFromOutput("main.js")) // IAsset object
-console.log(pipeline.getSource("main.ts")) // Source object
+console.log(pipeline.manifest.getAsset("main.ts")) // IAsset object
+console.log(pipeline.manifest.getAssetWithSource("main.ts")) // IAssetWithSource object
+console.log(pipeline.manifest.findAssetFromOutput("main.js")) // IAsset object
+console.log(pipeline.manifest.findSource("main.ts")) // Source object
 ```
 
 ## Documentation
 
-```ts
-////////////////
-/// PIPELINE ///
-////////////////
+### Pipeline
 
+```ts
 // UUID
 pipeline.uuid
 
@@ -130,25 +138,16 @@ pipeline.copy()
 // Logger
 pipeline.log("some logs")
 
-// Get Source object
-pipeline.getSource("inputPath")
-
-// Get IAsset object
-pipeline.getAsset("inputPath")
-
 // Get path
 pipeline.getPath("inputPath", { from: "relativePath", cleanup: false })
 
 // Get url
 pipeline.getUrl("inputPath", { from: "relativePath", cleanup: false })
+```
 
-// Get IAsset object from output
-pipeline.getAssetFromOutput("outputPath")
+### Cache
 
-/////////////
-/// CACHE ///
-/////////////
-
+```ts
 // Toggle cache
 pipeline.cache.enabled = false
 
@@ -166,11 +165,11 @@ pipeline.cache.hash("anyValue")
 pipeline.cache.version("anyValue")
 // Generate hash string
 pipeline.cache.generateHash("anyValue")
+```
 
-////////////////
-/// MANIFEST ///
-////////////////
+### Manifest
 
+```ts
 // Save on disk at each change (default: false)
 pipeline.manifest.saveAtChange = false
 
@@ -198,22 +197,28 @@ pipeline.manifest.readFile()
 pipeline.manifest.removeFile()
 
 // Get Asset object from inputPath
-pipeline.manifest.get("inputPath")
+pipeline.manifest.getAsset("inputPath")
 
 // Get AssetWithSource object from inputPath
-pipeline.manifest.getWithSource("inputPath")
+pipeline.manifest.getAssetWithSource("inputPath")
 
 // Check asset exists
-pipeline.manifest.has("inputPath")
+pipeline.manifest.hasAsset("inputPath")
 
 // Add asset
-pipeline.manifest.remove(asset)
+pipeline.manifest.addAsset(asset)
 
 // Remove asset
-pipeline.manifest.remove("inputPath")
+pipeline.manifest.removeAsset("inputPath")
 
 // Clear manifest
-pipeline.manifest.clear()
+pipeline.manifest.clearAssets()
+
+// Look for Source object from path
+pipeline.manifest.findSource("inputPath")
+
+// Look for IAsset object from output
+pipeline.manifest.findAssetFromOutput("outputPath")
 
 // Export an array of IAsset[]
 pipeline.manifest.export()
@@ -233,11 +238,11 @@ pipeline.manifest.export("output")
 
 // Export an object Record<string, IOutput>
 pipeline.manifest.export("output_key")
+```
 
-////////////////
-/// RESOLVER ///
-////////////////
+### Resolver
 
+```ts
 // Clone resolver
 pipeline.resolver.clone()
 
@@ -247,16 +252,22 @@ pipeline.resolver.resolve("inputPath")
 // Convert inputPath to outputPath and return its directory tree
 pipeline.resolver.getTree("inputPath")
 
+// Get path
+pipeline.resolver.getPath("inputPath", { from: "relativePath", cleanup: false })
+
+// Get url
+pipeline.resolver.getUrl("inputPath", { from: "relativePath", cleanup: false })
+
 // Refresh output tree
 pipeline.resolver.refreshTree()
 
 // Preview output tree
 console.log(pipeline.resolver.view())
+```
 
-//////////////
-/// SOURCE ///
-//////////////
+### Source
 
+```ts
 // Clone source
 pipeline.source.clone()
 
@@ -287,11 +298,11 @@ pipeline.source.all("array")
 
 // Return a Record<uuid, Source>
 pipeline.source.all("object")
+```
 
-/////////////////////
-/// FILE-PIPELINE ///
-/////////////////////
+### File pipeline
 
+```ts
 const app = pipeline.source.add("./app")
 
 // Clone File object
@@ -300,10 +311,10 @@ app.file.clone()
 // Add file path or pattern
 app.file.add("path_or_pattern", {
   // Remove directory path (optional)
-  keep_path: true,
+  keepPath: true,
 
   // Set base directory (optional)
-  base_dir: "myDir",
+  baseDir: "myDir",
 
   // Ignore matches (optional)
   ignore: false
@@ -321,18 +332,13 @@ app.file.add("path_or_pattern", {
 // Ignore file path or pattern
 app.file.ignore("ignore_file")
 
-// Add a file shadow path or pattern (the source file does exist, but the output it is)
-app.file.shadow("ignore_file", {
-  // ... Same options as file.add()
-})
-
-// Resolve paths and patterns, then update manifest
+// Resolve paths and patterns, then without updating manifest
 app.file.fetch()
+```
 
-//////////////////////////
-/// DIRECTORY-PIPELINE ///
-//////////////////////////
+### Directory pipeline
 
+```ts
 const app = pipeline.source.add("./app")
 
 // Clone File object
@@ -343,7 +349,7 @@ app.directory.add("path_or_pattern", {
   // ... Same options as file.add()
 
   // Apply rules to files
-  file_rules: [
+  fileRules: [
     {
       // Path or pattern
       glob: "path_or_pattern",
@@ -366,41 +372,37 @@ app.directory.add("path_or_pattern", {
 // Ignore directory path or pattern
 app.directory.ignore("ignore_directory")
 
+// Resolve paths and patterns, without updating manifest
+app.directory.fetch()
+```
+
+### Shadow pipeline
+
+```ts
 // Add a directory shadow path or pattern (the source directory does exist, but the output it is)
-app.directory.shadow("ignore_directory", {
-  // ... Same options as directory.add()
+app.shadow.addFile("shadowFilePath", {
+  // Rename output path  (optional) (string | TRenameFunction | TRenameObject)
+  output: "#{output.base}"
+
+  // Rename cache path  (optional) (string | TRenameFunction | TRenameObject)
+  cache: "#{output.name}-#{output.hash}#{output.ext}"
+
+  // A simple string for fitering (optional)
+  tag: "myTag"
 })
 
-// Resolve paths and patterns, then update manifest
-app.directory.fetch()
+// Add a directory shadow path or pattern (the source directory does exist, but the output it is)
+app.shadow.addDirectory("shadowDirectoryPath", {
+  // ... Same options as shadow.addFile
+})
 
-/////////////////
-/// TRANSFORM ///
-/////////////////
+// Resolve paths and patterns, without updating manifest
+app.shadow.fetch()
+```
 
-const transform = app.file.transform
-// Same for directory field
-// const transform = app.directory.transform
+### File System
 
-// Clone Transform object
-transform.clone(...)
-
-// Same as file.add() or directory.add()
-transform.add(...)
-
-// Same as file.ignore() or directory.ignore()
-transform.ignore(...)
-
-// Get the rule matching the path
-transform.matchRule("inputPath")
-
-// Transform the asset
-transform.resolve(pipeline, anAsset)
-
-///////////////////
-/// FILE-SYSTEM ///
-///////////////////
-
+```ts
 // Number of items by chunk to perform asynchronously
 app.fs.chunkCount = 15
 
@@ -425,4 +427,9 @@ app.fs.apply()
 
 ## More examples
 
-* [Test units](./test/test.spec.ts)
+* [Files - Unit tests](./test/files.spec.ts)
+* [Rename - Unit tests](./test/rename.spec.ts)
+* [Directories - Unit tests](./test/directories.spec.ts)
+* [FS - Unit tests](./test/fs.spec.ts)
+* [Manifest - Unit tests](./test/manifest.spec.ts)
+* [Multiple sources - Unit tests](./test/multiple-sources.spec.ts)
