@@ -62,13 +62,14 @@ describe("Multiple sources", () => {
     ], "Manifest is invalid")
   })
 
-  it("Cache", async () => {
+  it.only("Cache", async () => {
     const p = await setup(async p => {
       p.cache.enabled = true
 
       const scripts = p.source.add("app/scripts")
       scripts.file.add("main.ts", {
-        output: { ext: ".js" }
+        output: { ext: ".js" },
+        cache: { ext: ".mjs" },
       })
 
       const styles = p.source.add("app/styles")
@@ -98,8 +99,8 @@ describe("Multiple sources", () => {
       {
         input: "main.ts",
         output: {
-          path: "/main-15bd94418e42cef2feb6c03367128b8f.js",
-          url: "/main-15bd94418e42cef2feb6c03367128b8f.js",
+          path: "/main-00ffd25964c9ebb1801df019f714c3df.mjs",
+          url: "/main-00ffd25964c9ebb1801df019f714c3df.mjs",
         },
         type: "file",
       },

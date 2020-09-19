@@ -68,18 +68,19 @@ function _tranformOutput(pipeline, asset, rule) {
     rule.output = output = _rename(output, rule.output, options);
     options.output = Object.assign({ hash, fullpath: output }, path_1.parse(output));
     let cache = output;
-    if (typeof rule.cache === "function" || typeof rule.cache === "string" || typeof rule.cache === "object") {
-        rule.cache = cache = _rename(output, rule.cache, options);
-    }
-    else if (pipeline.cache.enabled &&
-        ((typeof rule.cache === "boolean" && rule.cache) || typeof rule.cache != 'boolean')) {
-        if (pipeline.cache.type === 'hash') {
-            rule.cache = cache = pipeline.cache.hash(output);
-            rule.cache = path_2.normalize(cache, "web");
+    if (pipeline.cache.enabled) {
+        if (typeof rule.cache === "function" || typeof rule.cache === "string" || typeof rule.cache === "object") {
+            rule.cache = cache = _rename(output, rule.cache, options);
         }
-        else if (pipeline.cache.type === 'version' && asset.type === 'file') {
-            rule.cache = cache = pipeline.cache.version(output);
-            rule.cache = path_2.normalize(cache, "web");
+        if ((typeof rule.cache === "boolean" && rule.cache) || typeof rule.cache != 'boolean') {
+            if (pipeline.cache.type === 'hash') {
+                rule.cache = cache = pipeline.cache.hash(cache);
+                rule.cache = path_2.normalize(cache, "web");
+            }
+            else if (pipeline.cache.type === 'version' && asset.type === 'file') {
+                rule.cache = cache = pipeline.cache.version(cache);
+                rule.cache = path_2.normalize(cache, "web");
+            }
         }
     }
     asset.input = path_2.normalize(asset.input, "web");

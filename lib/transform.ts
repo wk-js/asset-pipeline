@@ -94,18 +94,19 @@ function _tranformOutput(pipeline: Pipeline, asset: IAsset, rule: IMatchRule) {
 
   let cache = output
 
-  if (typeof rule.cache === "function" || typeof rule.cache === "string" || typeof rule.cache === "object") {
-    rule.cache = cache = _rename(output, rule.cache, options)
-  } else if (
-    pipeline.cache.enabled &&
-    ((typeof rule.cache === "boolean" && rule.cache) || typeof rule.cache != 'boolean')
-  ) {
-    if (pipeline.cache.type === 'hash') {
-      rule.cache = cache = pipeline.cache.hash(output)
-      rule.cache = normalize(cache, "web")
-    } else if (pipeline.cache.type === 'version' && asset.type === 'file') {
-      rule.cache = cache = pipeline.cache.version(output)
-      rule.cache = normalize(cache, "web")
+  if (pipeline.cache.enabled) {
+    if (typeof rule.cache === "function" || typeof rule.cache === "string" || typeof rule.cache === "object") {
+      rule.cache = cache = _rename(output, rule.cache, options)
+    }
+
+    if ((typeof rule.cache === "boolean" && rule.cache) || typeof rule.cache != 'boolean') {
+      if (pipeline.cache.type === 'hash') {
+        rule.cache = cache = pipeline.cache.hash(cache)
+        rule.cache = normalize(cache, "web")
+      } else if (pipeline.cache.type === 'version' && asset.type === 'file') {
+        rule.cache = cache = pipeline.cache.version(cache)
+        rule.cache = normalize(cache, "web")
+      }
     }
   }
 
