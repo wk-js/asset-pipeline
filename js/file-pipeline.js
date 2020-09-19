@@ -52,7 +52,7 @@ class FilePipeline {
         return file;
     }
     /**
-     * Collect a list of files matching patterns, then apply transformation rules
+     * Collect a list of files matching patterns, then apply transformation rules, then add to manifest
      */
     fetch() {
         if (!this.pipeline)

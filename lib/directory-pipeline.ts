@@ -56,6 +56,9 @@ export class DirectoryPipeline {
     return directory
   }
 
+  /**
+   * Collect a list of directories matching patterns, apply transformation rules, then add to manifest
+   */
   fetch() {
     if (!this.pipeline) return
     const pipeline = this.pipeline

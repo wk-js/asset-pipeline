@@ -74,6 +74,9 @@ class DirectoryPipeline {
         directory._rules = object_1.clone(this._rules);
         return directory;
     }
+    /**
+     * Collect a list of directories matching patterns, apply transformation rules, then add to manifest
+     */
     fetch() {
         if (!this.pipeline)
             return;

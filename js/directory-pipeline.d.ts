@@ -24,6 +24,9 @@ export declare class DirectoryPipeline {
      * Clone the pipeline
      */
     clone(directory: DirectoryPipeline): DirectoryPipeline;
+    /**
+     * Collect a list of directories matching patterns, apply transformation rules, then add to manifest
+     */
     fetch(): void;
     protected _fetch(): IAsset[];
     protected _fetcher(): (globs: string[], ignores: string[]) => string[];
