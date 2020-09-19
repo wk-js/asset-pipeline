@@ -185,10 +185,23 @@ class Manifest {
      * Get IAsset object from output
      */
     findAssetFromOutput(outputPath) {
+        if (!this.pipeline)
+            return;
+        const pipeline = this.pipeline;
+        outputPath = path_1.normalize(outputPath, "web");
+        // Remove URL host
+        if (path_1.isValidURL(outputPath)) {
+            const u = new URL(outputPath);
+            outputPath = u.pathname;
+        }
+        // Remove absolute path name
+        if (path_2.isAbsolute(outputPath)) {
+            outputPath = pipeline.host.pathname.relative(outputPath).web();
+        }
         const assets = this.export();
         for (let i = 0; i < assets.length; i++) {
             const item = assets[i];
-            if (item.output == outputPath || item.cache == outputPath) {
+            if (item.output == outputPath) {
                 return item;
             }
         }

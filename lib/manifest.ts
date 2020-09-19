@@ -1,7 +1,7 @@
 import { PipelineManager } from "./pipeline"
 import { writeFileSync, isFile, removeSync } from "lol/js/node/fs";
 import { IAsset, IManifest, IOutput, IAssetWithSource } from "./types";
-import { normalize } from "./path";
+import { isValidURL, normalize } from "./path";
 import { readFileSync, } from "fs";
 import { omit } from "lol/js/object";
 import { isAbsolute } from "path";
@@ -210,11 +210,27 @@ export class Manifest {
    * Get IAsset object from output
    */
   findAssetFromOutput(outputPath: string) {
+    if (!this.pipeline) return
+    const pipeline = this.pipeline
+
+    outputPath = normalize(outputPath, "web")
+
+    // Remove URL host
+    if (isValidURL(outputPath)) {
+      const u = new URL(outputPath)
+      outputPath = u.pathname
+    }
+
+    // Remove absolute path name
+    if (isAbsolute(outputPath)) {
+      outputPath = pipeline.host.pathname.relative(outputPath).web()
+    }
+
     const assets = this.export()
     for (let i = 0; i < assets.length; i++) {
-      const item = assets[i];
+      const item = assets[i]
 
-      if (item.output == outputPath || item.cache == outputPath) {
+      if (item.output == outputPath) {
         return item
       }
     }
