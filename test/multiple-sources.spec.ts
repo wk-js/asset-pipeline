@@ -62,7 +62,7 @@ describe("Multiple sources", () => {
     ], "Manifest is invalid")
   })
 
-  it.only("Cache", async () => {
+  it("Cache", async () => {
     const p = await setup(async p => {
       p.cache.enabled = true
 
@@ -91,24 +91,24 @@ describe("Multiple sources", () => {
       {
         input: "main.css",
         output: {
-          path: "/main-99ac3f9932ab062fcc6d004092a8c770.css",
-          url: "/main-99ac3f9932ab062fcc6d004092a8c770.css",
+          path: "/main-704b46a5c231868ba790744e636bd4d5.css",
+          url: "/main-704b46a5c231868ba790744e636bd4d5.css",
         },
         type: "file",
       },
       {
         input: "main.ts",
         output: {
-          path: "/main-00ffd25964c9ebb1801df019f714c3df.mjs",
-          url: "/main-00ffd25964c9ebb1801df019f714c3df.mjs",
+          path: "/main-31d1228c5030cba693fb22ac68536f01.mjs",
+          url: "/main-31d1228c5030cba693fb22ac68536f01.mjs",
         },
         type: "file",
       },
       {
         input: "common.styl",
         output: {
-          path: "/common-bc4bed16f8370d5d339cb9570fad5d16.css",
-          url: "/common-bc4bed16f8370d5d339cb9570fad5d16.css",
+          path: "/common-f7eaf4be083c38605b6ad1cdb7b4b11a.css",
+          url: "/common-f7eaf4be083c38605b6ad1cdb7b4b11a.css",
         },
         type: "file",
       },

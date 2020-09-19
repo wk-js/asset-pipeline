@@ -32,7 +32,7 @@ export class Resolver {
    */
   resolve(inputPath: string) {
     if (!this.pipeline) return inputPath
-    const { cache, manifest } = this.pipeline
+    const { manifest } = this.pipeline
 
     inputPath = normalize(inputPath, "web")
     const extra = inputPath.match(/\#|\?/)
@@ -47,7 +47,7 @@ export class Resolver {
     const asset = manifest.getAsset(inputPath)
 
     if (asset) {
-      output = cache.enabled ? asset.cache : asset.output
+      output = asset.output
     }
 
     output = normalize(output, "web")
@@ -61,7 +61,7 @@ export class Resolver {
    */
   refreshTree() {
     if (!this.pipeline) return
-    const { cache, manifest } = this.pipeline
+    const { manifest } = this.pipeline
 
     const tree = {
       name: ".",
@@ -75,7 +75,7 @@ export class Resolver {
     let path = tree.path
 
     for (const asset of assets) {
-      const output = cache.enabled ? asset.output : asset.cache
+      const output = asset.output
       const dirs = output.split("/").map(dir => dir.length === 0 ? "." : dir)
       const file = asset.type === "file" ? dirs.pop() : undefined
 

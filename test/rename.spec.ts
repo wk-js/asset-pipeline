@@ -1,6 +1,6 @@
 import "mocha";
 import * as assert from "assert";
-import { getAsset, getAssetFromOutput, setup, setupWithSourcesAdded } from "./setup"
+import { setup } from "./setup"
 
 describe("Rename", () => {
 
@@ -61,7 +61,7 @@ describe("Rename", () => {
         })
     })
 
-    assert.equal(p.getUrl("main.ts"), "/js/main-8091fc72cf965c080408a9915f0f729c.js")
+    assert.equal(p.getUrl("main.ts"), "/js/main-31d1228c5030cba693fb22ac68536f01.js")
   })
 
   it("Cache inherit output", async () => {

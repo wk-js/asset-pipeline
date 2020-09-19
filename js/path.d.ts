@@ -14,6 +14,7 @@ export declare function getNormalizedPaths(path: string): {
  * Remove hash and search parameters
  */
 export declare function cleanup(path: string): string;
+export declare function isValidURL(url: string): boolean;
 export declare class PathBuilder {
     private path;
     constructor(path: string);

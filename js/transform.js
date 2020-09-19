@@ -38,7 +38,7 @@ function resolveDir(pipeline, output) {
         const asset = pipeline.manifest.getAsset(dd);
         if (!asset)
             continue;
-        const ddd = pipeline.cache.enabled ? asset.cache : asset.output;
+        const ddd = asset.output;
         if (dd != ddd) {
             d = ddd.split('/');
         }
@@ -59,7 +59,7 @@ function _tranformOutput(pipeline, asset, rule) {
         const base_dir = pipeline.output.join(rule.baseDir, output);
         output = pipeline.output.relative(base_dir.os()).os();
     }
-    const hash = pipeline.cache.generateHash(output + pipeline.cache.key);
+    const hash = pipeline.cache.generateHash(output + pipeline.cache.saltKey);
     let options = {
         rule,
         input: Object.assign({ hash, fullpath: asset.input }, path_1.parse(asset.input)),
@@ -67,25 +67,21 @@ function _tranformOutput(pipeline, asset, rule) {
     };
     rule.output = output = _rename(output, rule.output, options);
     options.output = Object.assign({ hash, fullpath: output }, path_1.parse(output));
-    let cache = output;
     if (pipeline.cache.enabled) {
-        if (typeof rule.cache === "function" || typeof rule.cache === "string" || typeof rule.cache === "object") {
-            rule.cache = cache = _rename(output, rule.cache, options);
+        if (typeof rule.cache === "object") {
+            rule.cache.hash = "hash" in rule.cache ? rule.cache.hash : options.output.hash;
+            rule.cache = output = _rename(output, rule.cache, options);
         }
-        if ((typeof rule.cache === "boolean" && rule.cache) || typeof rule.cache != 'boolean') {
-            if (pipeline.cache.type === 'hash') {
-                rule.cache = cache = pipeline.cache.hash(cache);
-                rule.cache = path_2.normalize(cache, "web");
-            }
-            else if (pipeline.cache.type === 'version' && asset.type === 'file') {
-                rule.cache = cache = pipeline.cache.version(cache);
-                rule.cache = path_2.normalize(cache, "web");
-            }
+        else if (typeof rule.cache === "function" || typeof rule.cache === "string") {
+            rule.cache = output = _rename(output, rule.cache, options);
+        }
+        else if ((typeof rule.cache === "boolean" && rule.cache) || rule.cache === undefined) {
+            rule.cache = output = pipeline.cache.hash(output, hash);
+            rule.cache = output = path_2.normalize(output, "web");
         }
     }
     asset.input = path_2.normalize(asset.input, "web");
     asset.output = path_2.normalize(output, "web");
-    asset.cache = path_2.normalize(cache, "web");
     asset.resolved = true;
     asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default';
     asset.rule = rule;
@@ -102,14 +98,17 @@ function _rename(output, rename, options) {
             break;
         }
         case "object": {
-            const parsed = Object.assign(path_1.parse(options.output.fullpath), rename);
+            const parsed = Object.assign({}, options.output, rename);
+            if ("hash" in rename && rename.hash) {
+                parsed.name = `${parsed.name}-${rename.hash}`;
+            }
             if ("ext" in rename || "name" in rename) {
                 parsed.base = `${parsed.name}${parsed.ext}`;
             }
             for (const key of Object.keys(parsed)) {
                 parsed[key] = template_1.template2(parsed[key], object_1.flat(options), TemplateOptions);
             }
-            output = path_1.format(parsed);
+            output = path_1.format(object_1.omit(parsed, "hash", "fullpath"));
             break;
         }
     }

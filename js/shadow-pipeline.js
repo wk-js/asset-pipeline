@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ShadowPipeline = void 0;
 const object_1 = require("lol/js/object");
+const path_1 = require("./path");
 const pipeline_1 = require("./pipeline");
 const transform_1 = require("./transform");
 class ShadowPipeline {
@@ -38,9 +39,8 @@ class ShadowPipeline {
                     uuid: "__shadow__",
                     path: "__shadow__",
                 },
-                input: inputPath,
-                output: inputPath,
-                cache: inputPath,
+                input: path_1.normalize(inputPath, "web"),
+                output: path_1.normalize(inputPath, "web"),
                 tag: "default",
                 type: rule.type,
                 resolved: false,

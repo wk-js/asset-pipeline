@@ -51,6 +51,15 @@ export function cleanup(path: string) {
   return path.split(SEARCH_HASH_REG)[0]
 }
 
+export function isValidURL(url: string) {
+  try {
+    new URL(url)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
 export class PathBuilder {
   constructor(private path: string) {
     if (typeof path !== "string") throw new Error("Path should not be empty")

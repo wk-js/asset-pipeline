@@ -7,32 +7,22 @@ class Cache {
     constructor() {
         // Toggle cache
         this.enabled = false;
-        // Set cache type "hash" | "version" (Default: "hash")
-        this.type = 'hash';
         // Set hash key
-        this.key = 'no_key';
+        this.saltKey = 'asset';
     }
     /**
      * Clone cache object
      */
     clone(cache) {
         cache.enabled = this.enabled;
-        cache.type = this.type;
     }
     /**
      * Return "anyValue-hash"
      */
-    hash(path) {
+    hash(path, hash) {
         const pathObject = path_1.parse(path);
-        const hash = this.generateHash(path + this.key);
+        hash = hash || this.generateHash(path + this.saltKey);
         return path_1.join(pathObject.dir, `${pathObject.name}-${hash}${pathObject.ext}`);
-    }
-    /**
-     * Return "anyValue?v=hashKey"
-     */
-    version(path) {
-        const pathObject = path_1.parse(path);
-        return path_1.join(pathObject.dir, `${pathObject.name}${pathObject.ext}?v=${this.key}`);
     }
     /**
      * Generate hash string

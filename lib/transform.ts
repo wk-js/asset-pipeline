@@ -1,8 +1,8 @@
 import { Pipeline } from "./pipeline"
 import { basename, parse, format, ParsedPath } from "path";
 import { template2 } from "lol/js/string/template";
-import { IAsset, IMatchRule, RenameOptions, IMinimumRule } from "./types";
-import { clone, flat } from "lol/js/object";
+import { IAsset, IMatchRule, RenameOptions, IMinimumRule, TRenameObject } from "./types";
+import { clone, flat, omit } from "lol/js/object";
 import minimatch from "minimatch";
 import { normalize } from "./path";
 
@@ -41,7 +41,7 @@ function resolveDir(pipeline: Pipeline, output: string) {
 
     const asset = pipeline.manifest.getAsset(dd)
     if (!asset) continue
-    const ddd = pipeline.cache.enabled ? asset.cache : asset.output
+    const ddd = asset.output
     if (dd != ddd) {
       d = ddd.split('/')
     }
@@ -68,7 +68,7 @@ function _tranformOutput(pipeline: Pipeline, asset: IAsset, rule: IMatchRule) {
     output = pipeline.output.relative(base_dir.os()).os()
   }
 
-  const hash = pipeline.cache.generateHash(output + pipeline.cache.key)
+  const hash = pipeline.cache.generateHash(output + pipeline.cache.saltKey)
 
   let options: RenameOptions = {
     rule,
@@ -92,27 +92,20 @@ function _tranformOutput(pipeline: Pipeline, asset: IAsset, rule: IMatchRule) {
     ...parse(output)
   }
 
-  let cache = output
-
   if (pipeline.cache.enabled) {
-    if (typeof rule.cache === "function" || typeof rule.cache === "string" || typeof rule.cache === "object") {
-      rule.cache = cache = _rename(output, rule.cache, options)
-    }
-
-    if ((typeof rule.cache === "boolean" && rule.cache) || typeof rule.cache != 'boolean') {
-      if (pipeline.cache.type === 'hash') {
-        rule.cache = cache = pipeline.cache.hash(cache)
-        rule.cache = normalize(cache, "web")
-      } else if (pipeline.cache.type === 'version' && asset.type === 'file') {
-        rule.cache = cache = pipeline.cache.version(cache)
-        rule.cache = normalize(cache, "web")
-      }
+    if (typeof rule.cache === "object") {
+      rule.cache.hash = "hash" in rule.cache ? rule.cache.hash : options.output.hash
+      rule.cache = output = _rename(output, rule.cache, options)
+    } else if (typeof rule.cache === "function" || typeof rule.cache === "string") {
+      rule.cache = output = _rename(output, rule.cache, options)
+    } else if ((typeof rule.cache === "boolean" && rule.cache) || rule.cache === undefined) {
+      rule.cache = output = pipeline.cache.hash(output, hash)
+      rule.cache = output = normalize(output, "web")
     }
   }
 
   asset.input = normalize(asset.input, "web")
   asset.output = normalize(output, "web")
-  asset.cache = normalize(cache, "web")
   asset.resolved = true
   asset.tag = typeof rule.tag == 'string' ? rule.tag : 'default'
   asset.rule = rule
@@ -132,14 +125,21 @@ function _rename(output: string, rename: IMinimumRule['output'], options: Rename
     }
 
     case "object": {
-      const parsed: ParsedPath = Object.assign(parse(options.output.fullpath), rename)
+      const parsed: TRenameObject = Object.assign({}, options.output, rename)
+
+      if ("hash" in rename && rename.hash) {
+        parsed.name = `${parsed.name}-${rename.hash}`
+      }
+
       if ("ext" in rename || "name" in rename) {
         parsed.base = `${parsed.name}${parsed.ext}`
       }
+
       for (const key of Object.keys(parsed) as (keyof ParsedPath)[]) {
         parsed[key] = template2(parsed[key], flat(options), TemplateOptions)
       }
-      output = format(parsed)
+
+      output = format(omit(parsed, "hash", "fullpath"))
       break
     }
   }

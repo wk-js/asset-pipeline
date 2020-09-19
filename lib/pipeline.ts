@@ -21,7 +21,7 @@ export class Pipeline {
   resolver: Resolver;
   shadow: ShadowPipeline;
 
-  constructor(key: string) {
+  constructor(saltKey: string = "asset") {
     this.uuid = guid()
     PipelineManager.set(this.uuid, this)
 
@@ -31,7 +31,7 @@ export class Pipeline {
     this.cwd = new PathBuilder(process.cwd())
 
     this.cache = new Cache()
-    this.cache.key = key
+    this.cache.saltKey = saltKey
     this.source = new SourceManager(this.uuid)
     this.manifest = new Manifest(this.uuid)
     this.resolver = new Resolver(this.uuid)

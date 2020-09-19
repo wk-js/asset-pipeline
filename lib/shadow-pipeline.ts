@@ -1,4 +1,5 @@
 import { omit } from "lol/js/object";
+import { normalize } from "./path";
 import { PipelineManager } from "./pipeline";
 import { transform } from "./transform";
 import { IShadowRule } from "./types";
@@ -50,9 +51,8 @@ export class ShadowPipeline {
           uuid: "__shadow__",
           path: "__shadow__",
         },
-        input: inputPath,
-        output: inputPath,
-        cache: inputPath,
+        input: normalize(inputPath, "web"),
+        output: normalize(inputPath, "web"),
         tag: "default",
         type: rule.type,
         resolved: false,

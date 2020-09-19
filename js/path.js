@@ -19,7 +19,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.URLBuilder = exports.PathBuilder = exports.cleanup = exports.getNormalizedPaths = exports.normalize = void 0;
+exports.URLBuilder = exports.PathBuilder = exports.isValidURL = exports.cleanup = exports.getNormalizedPaths = exports.normalize = void 0;
 const Path = __importStar(require("path"));
 const WIN32_SEP_REG = /\\/g;
 const DOUBLE_BACKSLASH_REG = /\/\//;
@@ -71,6 +71,16 @@ function cleanup(path) {
     return path.split(SEARCH_HASH_REG)[0];
 }
 exports.cleanup = cleanup;
+function isValidURL(url) {
+    try {
+        new URL(url);
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+exports.isValidURL = isValidURL;
 class PathBuilder {
     constructor(path) {
         this.path = path;

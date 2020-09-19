@@ -1,7 +1,6 @@
 export declare class Cache {
     enabled: boolean;
-    type: string;
-    key: string | number;
+    saltKey: string;
     /**
      * Clone cache object
      */
@@ -9,11 +8,7 @@ export declare class Cache {
     /**
      * Return "anyValue-hash"
      */
-    hash(path: string): string;
-    /**
-     * Return "anyValue?v=hashKey"
-     */
-    version(path: string): string;
+    hash(path: string, hash?: string): string;
     /**
      * Generate hash string
      */

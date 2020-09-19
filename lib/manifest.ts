@@ -39,7 +39,7 @@ export class Manifest {
 
   get manifestPath() {
     if (!this.pipeline) return `tmp/manifest.json`
-    return `tmp/manifest-${this.pipeline.cache.key}.json`
+    return `tmp/manifest-${this.pipeline.cache.saltKey}.json`
   }
 
   /**
@@ -55,7 +55,7 @@ export class Manifest {
   saveFile() {
     if (!this.pipeline) return
 
-    this._file.key = this.pipeline.cache.key
+    this._file.key = this.pipeline.cache.saltKey
     this._file.date = new Date()
     this._file.sources = this.pipeline.source.all().map(s => s.path.web())
     this._file.output = this.pipeline.output.web()

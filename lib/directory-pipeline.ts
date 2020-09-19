@@ -90,7 +90,6 @@ export class DirectoryPipeline {
             source: item.source,
             input: input.web(),
             output: normalize(output, "web"),
-            cache: normalize(output, "web"),
             tag: typeof rule.tag == 'string' ? rule.tag : 'default',
             type: "file",
           }

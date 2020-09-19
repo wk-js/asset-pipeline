@@ -97,7 +97,6 @@ export class FilePipeline {
           },
           input: input.web(),
           output: input.web(),
-          cache: input.web(),
           resolved: false,
           type: this.type,
           tag: "default",

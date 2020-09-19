@@ -25,17 +25,17 @@ export interface RenameOptions {
 
 export type TRenameFunction = (options: RenameOptions) => string
 
-export type TRenameObject = Partial<ParsedPath>
+export type TRenameObject = ParsedPath & { hash: string }
 
 export interface IMinimumRule {
   // Ignore matched files
   ignore?: boolean,
 
   // Cachebreak mateched files
-  cache?: boolean | string | TRenameFunction | TRenameObject,
+  cache?: boolean | string | TRenameFunction | Partial<TRenameObject>,
 
   // Rename the basename or accept a function to rename full output path
-  output?: string | TRenameFunction | TRenameObject,
+  output?: string | TRenameFunction | Partial<TRenameObject>,
 
   // Tagname
   tag?: string
@@ -66,7 +66,7 @@ export interface IAsset {
   },
   input: string,
   output: string,
-  cache: string,
+  // cache: string,
   tag: string,
   type: "file" | "directory",
   resolved?: boolean,

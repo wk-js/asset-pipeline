@@ -23,11 +23,13 @@ export interface RenameOptions {
     rule: IMatchRule;
 }
 export declare type TRenameFunction = (options: RenameOptions) => string;
-export declare type TRenameObject = Partial<ParsedPath>;
+export declare type TRenameObject = ParsedPath & {
+    hash: string;
+};
 export interface IMinimumRule {
     ignore?: boolean;
-    cache?: boolean | string | TRenameFunction | TRenameObject;
-    output?: string | TRenameFunction | TRenameObject;
+    cache?: boolean | string | TRenameFunction | Partial<TRenameObject>;
+    output?: string | TRenameFunction | Partial<TRenameObject>;
     tag?: string;
 }
 export interface IFileRule extends IMinimumRule {
@@ -52,7 +54,6 @@ export interface IAsset {
     };
     input: string;
     output: string;
-    cache: string;
     tag: string;
     type: "file" | "directory";
     resolved?: boolean;

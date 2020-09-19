@@ -10,7 +10,7 @@ const path_1 = require("./path");
 const shadow_pipeline_1 = require("./shadow-pipeline");
 exports.PipelineManager = new Map();
 class Pipeline {
-    constructor(key) {
+    constructor(saltKey = "asset") {
         this.uuid = guid_1.guid();
         exports.PipelineManager.set(this.uuid, this);
         this.verbose = false;
@@ -18,7 +18,7 @@ class Pipeline {
         this.host = new path_1.URLBuilder("/");
         this.cwd = new path_1.PathBuilder(process.cwd());
         this.cache = new cache_1.Cache();
-        this.cache.key = key;
+        this.cache.saltKey = saltKey;
         this.source = new source_1.SourceManager(this.uuid);
         this.manifest = new manifest_1.Manifest(this.uuid);
         this.resolver = new resolver_1.Resolver(this.uuid);

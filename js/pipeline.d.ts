@@ -17,7 +17,7 @@ export declare class Pipeline {
     manifest: Manifest;
     resolver: Resolver;
     shadow: ShadowPipeline;
-    constructor(key: string);
+    constructor(saltKey?: string);
     /**
      * Clone pipeline
      */

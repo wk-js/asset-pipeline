@@ -9,7 +9,6 @@ describe("Files", () => {
     assert.equal(p.getPath("main.ts"), "/main.js")
     assert.equal(p.getUrl("main.ts"), "/main.js")
     assert.deepEqual(getAsset("main.ts", p), {
-      cache: "main.js",
       input: "main.ts",
       output: "main.js",
       rule: {
@@ -24,7 +23,6 @@ describe("Files", () => {
       type: "file",
     })
     assert.deepEqual(getAssetFromOutput("main.js", p), {
-      cache: "main.js",
       input: "main.ts",
       output: "main.js",
       rule: {
@@ -77,7 +75,6 @@ describe("Files", () => {
     assert.equal(p.getPath("main.ts"), "/main.js")
     assert.equal(p.getUrl("main.ts"), "http://mycdn.com/main.js")
     assert.deepEqual(getAsset("main.ts", p), {
-      cache: "main.js",
       input: "main.ts",
       output: "main.js",
       rule: {
@@ -92,7 +89,6 @@ describe("Files", () => {
       type: "file",
     })
     assert.deepEqual(getAssetFromOutput("main.js", p), {
-      cache: "main.js",
       input: "main.ts",
       output: "main.js",
       rule: {
@@ -116,7 +112,6 @@ describe("Files", () => {
     assert.equal(p.getPath("main.css"), "/main.css")
     assert.equal(p.getUrl("main.css"), "http://mycdn.com/main.css")
     assert.deepEqual(p.manifest.getAsset("main.css"), {
-      cache: "main.css",
       input: "main.css",
       output: "main.css",
       rule: {
@@ -132,7 +127,6 @@ describe("Files", () => {
       type: "file",
     })
     assert.deepEqual(p.manifest.findAssetFromOutput("main.css"), {
-      cache: "main.css",
       input: "main.css",
       output: "main.css",
       rule: {

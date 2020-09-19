@@ -105,7 +105,6 @@ class DirectoryPipeline {
                     source: item.source,
                     input: input.web(),
                     output: path_1.normalize(output, "web"),
-                    cache: path_1.normalize(output, "web"),
                     tag: typeof rule.tag == 'string' ? rule.tag : 'default',
                     type: "file",
                 };
