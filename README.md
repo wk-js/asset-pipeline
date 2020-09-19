@@ -20,14 +20,14 @@ Handle your assets like a boss
 ```ts
 import { AssetPipeline } from "asset-pipeline";
 
-const hashKey = "anything"
-const pipeline = new AssetPipeline(hashKey)
+const saltKey = "anything"
+const pipeline = new AssetPipeline(saltKey)
 
-// Set pathname
-pipeline.output.setPath("public")
-
-// Set origin
+// Set origin (Rendered: http://mycdn.com/)
 pipeline.output.setOrigin("http://mycdn.com")
+
+// Set pathname (Rendered: http://mycdn.com/public)
+pipeline.output.setPathname("public")
 
 // Save on disk at each change (default: false)
 pipeline.manifest.saveAtChange = false
@@ -152,10 +152,7 @@ pipeline.getUrl("inputPath", { from: "relativePath", cleanup: false })
 pipeline.cache.enabled = false
 
 // Set hash key
-pipeline.cache.key = hashKey
-
-// Set cache type "hash" | "version" (Default: "hash")
-pipeline.cache.type = "hash"
+pipeline.cache.saltKey = saltKey
 
 // Clone cache object
 pipeline.cache.clone()
@@ -185,7 +182,7 @@ pipeline.manifest.readOnDisk = false
 pipeline.manifest.manifestPath
 
 // Clone manifest
-pipeline.manifest.clone()
+pipeline.manifest.clone(newManifest)
 
 // Check if manifest file is created
 pipeline.manifest.fileExists()
@@ -320,13 +317,13 @@ app.file.add("path_or_pattern", {
   baseDir: "myDir",
 
   // Ignore matches (optional)
-  ignore: false
+  ignore: false,
 
   // Rename output path  (optional) (string | TRenameFunction | TRenameObject)
-  output: "#{output.base}"
+  output: { dir: "" },
 
-  // Rename cache path  (optional) (string | TRenameFunction | TRenameObject)
-  cache: "#{output.name}-#{output.hash}#{output.ext}"
+  // Rename cache path. It inherits output transformation (optional) (string | TRenameFunction | TRenameObject)
+  cache: "#{input.name}-#{input.hash}#{input.ext}",
 
   // A simple string for fitering (optional)
   tag: "myTag"
@@ -358,13 +355,13 @@ app.directory.add("path_or_pattern", {
       glob: "path_or_pattern",
 
       // Ignore matches (optional)
-      ignore: false
+      ignore: false,
 
-      // Rename output path  (optional) (string | TRenameFunction | TRenameObject)
-      output: "#{output.base}"
+      // Rename output path (optional) (string | TRenameFunction | TRenameObject)
+      output: { dir: "" },
 
-      // Rename cache path  (optional) (string | TRenameFunction | TRenameObject)
-      cache: "#{output.name}-#{output.hash}#{output.ext}"
+      // Rename cache path. It inherits output transformation (optional) (string | TRenameFunction | TRenameObject)
+      cache: "#{input.name}-#{input.hash}#{input.ext}",
 
       // A simple string for fitering (optional)
       tag: "myTag"
@@ -384,11 +381,11 @@ app.directory.fetch()
 ```ts
 // Add a directory shadow path or pattern (the source directory does exist, but the output it is)
 app.shadow.addFile("shadowFilePath", {
-  // Rename output path  (optional) (string | TRenameFunction | TRenameObject)
-  output: "#{output.base}"
+  // Rename output path (optional) (string | TRenameFunction | TRenameObject)
+  output: { dir: "" },
 
-  // Rename cache path  (optional) (string | TRenameFunction | TRenameObject)
-  cache: "#{output.name}-#{output.hash}#{output.ext}"
+  // Rename cache path. It inherits output transformation (optional) (string | TRenameFunction | TRenameObject)
+  cache: "#{input.name}-#{input.hash}#{input.ext}",
 
   // A simple string for fitering (optional)
   tag: "myTag"
