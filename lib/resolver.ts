@@ -127,7 +127,6 @@ export class Resolver {
   getPath(inputPath: string, options?: Partial<IResolvePathOptions>) {
     if (!inputPath) throw new Error("[asset-pipeline] path cannot be empty")
     if (!this.pipeline) return inputPath
-    const outputDir = this.pipeline.output
     const host = this.pipeline.host
 
     const opts = Object.assign({
@@ -142,8 +141,8 @@ export class Resolver {
     const fromTree = this.getTree(opts.from)
 
     // Get output relative to from
-    let output = outputDir.with(fromTree.path)
-      .relative(outputDir.with(outputPath).os())
+    let output = new PathBuilder(fromTree.path)
+    output = output.join(outputPath)
 
     if (opts.cleanup) {
       output = new PathBuilder(cleanup(output.os()))
@@ -180,7 +179,7 @@ export class Resolver {
       return print
     }
 
-    const output = this.pipeline.cwd.relative(this.pipeline.output.os()).web()
+    const output = this.pipeline.cwd.join(this.pipeline.output.os()).web()
     return output + '\n' + ptree(this.root, "  ").replace(/\n\s+\n/g, '\n')
   }
 

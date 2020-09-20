@@ -104,7 +104,6 @@ class Resolver {
             throw new Error("[asset-pipeline] path cannot be empty");
         if (!this.pipeline)
             return inputPath;
-        const outputDir = this.pipeline.output;
         const host = this.pipeline.host;
         const opts = Object.assign({
             from: ".",
@@ -115,8 +114,8 @@ class Resolver {
         // Cleanup from path and get the output tree
         const fromTree = this.getTree(opts.from);
         // Get output relative to from
-        let output = outputDir.with(fromTree.path)
-            .relative(outputDir.with(outputPath).os());
+        let output = new path_2.PathBuilder(fromTree.path);
+        output = output.join(outputPath);
         if (opts.cleanup) {
             output = new path_2.PathBuilder(path_2.cleanup(output.os()));
         }
@@ -146,7 +145,7 @@ class Resolver {
             print += tab + tree.files.join(`\n${tab}`);
             return print;
         }
-        const output = this.pipeline.cwd.relative(this.pipeline.output.os()).web();
+        const output = this.pipeline.cwd.join(this.pipeline.output.os()).web();
         return output + '\n' + ptree(this.root, "  ").replace(/\n\s+\n/g, '\n');
     }
 }

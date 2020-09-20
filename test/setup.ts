@@ -7,7 +7,7 @@ import { IAsset } from "../lib/types";
 import { statSync, unlinkSync } from "fs";
 
 export const LOAD_PATH = 'tmp/test-units'
-export const DST_PATH = 'tmp/test-units-dist'
+export const DST_PATH = '../test-units-dist'
 
 export async function setup(callback?: (p: AssetPipeline) => Promise<void>) {
   const p = new AssetPipeline("asset")
