@@ -71,6 +71,7 @@ class FilePipeline {
         const source = pipeline.source.get(this.sid);
         if (!source)
             return [];
+        const manifest = this.pipeline.manifest;
         const globs = [];
         const ignores = [];
         for (const entry of Object.entries(this._rules)) {
@@ -82,26 +83,28 @@ class FilePipeline {
                 globs.push([glob, entry[1]]);
             }
         }
-        let assets = [];
+        const map = new Map();
         const fetcher = this._fetcher();
         for (const [pattern, rule] of globs) {
             fetcher([pattern], []).forEach(file => {
-                const input = source.fullpath.relative(file);
-                assets.push({
-                    source: {
-                        uuid: source.uuid,
-                        path: source.path.web(),
-                    },
-                    input: input.web(),
-                    output: input.web(),
-                    resolved: false,
-                    type: this.type,
-                    tag: "default",
-                    rule
-                });
+                const input = source.fullpath.relative(file).web();
+                if (!map.has(input) && !manifest.hasAsset(input)) {
+                    map.set(input, {
+                        source: {
+                            uuid: source.uuid,
+                            path: source.path.web(),
+                        },
+                        input: input,
+                        output: input,
+                        resolved: false,
+                        type: this.type,
+                        tag: "default",
+                        rule
+                    });
+                }
             });
         }
-        assets = assets.filter(asset => {
+        const assets = [...map.values()].filter(asset => {
             for (const [pattern] of ignores) {
                 if (minimatch_1.default(asset.input, pattern))
                     return false;

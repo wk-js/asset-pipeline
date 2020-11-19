@@ -72,6 +72,7 @@ export class FilePipeline {
     const source = pipeline.source.get(this.sid)
     if (!source) return []
 
+    const manifest = this.pipeline.manifest
     const globs: [string, IMatchRule][] = []
     const ignores: [string, IMatchRule][] = []
 
@@ -84,28 +85,30 @@ export class FilePipeline {
       }
     }
 
-    let assets: IAsset[] = []
+    const map = new Map<string, IAsset>()
     const fetcher = this._fetcher()
 
     for (const [pattern, rule] of globs) {
       fetcher([pattern], []).forEach(file => {
-        const input = source.fullpath.relative(file)
-        assets.push({
-          source: {
-            uuid: source.uuid,
-            path: source.path.web(),
-          },
-          input: input.web(),
-          output: input.web(),
-          resolved: false,
-          type: this.type,
-          tag: "default",
-          rule
-        })
+        const input = source.fullpath.relative(file).web()
+        if (!map.has(input) && !manifest.hasAsset(input)) {
+          map.set(input, {
+            source: {
+              uuid: source.uuid,
+              path: source.path.web(),
+            },
+            input: input,
+            output: input,
+            resolved: false,
+            type: this.type,
+            tag: "default",
+            rule
+          })
+        }
       })
     }
 
-    assets = assets.filter(asset => {
+    const assets = [...map.values()].filter(asset => {
       for (const [pattern] of ignores) {
         if (minimatch(asset.input, pattern)) return false
       }
