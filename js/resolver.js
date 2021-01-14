@@ -100,11 +100,20 @@ class Resolver {
      * Get path
      */
     getPath(inputPath, options) {
-        if (!inputPath)
-            throw new Error("[asset-pipeline] path cannot be empty");
         if (!this.pipeline)
             return inputPath;
         const host = this.pipeline.host;
+        const output = this._getPath(inputPath, options);
+        return host.pathname.join(output.os()).web();
+    }
+    /**
+     * Get path
+     */
+    _getPath(inputPath, options) {
+        if (!inputPath)
+            throw new Error("[asset-pipeline] path cannot be empty");
+        if (!this.pipeline)
+            return new path_2.PathBuilder(inputPath);
         const opts = Object.assign({
             from: ".",
             cleanup: false,
@@ -119,7 +128,7 @@ class Resolver {
         if (opts.cleanup) {
             output = new path_2.PathBuilder(path_2.cleanup(output.os()));
         }
-        return host.pathname.join(output.os()).web();
+        return output;
     }
     /**
      * Get url
@@ -127,8 +136,8 @@ class Resolver {
     getUrl(inputPath, options) {
         if (!this.pipeline)
             return inputPath;
-        inputPath = this.getPath(inputPath, options);
-        return this.pipeline.host.join(inputPath).toString();
+        const inputPathB = this._getPath(inputPath, options);
+        return this.pipeline.host.join(inputPathB.web()).toString();
     }
     /**
      * Preview output tree

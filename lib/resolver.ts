@@ -125,9 +125,18 @@ export class Resolver {
    * Get path
    */
   getPath(inputPath: string, options?: Partial<IResolvePathOptions>) {
-    if (!inputPath) throw new Error("[asset-pipeline] path cannot be empty")
     if (!this.pipeline) return inputPath
     const host = this.pipeline.host
+    const output = this._getPath(inputPath, options)
+    return host.pathname.join(output.os()).web()
+  }
+
+  /**
+   * Get path
+   */
+  private _getPath(inputPath: string, options?: Partial<IResolvePathOptions>) {
+    if (!inputPath) throw new Error("[asset-pipeline] path cannot be empty")
+    if (!this.pipeline) return new PathBuilder(inputPath)
 
     const opts = Object.assign({
       from: ".",
@@ -148,7 +157,7 @@ export class Resolver {
       output = new PathBuilder(cleanup(output.os()))
     }
 
-    return host.pathname.join(output.os()).web()
+    return output
   }
 
   /**
@@ -156,8 +165,8 @@ export class Resolver {
    */
   getUrl(inputPath: string, options?: Partial<IResolvePathOptions>) {
     if (!this.pipeline) return inputPath
-    inputPath = this.getPath(inputPath, options)
-    return this.pipeline.host.join(inputPath).toString()
+    const inputPathB = this._getPath(inputPath, options)
+    return this.pipeline.host.join(inputPathB.web()).toString()
   }
 
   /**

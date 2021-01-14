@@ -29,6 +29,10 @@ export declare class Resolver {
      */
     getPath(inputPath: string, options?: Partial<IResolvePathOptions>): string;
     /**
+     * Get path
+     */
+    private _getPath;
+    /**
      * Get url
      */
     getUrl(inputPath: string, options?: Partial<IResolvePathOptions>): string;
