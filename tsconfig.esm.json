@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2015",
-    "module": "commonjs",
+    "module": "ES6",
     "moduleResolution": "node",
     "declaration": true,
-    "outDir": "./js",
+    "outDir": "./dist/esm",
     "strict": true,
     "esModuleInterop": true
   },

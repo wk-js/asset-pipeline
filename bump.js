@@ -19,7 +19,7 @@ async function _bump(release = "patch") {
     return JSON.stringify(pkg, null, 2)
   })
 
-  spawnSync("npx tsc", Options)
+  spawnSync("node build.js", Options)
   spawnSync("npm install", Options)
   spawnSync(`git commit -am "Bump ${version}" && git tag ${version} && git push --tags && git push`, Options)
 }

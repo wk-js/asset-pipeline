@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2015",
-    "module": "commonjs",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "declaration": true,
-    "outDir": "./js",
+    "outDir": "./dist/cjs",
     "strict": true,
     "esModuleInterop": true
   },
