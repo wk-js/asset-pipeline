@@ -76,17 +76,17 @@ export class FileSystem {
         return __awaiter(this, void 0, void 0, function* () {
             const validGlobs = this.globs
                 .filter(glob => glob.action === type)
-                .map(glob => PATH.set(glob.glob).os());
+                .map(glob => PATH.set(glob.glob).unix());
             const ignoredGlobs = this.globs
                 .filter(glob => glob.action === "ignore")
-                .map(glob => PATH.set(glob.glob).os());
+                .map(glob => PATH.set(glob.glob).unix());
             let files = (type === 'symlink' ?
                 fetchDirs(validGlobs, ignoredGlobs)
                 :
                     fetch(validGlobs, ignoredGlobs));
             let ios = [];
             files.forEach(file => {
-                const input = PATH.set(file).os();
+                const input = PATH.set(file).unix();
                 const output = this.resolver.getOutputPath(file);
                 if (input !== output) {
                     return ios.push([input, cleanup(output)]);

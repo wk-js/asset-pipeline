@@ -1,48 +1,50 @@
-import { FileList as FList } from "filelist";
 import { fetch } from "lol/js/node/fs";
 import { PathBuilder } from "./path";
 const PATH = new PathBuilder("");
 export class FileList {
     constructor() {
-        this.lazy = true;
         this.entries = [];
-        this.filelist = new FList();
+        this.filelist = {
+            pending: true,
+            include: [],
+            exclude: []
+        };
     }
     include(...patterns) {
         for (const pattern of patterns) {
-            this._include(this._toOSPath(pattern));
+            this._include(this._toUnixPath(pattern));
         }
         return this;
     }
     exclude(...patterns) {
         for (const pattern of patterns) {
-            this._exclude(this._toOSPath(pattern));
+            this._exclude(this._toUnixPath(pattern));
         }
         return this;
     }
     shadow(...patterns) {
         for (const pattern of patterns) {
-            this._push(this._toOSPath(pattern));
+            this._push(this._toUnixPath(pattern));
         }
         return this;
     }
     resolve(force = false) {
         if (force)
             this.filelist.pending = true;
-        if (this.lazy && this.filelist.pending) {
-            const files = this.filelist.toArray();
+        if (this.filelist.pending) {
+            const files = fetch(this.filelist.include, this.filelist.exclude);
             for (const file of files) {
                 this._push(file);
             }
         }
         return this.entries.slice(0);
     }
-    _toOSPath(pattern) {
+    _toUnixPath(pattern) {
         if (pattern instanceof PathBuilder) {
-            return pattern.os();
+            return pattern.unix();
         }
         else {
-            return PATH.set(pattern).os();
+            return PATH.set(pattern).unix();
         }
     }
     _push(file) {
@@ -52,29 +54,9 @@ export class FileList {
         }
     }
     _include(pattern) {
-        if (this.lazy) {
-            this.filelist.include(pattern);
-        }
-        else {
-            const files = fetch(pattern);
-            files.forEach(file => {
-                this._push(file);
-            });
-        }
+        this.filelist.include.push(PATH.set(pattern).unix());
     }
     _exclude(pattern) {
-        if (this.lazy) {
-            this.filelist.exclude(pattern);
-        }
-        else {
-            const files = fetch(pattern);
-            files.forEach(file => {
-                const f = PATH.set(file).web();
-                const index = this.entries.indexOf(f);
-                if (index > -1) {
-                    this.entries.splice(index, 1);
-                }
-            });
-        }
+        this.filelist.exclude.push(PATH.set(pattern).unix());
     }
 }

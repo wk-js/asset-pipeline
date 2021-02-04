@@ -65,7 +65,7 @@ export class Resolver {
     }
     getOutputPath(path) {
         const resolved = this.resolve(path)[0];
-        return this.output.join(resolved.transformed.path).os();
+        return this.output.join(resolved.transformed.path).unix();
     }
     filter(predicate) {
         if (!predicate)

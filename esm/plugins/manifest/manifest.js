@@ -24,7 +24,7 @@ export class Manifest {
      * Check if manifest file is created
      */
     exists() {
-        return this.saveOnDisk && isFile(this.path.os());
+        return this.saveOnDisk && isFile(this.path.unix());
     }
     /**
      * Save manifest file
@@ -34,14 +34,14 @@ export class Manifest {
         this.file.date = new Date().toISOString();
         this.file.entries = this.pipeline.resolver['_paths'];
         if (this.saveOnDisk) {
-            writeFileSync(this.path.os(), JSON.stringify(this.file, null, 2));
+            writeFileSync(this.path.unix(), JSON.stringify(this.file, null, 2));
         }
     }
     /**
      * Read manifest file
      */
     read() {
-        const path = this.path.os();
+        const path = this.path.unix();
         if (this.saveOnDisk && isFile(path)) {
             const content = readFileSync(path);
             const file = JSON.parse(content.toString('utf-8'));
@@ -52,7 +52,7 @@ export class Manifest {
      * Remove manifest file
      */
     delete() {
-        const path = this.path.os();
+        const path = this.path.unix();
         if (isFile(path)) {
             removeSync(path);
         }

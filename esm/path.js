@@ -115,7 +115,7 @@ export class URLBuilder {
         if (typeof origin !== "string")
             throw new Error(`[asset-pipeline][path] Orign should be a string. An empty string is accepted.`);
         try {
-            const u = new URL(this.pathname.os(), origin);
+            const u = new URL(this.pathname.unix(), origin);
             this._origin = u.origin;
             this.setPathname(u.pathname);
         }
