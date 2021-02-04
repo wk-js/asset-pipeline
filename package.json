@@ -6,9 +6,12 @@
   "module": "esm/index.js",
   "types": "cjs",
   "scripts": {
-    "build": "npx tsc && npx tsc -p tsconfig.esm.json",
-    "bump": "node bump.js",
-    "bump:beta": "node bump.js premajor",
+    "build": "node build.js",
+    "bump:major": "node bump.js major",
+    "bump:patch": "node bump.js patch",
+    "bump:beta:major": "node bump.js premajor",
+    "bump:beta:patch": "node bump.js prepatch",
+    "bump:beta:release": "node bump.js prerelease",
     "test": "mocha ./test/**/*.spec.js"
   },
   "author": "Christophe Massolin",
