@@ -2,23 +2,23 @@
   "name": "asset-pipeline",
   "version": "4.1.4",
   "description": "Asset pipeline",
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "types": "js",
+  "main": "cjs/index.js",
+  "module": "esm/index.js",
+  "types": "cjs",
   "scripts": {
-    "tsc": "npx tsc",
-    "build": "npx tsc && npx tsc -p tsconfig.cjs.json && npx tsc -p tsconfig.esm.json",
+    "build": "npx tsc && npx tsc -p tsconfig.esm.json",
     "bump": "node bump.js",
-    "test": "mocha -r ts-node/register ./test/**/*.spec.ts"
+    "bump:beta": "node bump.js premajor",
+    "test": "mocha ./test/**/*.spec.js"
   },
-  "author": "",
+  "author": "Christophe Massolin",
   "license": "ISC",
   "repository": {
     "url": "https://github.com/wk-js/asset-pipeline"
   },
   "dependencies": {
-    "filelist": "github:FuriouZz/filelist",
-    "lol": "github:wk-js/lol.js#0.0.19",
+    "filelist": "github:FuriouZz/filelist#459078a795670c02f5d87d8ad0784b43bd60f384",
+    "lol": "github:wk-js/lol.js#0.0.25",
     "minimatch": "^3.0.4"
   },
   "devDependencies": {
@@ -27,7 +27,6 @@
     "@types/node": "13.13.0",
     "mocha": "8.1.3",
     "semver": "^7.3.2",
-    "ts-node": "9.0.0",
-    "typescript": "4.0.2"
+    "typescript": "^4.1.3"
   }
 }

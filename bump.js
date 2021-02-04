@@ -3,13 +3,19 @@ const inc = require("semver/functions/inc")
 const { spawnSync } = require("child_process")
 
 const Options = { shell: true, stdio: 'inherit' }
+const PreReg = /^pre/
 
 async function _bump(release = "patch") {
   let version = null
 
   await editFile("package.json", (buf) => {
     const pkg = JSON.parse(buf.toString("utf-8"))
-    version = inc(pkg.version, release)
+
+    if (PreReg.test(release)) {
+      version = inc(pkg.version, release, "beta")
+    } else {
+      version = inc(pkg.version, release)
+    }
 
     if (version === null) {
       throw new Error(`Bump failed`)

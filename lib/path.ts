@@ -77,6 +77,7 @@ export class PathBuilder {
   set(path: string) {
     if (typeof path !== "string") throw new Error("[asset-pipeline][path] Path should not be empty")
     this.path = path
+    return this
   }
 
   isAbsolute() {
@@ -107,20 +108,38 @@ export class URLBuilder {
     this.pathname = new PathBuilder(path)
   }
 
-  setURL(origin: string) {
+  set(url: string) {
+    if (typeof url !== "string") throw new Error(`[asset-pipeline][path] Orign should be a string. An empty string is accepted.`)
+
+    try {
+      const u = new URL(url)
+      this._origin = u.origin
+      this.setPathname(u.pathname)
+    } catch (e) {
+      this._origin = ""
+      this.pathname.set("/")
+    }
+
+    return this
+  }
+
+  setOrigin(origin: string) {
     if (typeof origin !== "string") throw new Error(`[asset-pipeline][path] Orign should be a string. An empty string is accepted.`)
 
     try {
-      const u = new URL(this.pathname.os(), origin)
+      const u = new URL(this.pathname.unix(), origin)
       this._origin = u.origin
       this.setPathname(u.pathname)
     } catch (e) {
       this._origin = ""
     }
+
+    return this
   }
 
   setPathname(path: string) {
     this.pathname.set(path)
+    return this
   }
 
   isValidURL() {

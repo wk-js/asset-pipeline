@@ -1,110 +1,45 @@
-import { ParsedPath } from "path";
-import { Source } from "./source";
+import { EmitterCallback, EmitterEvent } from "lol/js/emitter"
+import { Pipeline } from "./pipeline"
 
-export interface RenameOptions {
-  input: {
-    fullpath: string,
-    root: string,
-    dir: string,
-    base: string,
-    ext: string,
-    name: string,
-    hash: string
-  },
-  output: {
-    fullpath: string,
-    root: string,
-    dir: string,
-    base: string,
-    ext: string,
-    name: string,
-    hash: string
-  },
-  rule: IMatchRule
+export interface Rule {
+  name?: string
+  extension?: string
+  directory?: string
+  baseDirectory?: string
+  relative?: string
+
+  tag: string
+  priority: number
+  cachebreak: boolean
 }
 
-export type TRenameFunction = (options: RenameOptions) => string
-
-export type TRenameObject = ParsedPath & { hash: string }
-
-export interface IMinimumRule {
-  // Ignore matched files
-  ignore?: boolean,
-
-  // Cachebreak mateched files
-  cache?: boolean | string | TRenameFunction | Partial<TRenameObject>,
-
-  // Rename the basename or accept a function to rename full output path
-  output?: string | TRenameFunction | Partial<TRenameObject>,
-
-  // Tagname
-  tag?: string
+export interface RuleOptions {
+  cachebreak: boolean
+  saltKey: string
 }
 
-export interface IFileRule extends IMinimumRule {
-  // Remove dir_path, keep basename only
-  keepPath?: boolean,
-
-  // Add a base directory
-  baseDir?: string,
+export interface TransformedPath {
+  path: string
+  tag: string
+  priority: number
 }
 
-export interface IDirectoryRule extends IFileRule {
-  fileRules?: (IMinimumRule & { glob?: string })[]
+export type TransformedEntry = [string, TransformedPath]
+
+export interface ResolvedPath {
+  transformed: TransformedPath
+  parameters: string
 }
 
-export type IShadowRule = IMatchRule & { type: "file" | "directory" }
-
-export interface IMatchRule extends IFileRule {
-  glob: string
+export interface PipelineEvents {
+  "resolved": void
+  "transformed": void
 }
 
-export interface IAsset {
-  source: {
-    uuid: string,
-    path: string
-  },
-  input: string,
-  output: string,
-  // cache: string,
-  tag: string,
-  type: "file" | "directory",
-  resolved?: boolean,
-  rule?: IFileRule | IDirectoryRule
-}
+export type PipelineEvent<K extends keyof PipelineEvents=any> = EmitterEvent<K, PipelineEvents[K]>
+export type PipelineEventCallback<K extends keyof PipelineEvents=any> = EmitterCallback<K, PipelineEvents[K]>
 
-export type IAssetWithSource = Omit<IAsset, "source"> & {
-  source: Source
-}
-
-export interface IManifest {
-  key: string | number,
-  date: Date,
-  sources: string[],
-  output: string,
-  assets: Record<string, IAsset | undefined>
-}
-
-export interface IPathObject {
-  relative: string,
-  full?: string,
-  source?: string,
-  key?: string
-}
-
-export interface IOutput {
-  input: string,
-  type: "file" | "directory",
-  output: {
-    path: string,
-    url: string,
-  }
-}
-
-export interface IResolvePathOptions {
-  // Set relative path
-  from: string
-
-  // Remove hash and search parameters
-  cleanup: boolean
+export interface PipelinePlugin {
+  name: string
+  setup(pipeline: Pipeline): any | Promise<any>
 }

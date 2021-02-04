@@ -1,110 +1,58 @@
-import { Manifest } from "./manifest";
-import { Resolver } from "./resolver";
-import { SourceManager } from "./source";
-import { Cache } from "./cache";
-import { guid } from "lol/js/string/guid";
-import { PathBuilder, URLBuilder } from "./path";
-import { IResolvePathOptions } from "./types";
-import { ShadowPipeline } from "./shadow-pipeline";
-
-export const PipelineManager = new Map<string, Pipeline>()
+import { FileList } from "./file-list"
+import { Resolver } from "./resolver"
+import { PathBuilder } from "./path"
+import { Transformer } from "./transformer"
+import { Emitter } from "lol/js/emitter"
+import { PipelineEvents, PipelinePlugin } from "./types"
+import { verbose } from "./logger"
 
 export class Pipeline {
-  uuid: string
-  cache: Cache;
-  verbose: boolean;
-  output: PathBuilder;
-  host: URLBuilder;
-  cwd: PathBuilder;
-  source: SourceManager;
-  manifest: Manifest;
-  resolver: Resolver;
-  shadow: ShadowPipeline;
+  files = new FileList()
+  rules = new Transformer()
+  resolver = new Resolver()
+  events = new Emitter<PipelineEvents>()
+  protected _plugins = new Set<string>()
+  protected _options = new Map<string, any>()
 
-  constructor(saltKey: string = "asset") {
-    this.uuid = guid()
-    PipelineManager.set(this.uuid, this)
-
-    this.verbose = false
-    this.output = new PathBuilder("public")
-    this.host = new URLBuilder("/")
-    this.cwd = new PathBuilder(process.cwd())
-
-    this.cache = new Cache()
-    this.cache.saltKey = saltKey
-    this.source = new SourceManager(this.uuid)
-    this.manifest = new Manifest(this.uuid)
-    this.resolver = new Resolver(this.uuid)
-    this.shadow = new ShadowPipeline(this.uuid)
+  get logging() {
+    return verbose()
   }
 
-  /**
-   * Clone pipeline
-   */
-  clone(key: string) {
-    const p = new Pipeline(key)
-    this.cache.clone(p.cache)
-    this.source.clone(p.source)
-    this.manifest.clone(p.manifest)
-    return p
+  set logging(value: boolean) {
+    verbose(value)
   }
 
-  /**
-   * Fetch directories, files, update tree and update manifest
-   */
-  fetch(force?: boolean) {
-    force = force ? force : !this.manifest.readOnDisk
+  createPath(path: string) {
+    return new PathBuilder(path)
+  }
 
-    if (force || !this.manifest.fileExists()) {
-      this.log('Clear manifest')
-      this.manifest.clearAssets()
+  fetch(forceResolve?: boolean) {
+    this.files.resolve(forceResolve)
+    this.events.dispatch("resolved")
+    const paths = this.rules.transform(this.files.entries)
+    this.resolver.set(paths)
+    this.events.dispatch("transformed")
+  }
 
-      this.log('Fetch shadows')
-      this.shadow.fetch()
-      this.resolver.refreshTree()
+  options(key: string) {
+    return this._options.get(key)
+  }
 
-      this.log('Fetch directories')
-      this.source.fetch("directory")
-      this.resolver.refreshTree()
+  async plugin(plugin: PipelinePlugin) {
+    if (this._plugins.has(plugin.name)) {
+      return
+    }
 
-      this.log('Fetch files')
-      this.source.fetch("file")
-      this.resolver.refreshTree()
+    this._plugins.add(plugin.name)
 
-      this.log('Save manifest')
-      return this.manifest.saveFile()
-    } else {
-      this.log('Read manifest')
-      return this.manifest.readFile()
+    let options: any
+    const res = options = plugin.setup(this)
+    if (res && typeof res === "object" && typeof res.then) {
+      options = await res
+    }
+
+    if (options) {
+      this._options.set(plugin.name, options)
     }
   }
-
-  /**
-   * Perform copy/move/symlink
-   */
-  copy() {
-    return this.source.copy()
-  }
-
-  /**
-   * Logger
-   */
-  log(...args: any[]) {
-    if (this.verbose) console.log('[asset-pipeline]', ...args)
-  }
-
-  /**
-   * Get path
-   */
-  getPath(inputPath: string, options?: Partial<IResolvePathOptions>) {
-    return this.resolver.getPath(inputPath, options)
-  }
-
-  /**
-   * Get url
-   */
-  getUrl(inputPath: string, options?: Partial<IResolvePathOptions>) {
-    return this.resolver.getUrl(inputPath, options)
-  }
-
 }
