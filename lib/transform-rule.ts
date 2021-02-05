@@ -1,142 +1,139 @@
-import minimatch from "minimatch";
+import { createRule } from "./rule"
 import { basename, dirname, format, join, parse, relative } from "path";
 import { generateHash } from "./utils";
 import { normalize } from "./path/utils";
-import { Rule, RuleOptions, TransformedPath } from "./types";
+import { RuleOptions, TransformedPath } from "./types";
+
+export interface TransformRuleOptions {
+  name?: string
+  extension?: string
+  directory?: string
+  baseDirectory?: string
+  relative?: string
+  cachebreak: boolean
+}
+
+export type TransformRule = ReturnType<typeof CreateTransformRule>
 
 const EXT_REG = /^\./
 
-export class TransformRule {
-  rule: Rule = {
+export const CreateTransformRule = createRule({
+  data: <TransformRuleOptions>{
     tag: "default",
-    priority: 0,
     cachebreak: true
-  }
+  },
 
-  constructor(public pattern: string) {}
+  methods: {
 
-  path(path: string) {
-    this.directory(dirname(path))
-    const parts = basename(path).split(".")
-    const name = parts.shift()
-    const extension = parts.join(".")
-    if (name) this.name(name)
-    if (extension) this.extension(`.${extension}`)
-    return this
-  }
+    name(name: string) {
+      this.options.name = name
+      return this
+    },
 
-  name(name: string) {
-    this.rule.name = name
-    return this
-  }
+    directory(directory: string) {
+      this.options.directory = directory
+      return this
+    },
 
-  extension(extension: string) {
-    if (!EXT_REG.test(extension)) {
-      extension = `.${extension}`
-    }
-    this.rule.extension = extension
-    return this
-  }
+    baseDirectory(baseDirectory: string) {
+      this.options.baseDirectory = baseDirectory
+      return this
+    },
 
-  directory(directory: string) {
-    this.rule.directory = directory
-    return this
-  }
+    relative(relative: string) {
+      this.options.relative = relative
+      return this
+    },
 
-  baseDirectory(baseDirectory: string) {
-    this.rule.baseDirectory = baseDirectory
-    return this
-  }
+    cachebreak(enable: boolean) {
+      this.options.cachebreak = enable
+      return this
+    },
 
-  relative(relative: string) {
-    this.rule.relative = relative
-    return this
-  }
+    path(path: string) {
+      this.options.directory = dirname(path)
+      const parts = basename(path).split(".")
+      const name = parts.shift()
+      const extension = parts.join(".")
+      if (name) this.options.name = name
+      if (extension) this.extension(`.${extension}`)
+      return this
+    },
 
-  keepDirectory(enable: boolean) {
-    if (enable) {
-      delete this.rule.directory
-    } else {
-      this.rule.directory = "."
-    }
-    return this
-  }
+    extension(extension: string) {
+      if (!EXT_REG.test(extension)) {
+        extension = `.${extension}`
+      }
+      this.options.extension = extension
+      return this
+    },
 
-  cachebreak(enable: boolean) {
-    this.rule.cachebreak = enable
-    return this
-  }
+    keepDirectory(enable: boolean) {
+      if (enable) {
+        delete this.options.directory
+      } else {
+        this.options.directory = "."
+      }
+      return this
+    },
 
-  priority(value: number) {
-    this.rule.priority = value
-    return this
-  }
+    apply(filename: string, options?: Partial<RuleOptions>): TransformedPath {
+      if (!this.match(filename)) {
+        throw new Error(`Cannot tranform "${filename}"`)
+      }
 
-  tag(tag: string) {
-    this.rule.tag = tag
-    return this
-  }
+      const _options: RuleOptions = {
+        cachebreak: false,
+        saltKey: "none",
+        ...(options || {})
+      }
 
-  match(filename: string) {
-    return minimatch(filename, this.pattern)
-  }
+      const rule = this.options
+      let output = filename
 
-  apply(filename: string, options?: Partial<RuleOptions>): TransformedPath {
-    if (!this.match(filename)) {
-      throw new Error(`Cannot tranform "${filename}"`)
-    }
+      const hash = generateHash(output + _options.saltKey)
+      const parsed = parse(output)
 
-    const _options: RuleOptions = {
-      cachebreak: false,
-      saltKey: "none",
-      ...(options || {})
-    }
+      // Fix ext and name
+      const parts = parsed.base.split(".")
+      const name = parts.shift()!
+      parsed.name = name
+      parsed.ext = `.${parts.join(".")}`
 
-    const rule = this.rule
-    let output = filename
+      if (typeof rule.directory === "string" && rule.directory) {
+        parsed.dir = rule.directory
+      }
 
-    const hash = generateHash(output + _options.saltKey)
-    const parsed = parse(output)
+      if (typeof rule.relative === "string" && rule.relative) {
+        parsed.dir = relative(rule.relative, parsed.dir)
+      }
 
-    // Fix ext and name
-    const parts = parsed.base.split(".")
-    const name = parts.shift()!
-    parsed.name = name
-    parsed.ext = `.${parts.join(".")}`
+      if (typeof rule.baseDirectory === "string" && rule.baseDirectory) {
+        parsed.dir = join(rule.baseDirectory, parsed.dir)
+      }
 
-    if (typeof rule.directory === "string" && rule.directory) {
-      parsed.dir = rule.directory
-    }
+      if (typeof rule.name === "string" && rule.name) {
+        parsed.name = rule.name
+      }
 
-    if (typeof rule.relative === "string" && rule.relative) {
-      parsed.dir = relative(rule.relative, parsed.dir)
-    }
+      if (_options.cachebreak && rule.cachebreak) {
+        parsed.name = `${parsed.name}-${hash}`
+      }
 
-    if (typeof rule.baseDirectory === "string" && rule.baseDirectory) {
-      parsed.dir = join(rule.baseDirectory, parsed.dir)
-    }
+      if (typeof rule.extension === "string" && rule.extension) {
+        parsed.ext = rule.extension
+      }
 
-    if (typeof rule.name === "string" && rule.name) {
-      parsed.name = rule.name
-    }
+      parsed.base = parsed.name + parsed.ext
 
-    if (_options.cachebreak && rule.cachebreak) {
-      parsed.name = `${parsed.name}-${hash}`
-    }
+      output = format(parsed)
 
-    if (typeof rule.extension === "string" && rule.extension) {
-      parsed.ext = rule.extension
+      return {
+        path: normalize(output, "web"),
+        tag: rule.tag,
+        priority: rule.priority
+      }
     }
 
-    parsed.base = parsed.name + parsed.ext
-
-    output = format(parsed)
-
-    return {
-      path: normalize(output, "web"),
-      tag: rule.tag,
-      priority: rule.priority
-    }
   }
-
-}
+})
