@@ -5,6 +5,7 @@ export class Resolver {
     constructor() {
         this.host = new URLBuilder("/");
         this.output = new PathBuilder("public");
+        this._cwd = new PathBuilder(process.cwd());
         this._paths = [];
         this._aliases = [];
     }
@@ -67,7 +68,8 @@ export class Resolver {
     }
     getOutputPath(path) {
         const resolved = this.resolve(path)[0];
-        return this.host.pathname.join(this.output, resolved.transformed.path).unix();
+        const _path = this._cwd.join(this.host.pathname, this.output, resolved.transformed.path);
+        return this._cwd.relative(_path).web();
     }
     filter(predicate) {
         if (!predicate)

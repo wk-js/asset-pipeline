@@ -4,6 +4,7 @@ import { ResolvedPath, TransformResult } from "./types";
 export declare class Resolver {
     host: URLBuilder;
     output: PathBuilder;
+    protected _cwd: PathBuilder;
     protected _paths: TransformResult[];
     protected _aliases: PathBuilder[];
     set(paths: TransformResult[]): void;

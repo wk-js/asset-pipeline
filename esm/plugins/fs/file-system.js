@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import "./types";
 import { statSync, symlinkSync } from "fs";
 import { fetch, fetchDirs, copy, move, ensureDirSync } from "lol/js/node/fs";
-import { PathBuilder } from "../../path/path";
+import { PathBuilder, toUnixString } from "../../path/path";
 import { chunk } from "lol/js/array/array";
 import { dirname } from "path";
 import { info } from "../../logger";
@@ -29,7 +29,7 @@ export class FileSystem {
      */
     move(glob) {
         this.globs.push({
-            glob: glob,
+            glob: toUnixString(glob),
             action: 'move'
         });
     }
@@ -38,7 +38,7 @@ export class FileSystem {
      */
     copy(glob) {
         this.globs.push({
-            glob: glob,
+            glob: toUnixString(glob),
             action: 'copy'
         });
     }
@@ -47,7 +47,7 @@ export class FileSystem {
      */
     symlink(glob) {
         this.globs.push({
-            glob: glob,
+            glob: toUnixString(glob),
             action: 'symlink'
         });
     }
@@ -56,7 +56,7 @@ export class FileSystem {
      */
     ignore(glob) {
         this.globs.push({
-            glob: glob,
+            glob: toUnixString(glob),
             action: 'ignore'
         });
     }
