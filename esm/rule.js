@@ -1,7 +1,7 @@
 import minimatch from "minimatch";
 export function createRule(desc) {
     return (pattern) => {
-        const rule = Object.assign({ pattern, options: Object.assign({ tag: "default", priority: 0 }, desc.data), tag(tag) {
+        const rule = Object.assign({ pattern, options: Object.assign({ tag: "default", priority: 0 }, desc.options), tag(tag) {
                 this.options.tag = tag;
                 return this;
             },
@@ -18,7 +18,7 @@ export function createRule(desc) {
                 return this;
             }, match(filename) {
                 return minimatch(filename, this.pattern);
-            } }, desc.methods);
+            } }, desc.api);
         for (const [key, value] of Object.entries(rule)) {
             if (typeof value === "function") {
                 // @ts-ignore

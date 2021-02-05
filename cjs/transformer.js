@@ -12,6 +12,12 @@ class Transformer {
     }
     add(pattern) {
         const t = transform_rule_1.CreateTransformRule(path_1.toWebString(pattern));
+        const clone = t.clone;
+        t.clone = () => {
+            const cloned = clone();
+            this.rules.push(cloned);
+            return cloned;
+        };
         this.rules.push(t);
         return t;
     }

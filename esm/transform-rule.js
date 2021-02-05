@@ -4,11 +4,11 @@ import { generateHash } from "./utils";
 import { normalize } from "./path/utils";
 const EXT_REG = /^\./;
 export const CreateTransformRule = createRule({
-    data: {
+    options: {
         tag: "default",
         cachebreak: true
     },
-    methods: {
+    api: {
         name(name) {
             this.options.name = name;
             return this;

@@ -11,6 +11,12 @@ export class Transformer {
 
   add(pattern: PathOrString) {
     const t = CreateTransformRule(toWebString(pattern))
+    const clone = t.clone
+    t.clone = () => {
+      const cloned = clone()
+      this.rules.push(cloned)
+      return cloned
+    }
     this.rules.push(t)
     return t
   }

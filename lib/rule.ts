@@ -3,13 +3,13 @@ import { RuleBuilder, DefaultRule } from "./types";
 
 export function createRule<Data, Methods>(desc: RuleBuilder<Data, Methods>): (pattern: string) => DefaultRule<Data> & Methods {
   return (pattern) => {
-    const rule: DefaultRule = {
+    const rule: DefaultRule<any> = {
       pattern,
 
       options: {
         tag: "default",
         priority: 0,
-        ...desc.data
+        ...desc.options
       },
 
       tag(tag: string) {
@@ -40,7 +40,7 @@ export function createRule<Data, Methods>(desc: RuleBuilder<Data, Methods>): (pa
         return minimatch(filename, this.pattern)
       },
 
-      ...desc.methods
+      ...desc.api
     }
 
     for (const [key, value] of Object.entries(rule)) {

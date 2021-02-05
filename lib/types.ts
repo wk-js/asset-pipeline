@@ -6,22 +6,22 @@ export interface RuleOptions {
   saltKey: string
 }
 
-export interface DefaultRule<Options=any> {
+export interface DefaultRule<Options extends Record<string, any>> {
   pattern: string
   options: Options & {
     tag: string
     priority: number
   }
+  clone(): this
   tag(tag: string): this
   priority(priority: number): this
-  clone(tag: string): this
   set(override: Partial<this['options']>): this
   match(filename: string): boolean
 }
 
 export interface RuleBuilder<Data, Methods> {
-  data: Data
-  methods?: Methods & ThisType<Methods & DefaultRule<Data>>
+  options: Data
+  api?: Methods & ThisType<Methods & DefaultRule<Data>>
 }
 
 export interface TransformedPath {

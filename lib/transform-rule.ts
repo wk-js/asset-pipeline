@@ -18,12 +18,12 @@ export type TransformRule = ReturnType<typeof CreateTransformRule>
 const EXT_REG = /^\./
 
 export const CreateTransformRule = createRule({
-  data: <TransformRuleOptions>{
+  options: <TransformRuleOptions>{
     tag: "default",
     cachebreak: true
   },
 
-  methods: {
+  api: {
 
     name(name: string) {
       this.options.name = name
