@@ -16,7 +16,7 @@ export class Resolver {
         this._aliases.push(toPath(path));
         return this;
     }
-    resolve(path) {
+    resolve(path, tag = "default") {
         path = normalize(path, "web");
         const original = path;
         const extra = path.match(/\#|\?/);
@@ -27,7 +27,7 @@ export class Resolver {
         }
         const paths = [];
         for (const [filename, transformed] of this._paths) {
-            if (path === filename) {
+            if (path === filename && transformed.tag === tag) {
                 paths.push({
                     transformed: transformed,
                     parameters
@@ -38,7 +38,7 @@ export class Resolver {
             for (const alias of this._aliases) {
                 const p = alias.join(path).web();
                 for (const [filename, transformed] of this._paths) {
-                    if (p === filename) {
+                    if (p === filename && transformed.tag === tag) {
                         paths.push({
                             transformed: transformed,
                             parameters
@@ -52,22 +52,22 @@ export class Resolver {
         }
         return paths.reverse();
     }
-    getTransformedPath(path) {
-        const paths = this.resolve(path);
+    getTransformedPath(path, tag) {
+        const paths = this.resolve(path, tag);
         return paths[0].transformed;
     }
-    getPath(path) {
-        const resolved = this.resolve(path)[0];
+    getPath(path, tag) {
+        const resolved = this.resolve(path, tag)[0];
         path = resolved.transformed.path + resolved.parameters;
         return this.host.pathname.join(path).web();
     }
-    getUrl(path) {
-        const resolved = this.resolve(path)[0];
+    getUrl(path, tag) {
+        const resolved = this.resolve(path, tag)[0];
         path = resolved.transformed.path + resolved.parameters;
         return this.host.join(path).toString();
     }
-    getOutputPath(path) {
-        const resolved = this.resolve(path)[0];
+    getOutputPath(path, tag) {
+        const resolved = this.resolve(path, tag)[0];
         const _path = this._cwd.join(this.host.pathname, this.output, resolved.transformed.path);
         return this._cwd.relative(_path).web();
     }

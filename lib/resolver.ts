@@ -20,7 +20,7 @@ export class Resolver {
     return this
   }
 
-  resolve(path: string) {
+  resolve(path: string, tag = "default") {
     path = normalize(path, "web")
     const original = path
     const extra = path.match(/\#|\?/)
@@ -34,7 +34,7 @@ export class Resolver {
     const paths: ResolvedPath[] = []
 
     for (const [filename, transformed] of this._paths) {
-      if (path === filename) {
+      if (path === filename && transformed.tag === tag) {
         paths.push({
           transformed: transformed,
           parameters
@@ -46,7 +46,7 @@ export class Resolver {
       for (const alias of this._aliases) {
         const p = alias.join(path).web()
         for (const [filename, transformed] of this._paths) {
-          if (p === filename) {
+          if (p === filename && transformed.tag === tag) {
             paths.push({
               transformed: transformed,
               parameters
@@ -63,25 +63,25 @@ export class Resolver {
     return paths.reverse()
   }
 
-  getTransformedPath(path: string) {
-    const paths = this.resolve(path)
+  getTransformedPath(path: string, tag?: string) {
+    const paths = this.resolve(path, tag)
     return paths[0].transformed
   }
 
-  getPath(path: string) {
-    const resolved = this.resolve(path)[0]
+  getPath(path: string, tag?: string) {
+    const resolved = this.resolve(path, tag)[0]
     path = resolved.transformed.path + resolved.parameters
     return this.host.pathname.join(path).web()
   }
 
-  getUrl(path: string) {
-    const resolved = this.resolve(path)[0]
+  getUrl(path: string, tag?: string) {
+    const resolved = this.resolve(path, tag)[0]
     path = resolved.transformed.path + resolved.parameters
     return this.host.join(path).toString()
   }
 
-  getOutputPath(path: string) {
-    const resolved = this.resolve(path)[0]
+  getOutputPath(path: string, tag?: string) {
+    const resolved = this.resolve(path, tag)[0]
     const _path = this._cwd.join(this.host.pathname, this.output, resolved.transformed.path)
     return this._cwd.relative(_path).web()
   }
