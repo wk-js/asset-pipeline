@@ -10,10 +10,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import "./types";
 import { statSync, symlinkSync } from "fs";
 import { fetch, fetchDirs, copy, move, ensureDirSync } from "lol/js/node/fs";
-import { cleanup, PathBuilder } from "../../path";
+import { PathBuilder } from "../../path/path";
 import { chunk } from "lol/js/array/array";
 import { dirname } from "path";
 import { info } from "../../logger";
+import { cleanup } from "../../path/utils";
 const PATH = new PathBuilder("");
 export class FileSystem {
     constructor(pipeline) {

@@ -1,9 +1,9 @@
 import minimatch from "minimatch";
 import { basename, dirname, format, join, parse, relative } from "path";
 import { generateHash } from "./utils";
-import { normalize } from "./path";
+import { normalize } from "./path/utils";
 const EXT_REG = /^\./;
-export class RuleBuilder {
+export class TransformRule {
     constructor(pattern) {
         this.pattern = pattern;
         this.rule = {
@@ -71,6 +71,9 @@ export class RuleBuilder {
         return minimatch(filename, this.pattern);
     }
     apply(filename, options) {
+        if (!this.match(filename)) {
+            throw new Error(`Cannot tranform "${filename}"`);
+        }
         const _options = Object.assign({ cachebreak: false, saltKey: "none" }, (options || {}));
         const rule = this.rule;
         let output = filename;

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import { FileList } from "./file-list";
 import { Resolver } from "./resolver";
-import { PathBuilder } from "./path";
+import { PathBuilder } from "./path/path";
 import { Transformer } from "./transformer";
 import { Emitter } from "lol/js/emitter";
 import { verbose } from "./logger";

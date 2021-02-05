@@ -24,7 +24,7 @@ export interface TransformedPath {
   priority: number
 }
 
-export type TransformedEntry = [string, TransformedPath]
+export type TransformResult = [string, TransformedPath]
 
 export interface ResolvedPath {
   transformed: TransformedPath
@@ -33,7 +33,7 @@ export interface ResolvedPath {
 
 export interface PipelineEvents {
   "resolved": string[]
-  "transformed": TransformedEntry[]
+  "transformed": TransformResult[]
 }
 
 export type PipelineEvent<K extends keyof PipelineEvents=any> = EmitterEvent<K, PipelineEvents[K]>

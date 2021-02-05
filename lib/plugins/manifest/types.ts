@@ -1,4 +1,4 @@
-import { TransformedEntry } from "../../types";
+import { TransformResult } from "../../types";
 import { Manifest } from "./manifest";
 
 declare module "../../pipeline" {
@@ -11,6 +11,6 @@ declare module "../../pipeline" {
 export interface ManifestFile {
   saltKey: string
   date: string
-  entries: TransformedEntry[]
+  entries: TransformResult[]
   aliases: string[]
 }

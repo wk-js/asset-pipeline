@@ -1,4 +1,4 @@
-import { PathBuilder } from "../../path";
+import { PathBuilder } from "../../path/path";
 import { Pipeline } from "../../pipeline";
 import { ManifestFile } from "./types";
 export declare class Manifest {

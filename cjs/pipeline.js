@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Pipeline = void 0;
 const file_list_1 = require("./file-list");
 const resolver_1 = require("./resolver");
-const path_1 = require("./path");
+const path_1 = require("./path/path");
 const transformer_1 = require("./transformer");
 const emitter_1 = require("lol/js/emitter");
 const logger_1 = require("./logger");

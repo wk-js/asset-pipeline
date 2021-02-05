@@ -1,10 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Resolver = void 0;
-const path_1 = require("./path");
+const path_1 = require("./path/path");
+const url_1 = require("./path/url");
+const utils_1 = require("./path/utils");
 class Resolver {
     constructor() {
-        this.host = new path_1.URLBuilder("/");
+        this.host = new url_1.URLBuilder("/");
         this.output = new path_1.PathBuilder("public");
         this._paths = [];
         this._aliases = [];
@@ -17,7 +19,7 @@ class Resolver {
         return this;
     }
     resolve(path) {
-        path = path_1.normalize(path, "web");
+        path = utils_1.normalize(path, "web");
         const original = path;
         const extra = path.match(/\#|\?/);
         let parameters = '';

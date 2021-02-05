@@ -1,4 +1,6 @@
-import { normalize, PathBuilder, URLBuilder } from "./path";
+import { PathBuilder } from "./path/path";
+import { URLBuilder } from "./path/url";
+import { normalize } from "./path/utils";
 export class Resolver {
     constructor() {
         this.host = new URLBuilder("/");

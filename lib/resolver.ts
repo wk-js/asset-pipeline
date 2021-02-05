@@ -1,14 +1,16 @@
-import { normalize, PathBuilder, URLBuilder } from "./path";
-import { ResolvedPath, TransformedEntry } from "./types";
+import { PathBuilder } from "./path/path";
+import { URLBuilder } from "./path/url";
+import { normalize } from "./path/utils";
+import { ResolvedPath, TransformResult } from "./types";
 
 export class Resolver {
   host = new URLBuilder("/")
   output = new PathBuilder("public")
 
-  protected _paths: TransformedEntry[] = []
+  protected _paths: TransformResult[] = []
   protected _aliases: PathBuilder[] = []
 
-  set(paths: TransformedEntry[]) {
+  set(paths: TransformResult[]) {
     this._paths = paths.sort((a, b) => a[1].priority < b[1].priority ? -1 : 1)
   }
 
@@ -82,7 +84,7 @@ export class Resolver {
     return this.output.join(resolved.transformed.path).unix()
   }
 
-  filter(predicate?: (value: TransformedEntry, index: number, array: TransformedEntry[]) => boolean) {
+  filter(predicate?: (value: TransformResult, index: number, array: TransformResult[]) => boolean) {
     if (!predicate) return this._paths.slice(0)
     return this._paths.filter(predicate)
   }

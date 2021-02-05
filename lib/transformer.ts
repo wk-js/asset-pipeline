@@ -1,6 +1,6 @@
-import { PathBuilder } from "./path"
-import { RuleBuilder } from "./rule"
-import { RuleOptions, TransformedEntry } from "./types"
+import { PathBuilder, PathOrString, toWebString } from "./path/path";
+import { TransformRule } from "./transform-rule"
+import { RuleOptions, TransformResult } from "./types"
 
 const PATH = new PathBuilder("")
 
@@ -8,18 +8,17 @@ export class Transformer {
 
   saltKey = ""
   cachebreak = false
-  entries: RuleBuilder[] = []
-  results: TransformedEntry[] = []
+  entries: TransformRule[] = []
+  results: TransformResult[] = []
 
-  add(pattern: string | PathBuilder) {
-    const path = this._toWebPath(pattern)
-    const t = new RuleBuilder(path)
+  add(pattern: PathOrString) {
+    const t = new TransformRule(toWebString(pattern))
     this.entries.push(t)
     return t
   }
 
-  delete(pattern: string | PathBuilder) {
-    const path = this._toWebPath(pattern)
+  delete(pattern: PathOrString) {
+    const path = toWebString(pattern)
     const index = this.entries.findIndex(item => item.pattern === path)
     if (index > -1) this.entries.splice(index, 1)
   }
@@ -29,7 +28,7 @@ export class Transformer {
       saltKey: this.saltKey,
       cachebreak: this.cachebreak
     }
-    const results: TransformedEntry[] = []
+    const results: TransformResult[] = []
 
     for (const filename of files) {
       const transforms = this.entries
@@ -47,14 +46,6 @@ export class Transformer {
     }
 
     return this.results = results
-  }
-
-  protected _toWebPath(pattern: string | PathBuilder): string {
-    if (pattern instanceof PathBuilder) {
-      return pattern.web()
-    } else {
-      return PATH.set(pattern).web()
-    }
   }
 
 }

@@ -1,16 +1,17 @@
-import { PathBuilder, URLBuilder } from "./path";
-import { ResolvedPath, TransformedEntry } from "./types";
+import { PathBuilder } from "./path/path";
+import { URLBuilder } from "./path/url";
+import { ResolvedPath, TransformResult } from "./types";
 export declare class Resolver {
     host: URLBuilder;
     output: PathBuilder;
-    protected _paths: TransformedEntry[];
+    protected _paths: TransformResult[];
     protected _aliases: PathBuilder[];
-    set(paths: TransformedEntry[]): void;
+    set(paths: TransformResult[]): void;
     alias(path: string): this;
     resolve(path: string): ResolvedPath[];
     getTransformedPath(path: string): import("./types").TransformedPath;
     getPath(path: string): string;
     getUrl(path: string): string;
     getOutputPath(path: string): string;
-    filter(predicate?: (value: TransformedEntry, index: number, array: TransformedEntry[]) => boolean): TransformedEntry[];
+    filter(predicate?: (value: TransformResult, index: number, array: TransformResult[]) => boolean): TransformResult[];
 }

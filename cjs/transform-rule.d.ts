@@ -1,5 +1,5 @@
 import { Rule, RuleOptions, TransformedPath } from "./types";
-export declare class RuleBuilder {
+export declare class TransformRule {
     pattern: string;
     rule: Rule;
     constructor(pattern: string);

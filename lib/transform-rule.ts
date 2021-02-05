@@ -1,12 +1,12 @@
 import minimatch from "minimatch";
 import { basename, dirname, format, join, parse, relative } from "path";
 import { generateHash } from "./utils";
-import { normalize } from "./path";
+import { normalize } from "./path/utils";
 import { Rule, RuleOptions, TransformedPath } from "./types";
 
 const EXT_REG = /^\./
 
-export class RuleBuilder {
+export class TransformRule {
   rule: Rule = {
     tag: "default",
     priority: 0,
@@ -82,6 +82,10 @@ export class RuleBuilder {
   }
 
   apply(filename: string, options?: Partial<RuleOptions>): TransformedPath {
+    if (!this.match(filename)) {
+      throw new Error(`Cannot tranform "${filename}"`)
+    }
+
     const _options: RuleOptions = {
       cachebreak: false,
       saltKey: "none",

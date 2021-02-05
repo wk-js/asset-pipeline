@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Manifest = void 0;
 const fs_1 = require("fs");
 const fs_2 = require("lol/js/node/fs");
-const path_1 = require("../../path");
+const path_1 = require("../../path/path");
 class Manifest {
     constructor(pipeline) {
         this.pipeline = pipeline;

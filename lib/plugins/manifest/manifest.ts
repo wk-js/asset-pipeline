@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "fs";
 import { isFile, removeSync } from "lol/js/node/fs";
-import { PathBuilder } from "../../path";
+import { PathBuilder } from "../../path/path";
 import { Pipeline } from "../../pipeline";
 import { ManifestFile } from "./types";
 

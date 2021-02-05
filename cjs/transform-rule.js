@@ -3,13 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RuleBuilder = void 0;
+exports.TransformRule = void 0;
 const minimatch_1 = __importDefault(require("minimatch"));
 const path_1 = require("path");
 const utils_1 = require("./utils");
-const path_2 = require("./path");
+const utils_2 = require("./path/utils");
 const EXT_REG = /^\./;
-class RuleBuilder {
+class TransformRule {
     constructor(pattern) {
         this.pattern = pattern;
         this.rule = {
@@ -77,6 +77,9 @@ class RuleBuilder {
         return minimatch_1.default(filename, this.pattern);
     }
     apply(filename, options) {
+        if (!this.match(filename)) {
+            throw new Error(`Cannot tranform "${filename}"`);
+        }
         const _options = Object.assign({ cachebreak: false, saltKey: "none" }, (options || {}));
         const rule = this.rule;
         let output = filename;
@@ -108,10 +111,10 @@ class RuleBuilder {
         parsed.base = parsed.name + parsed.ext;
         output = path_1.format(parsed);
         return {
-            path: path_2.normalize(output, "web"),
+            path: utils_2.normalize(output, "web"),
             tag: rule.tag,
             priority: rule.priority
         };
     }
 }
-exports.RuleBuilder = RuleBuilder;
+exports.TransformRule = TransformRule;

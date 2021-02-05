@@ -1,5 +1,5 @@
 import { fetch } from "lol/js/node/fs";
-import { PathBuilder } from "./path";
+import { PathBuilder, toWebString } from "./path/path";
 const PATH = new PathBuilder("");
 export class FileList {
     constructor() {
@@ -12,19 +12,19 @@ export class FileList {
     }
     include(...patterns) {
         for (const pattern of patterns) {
-            this._include(this._toUnixPath(pattern));
+            this._include(toWebString(pattern));
         }
         return this;
     }
     exclude(...patterns) {
         for (const pattern of patterns) {
-            this._exclude(this._toUnixPath(pattern));
+            this._exclude(toWebString(pattern));
         }
         return this;
     }
     shadow(...patterns) {
         for (const pattern of patterns) {
-            this._push(this._toUnixPath(pattern));
+            this._push(toWebString(pattern));
         }
         return this;
     }
@@ -38,14 +38,6 @@ export class FileList {
             }
         }
         return this.entries.slice(0);
-    }
-    _toUnixPath(pattern) {
-        if (pattern instanceof PathBuilder) {
-            return pattern.unix();
-        }
-        else {
-            return PATH.set(pattern).unix();
-        }
     }
     _push(file) {
         const f = PATH.set(file).web();

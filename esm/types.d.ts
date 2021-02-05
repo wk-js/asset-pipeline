@@ -19,14 +19,14 @@ export interface TransformedPath {
     tag: string;
     priority: number;
 }
-export declare type TransformedEntry = [string, TransformedPath];
+export declare type TransformResult = [string, TransformedPath];
 export interface ResolvedPath {
     transformed: TransformedPath;
     parameters: string;
 }
 export interface PipelineEvents {
     "resolved": string[];
-    "transformed": TransformedEntry[];
+    "transformed": TransformResult[];
 }
 export declare type PipelineEvent<K extends keyof PipelineEvents = any> = EmitterEvent<K, PipelineEvents[K]>;
 export declare type PipelineEventCallback<K extends keyof PipelineEvents = any> = EmitterCallback<K, PipelineEvents[K]>;

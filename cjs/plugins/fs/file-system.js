@@ -13,10 +13,11 @@ exports.FileSystem = void 0;
 require("./types");
 const fs_1 = require("fs");
 const fs_2 = require("lol/js/node/fs");
-const path_1 = require("../../path");
+const path_1 = require("../../path/path");
 const array_1 = require("lol/js/array/array");
 const path_2 = require("path");
 const logger_1 = require("../../logger");
+const utils_1 = require("../../path/utils");
 const PATH = new path_1.PathBuilder("");
 class FileSystem {
     constructor(pipeline) {
@@ -92,7 +93,7 @@ class FileSystem {
                 const input = PATH.set(file).unix();
                 const output = this.resolver.getOutputPath(file);
                 if (input !== output) {
-                    return ios.push([input, path_1.cleanup(output)]);
+                    return ios.push([input, utils_1.cleanup(output)]);
                 }
             });
             ios = ios.filter(io => {

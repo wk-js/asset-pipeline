@@ -1,5 +1,5 @@
-import { PathBuilder } from "./path";
-import { RuleBuilder } from "./rule";
+import { PathBuilder, toWebString } from "./path/path";
+import { TransformRule } from "./transform-rule";
 const PATH = new PathBuilder("");
 export class Transformer {
     constructor() {
@@ -9,13 +9,12 @@ export class Transformer {
         this.results = [];
     }
     add(pattern) {
-        const path = this._toWebPath(pattern);
-        const t = new RuleBuilder(path);
+        const t = new TransformRule(toWebString(pattern));
         this.entries.push(t);
         return t;
     }
     delete(pattern) {
-        const path = this._toWebPath(pattern);
+        const path = toWebString(pattern);
         const index = this.entries.findIndex(item => item.pattern === path);
         if (index > -1)
             this.entries.splice(index, 1);
@@ -41,13 +40,5 @@ export class Transformer {
             }
         }
         return this.results = results;
-    }
-    _toWebPath(pattern) {
-        if (pattern instanceof PathBuilder) {
-            return pattern.web();
-        }
-        else {
-            return PATH.set(pattern).web();
-        }
     }
 }

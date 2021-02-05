@@ -1,6 +1,6 @@
 import { FileList } from "./file-list"
 import { Resolver } from "./resolver"
-import { PathBuilder } from "./path"
+import { PathBuilder } from "./path/path";
 import { Transformer } from "./transformer"
 import { Emitter } from "lol/js/emitter"
 import { PipelineEvents, PipelinePlugin } from "./types"

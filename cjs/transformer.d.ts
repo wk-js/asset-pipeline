@@ -1,13 +1,12 @@
-import { PathBuilder } from "./path";
-import { RuleBuilder } from "./rule";
-import { TransformedEntry } from "./types";
+import { PathOrString } from "./path/path";
+import { TransformRule } from "./transform-rule";
+import { TransformResult } from "./types";
 export declare class Transformer {
     saltKey: string;
     cachebreak: boolean;
-    entries: RuleBuilder[];
-    results: TransformedEntry[];
-    add(pattern: string | PathBuilder): RuleBuilder;
-    delete(pattern: string | PathBuilder): void;
-    transform(files: string[]): TransformedEntry[];
-    protected _toWebPath(pattern: string | PathBuilder): string;
+    entries: TransformRule[];
+    results: TransformResult[];
+    add(pattern: PathOrString): TransformRule;
+    delete(pattern: PathOrString): void;
+    transform(files: string[]): TransformResult[];
 }

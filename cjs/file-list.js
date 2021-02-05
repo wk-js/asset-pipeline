@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileList = void 0;
 const fs_1 = require("lol/js/node/fs");
-const path_1 = require("./path");
+const path_1 = require("./path/path");
 const PATH = new path_1.PathBuilder("");
 class FileList {
     constructor() {
@@ -15,19 +15,19 @@ class FileList {
     }
     include(...patterns) {
         for (const pattern of patterns) {
-            this._include(this._toUnixPath(pattern));
+            this._include(path_1.toWebString(pattern));
         }
         return this;
     }
     exclude(...patterns) {
         for (const pattern of patterns) {
-            this._exclude(this._toUnixPath(pattern));
+            this._exclude(path_1.toWebString(pattern));
         }
         return this;
     }
     shadow(...patterns) {
         for (const pattern of patterns) {
-            this._push(this._toUnixPath(pattern));
+            this._push(path_1.toWebString(pattern));
         }
         return this;
     }
@@ -41,14 +41,6 @@ class FileList {
             }
         }
         return this.entries.slice(0);
-    }
-    _toUnixPath(pattern) {
-        if (pattern instanceof path_1.PathBuilder) {
-            return pattern.unix();
-        }
-        else {
-            return PATH.set(pattern).unix();
-        }
     }
     _push(file) {
         const f = PATH.set(file).web();

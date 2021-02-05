@@ -1,7 +1,7 @@
 import "./types"
 import { statSync, symlinkSync } from "fs";
 import { fetch, fetchDirs, copy, move, ensureDirSync } from "lol/js/node/fs";
-import { cleanup, PathBuilder } from "../../path";
+import { PathBuilder } from "../../path/path";
 import { Pipeline } from "../../pipeline";
 import { FSRuleEntry } from "./types";
 import { chunk } from "lol/js/array/array";
@@ -10,6 +10,7 @@ import { Emitter } from "lol/js/emitter";
 import { PipelineEvents } from "../../types";
 import { Resolver } from "../../resolver";
 import { info } from "../../logger";
+import { cleanup } from "../../path/utils";
 
 const PATH = new PathBuilder("")
 

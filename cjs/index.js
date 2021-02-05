@@ -12,10 +12,10 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./pipeline"), exports);
 __exportStar(require("./file-list"), exports);
-__exportStar(require("./path"), exports);
+__exportStar(require("./path/path"), exports);
 __exportStar(require("./resolver"), exports);
 __exportStar(require("./transformer"), exports);
-__exportStar(require("./rule"), exports);
+__exportStar(require("./transform-rule"), exports);
 __exportStar(require("./types"), exports);
 __exportStar(require("./plugins/fs/file-system"), exports);
 __exportStar(require("./plugins/fs/plugin"), exports);
