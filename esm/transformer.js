@@ -1,23 +1,22 @@
-import { PathBuilder, toWebString } from "./path/path";
-import { TransformRule } from "./transform-rule";
-const PATH = new PathBuilder("");
+import { toWebString } from "./path/path";
+import { CreateTransformRule } from "./transform-rule";
 export class Transformer {
     constructor() {
         this.saltKey = "";
         this.cachebreak = false;
-        this.entries = [];
+        this.rules = [];
         this.results = [];
     }
     add(pattern) {
-        const t = new TransformRule(toWebString(pattern));
-        this.entries.push(t);
+        const t = CreateTransformRule(toWebString(pattern));
+        this.rules.push(t);
         return t;
     }
     delete(pattern) {
         const path = toWebString(pattern);
-        const index = this.entries.findIndex(item => item.pattern === path);
+        const index = this.rules.findIndex(item => item.pattern === path);
         if (index > -1)
-            this.entries.splice(index, 1);
+            this.rules.splice(index, 1);
     }
     transform(files) {
         const options = {
@@ -26,9 +25,7 @@ export class Transformer {
         };
         const results = [];
         for (const filename of files) {
-            const transforms = this.entries
-                .filter(t => t.match(filename))
-                .sort((a, b) => a.priority < b.priority ? -1 : 1);
+            const transforms = this.rules.filter(t => t.match(filename));
             if (transforms.length > 0) {
                 for (const transform of transforms) {
                     const result = transform.apply(filename, options);

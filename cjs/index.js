@@ -14,6 +14,7 @@ __exportStar(require("./pipeline"), exports);
 __exportStar(require("./file-list"), exports);
 __exportStar(require("./path/path"), exports);
 __exportStar(require("./resolver"), exports);
+__exportStar(require("./rule"), exports);
 __exportStar(require("./transformer"), exports);
 __exportStar(require("./transform-rule"), exports);
 __exportStar(require("./types"), exports);

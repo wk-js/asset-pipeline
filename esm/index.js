@@ -2,6 +2,7 @@ export * from "./pipeline";
 export * from "./file-list";
 export * from "./path/path";
 export * from "./resolver";
+export * from "./rule";
 export * from "./transformer";
 export * from "./transform-rule";
 export * from "./types";
