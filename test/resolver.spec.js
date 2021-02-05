@@ -1,4 +1,4 @@
-const { LOAD_PATH, setupWithEntries, DST_PATH, setup } = require("./setup")
+const { LOAD_PATH, setupWithEntries, DST_PATH } = require("./setup")
 const assert = require("assert")
 const { Pipeline } = require("../cjs")
 
@@ -9,7 +9,7 @@ describe("Resolver", () => {
 
     assert.strictEqual(p.resolver.getPath("tmp/test-units/app/scripts/main.ts"), "/main.js")
 
-    p.resolver.alias(LOAD_PATH.join("app").web())
+    p.resolver.alias(LOAD_PATH.join("app"))
     assert.strictEqual(p.resolver.getPath("scripts/main.ts"), "/main.js")
 
     p.resolver.host.set("https://localhost:3000/public/")
@@ -19,7 +19,7 @@ describe("Resolver", () => {
   it("Get url", async () => {
     const p = await setupWithEntries()
 
-    p.resolver.alias(LOAD_PATH.join("app").web())
+    p.resolver.alias(LOAD_PATH.join("app"))
 
     p.resolver.host.set("https://localhost:3000/")
     assert.strictEqual(p.resolver.getUrl("scripts/main.ts"), "https://localhost:3000/main.js")
@@ -32,7 +32,7 @@ describe("Resolver", () => {
     const p = await setupWithEntries()
     const dist = DST_PATH.clone()
 
-    p.resolver.alias(LOAD_PATH.join("app").web())
+    p.resolver.alias(LOAD_PATH.join("app"))
     assert.strictEqual(p.resolver.getOutputPath("scripts/main.ts"), dist.join("main.js").unix())
 
     p.resolver.output.set("dist")

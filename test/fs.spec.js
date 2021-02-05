@@ -10,7 +10,7 @@ describe("fs", () => {
 
     await p.plugin(FsPlugin)
     const fs = p.options("fs")
-    fs.copy(LOAD_PATH.join("app/assets/**/*").unix())
+    fs.copy(LOAD_PATH.join("app/assets/**/*"))
     await fs.apply()
 
     const files = fetch(p.resolver.output.join("**/*").unix())
@@ -33,7 +33,7 @@ describe("fs", () => {
 
     await p.plugin(FsPlugin)
     const fs = p.options("fs")
-    fs.copy(LOAD_PATH.join("app/assets/**/*").unix())
+    fs.copy(LOAD_PATH.join("app/assets/**/*"))
     await fs.apply()
 
     const files = fetch(p.resolver.output.join("**/*").unix())

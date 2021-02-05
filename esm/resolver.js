@@ -1,4 +1,4 @@
-import { PathBuilder } from "./path/path";
+import { PathBuilder, toPath } from "./path/path";
 import { URLBuilder } from "./path/url";
 import { normalize } from "./path/utils";
 export class Resolver {
@@ -12,7 +12,7 @@ export class Resolver {
         this._paths = paths.sort((a, b) => a[1].priority < b[1].priority ? -1 : 1);
     }
     alias(path) {
-        this._aliases.push(new PathBuilder(path));
+        this._aliases.push(toPath(path));
         return this;
     }
     resolve(path) {
@@ -67,7 +67,7 @@ export class Resolver {
     }
     getOutputPath(path) {
         const resolved = this.resolve(path)[0];
-        return this.output.join(resolved.transformed.path).unix();
+        return this.host.pathname.join(this.output, resolved.transformed.path).unix();
     }
     filter(predicate) {
         if (!predicate)

@@ -32,7 +32,7 @@ class FileSystem {
      */
     move(glob) {
         this.globs.push({
-            glob: glob,
+            glob: path_1.toUnixString(glob),
             action: 'move'
         });
     }
@@ -41,7 +41,7 @@ class FileSystem {
      */
     copy(glob) {
         this.globs.push({
-            glob: glob,
+            glob: path_1.toUnixString(glob),
             action: 'copy'
         });
     }
@@ -50,7 +50,7 @@ class FileSystem {
      */
     symlink(glob) {
         this.globs.push({
-            glob: glob,
+            glob: path_1.toUnixString(glob),
             action: 'symlink'
         });
     }
@@ -59,7 +59,7 @@ class FileSystem {
      */
     ignore(glob) {
         this.globs.push({
-            glob: glob,
+            glob: path_1.toUnixString(glob),
             action: 'ignore'
         });
     }

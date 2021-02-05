@@ -1,4 +1,4 @@
-import { PathBuilder } from "./path/path";
+import { PathBuilder, PathOrString, toPath } from "./path/path";
 import { URLBuilder } from "./path/url";
 import { normalize } from "./path/utils";
 import { ResolvedPath, TransformResult } from "./types";
@@ -7,6 +7,7 @@ export class Resolver {
   host = new URLBuilder("/")
   output = new PathBuilder("public")
 
+  protected _cwd = new PathBuilder(process.cwd())
   protected _paths: TransformResult[] = []
   protected _aliases: PathBuilder[] = []
 
@@ -14,8 +15,8 @@ export class Resolver {
     this._paths = paths.sort((a, b) => a[1].priority < b[1].priority ? -1 : 1)
   }
 
-  alias(path: string) {
-    this._aliases.push(new PathBuilder(path))
+  alias(path: PathOrString) {
+    this._aliases.push(toPath(path))
     return this
   }
 
@@ -81,7 +82,8 @@ export class Resolver {
 
   getOutputPath(path: string) {
     const resolved = this.resolve(path)[0]
-    return this.output.join(resolved.transformed.path).unix()
+    const _path = this._cwd.join(this.host.pathname, this.output, resolved.transformed.path)
+    return this._cwd.relative(_path).web()
   }
 
   filter(predicate?: (value: TransformResult, index: number, array: TransformResult[]) => boolean) {

@@ -1,7 +1,7 @@
 import "./types"
 import { statSync, symlinkSync } from "fs";
 import { fetch, fetchDirs, copy, move, ensureDirSync } from "lol/js/node/fs";
-import { PathBuilder } from "../../path/path";
+import { PathBuilder, PathOrString, toUnixString } from "../../path/path";
 import { Pipeline } from "../../pipeline";
 import { FSRuleEntry } from "./types";
 import { chunk } from "lol/js/array/array";
@@ -30,9 +30,9 @@ export class FileSystem {
   /**
    * Register a path or a glob pattern for a move
    */
-  move(glob: string) {
+  move(glob: PathOrString) {
     this.globs.push({
-      glob: glob,
+      glob: toUnixString(glob),
       action: 'move'
     })
   }
@@ -40,9 +40,9 @@ export class FileSystem {
   /**
    * Register a path or a glob pattern for a copy
    */
-  copy(glob: string) {
+  copy(glob: PathOrString) {
     this.globs.push({
-      glob: glob,
+      glob: toUnixString(glob),
       action: 'copy'
     })
   }
@@ -50,9 +50,9 @@ export class FileSystem {
   /**
    * Register a path or a glob pattern for a symlink
    */
-  symlink(glob: string) {
+  symlink(glob: PathOrString) {
     this.globs.push({
-      glob: glob,
+      glob: toUnixString(glob),
       action: 'symlink'
     })
   }
@@ -60,9 +60,9 @@ export class FileSystem {
   /**
    * Register a path or a glob pattern to ignore
    */
-  ignore(glob: string) {
+  ignore(glob: PathOrString) {
     this.globs.push({
-      glob: glob,
+      glob: toUnixString(glob),
       action: 'ignore'
     })
   }
