@@ -27,11 +27,11 @@ export class Pipeline {
   }
 
   fetch(forceResolve?: boolean) {
-    this.files.resolve(forceResolve)
-    this.events.dispatch("resolved")
+    const files = this.files.resolve(forceResolve)
+    this.events.dispatch("resolved", files)
     const paths = this.rules.transform(this.files.entries)
     this.resolver.set(paths)
-    this.events.dispatch("transformed")
+    this.events.dispatch("transformed", paths)
   }
 
   options(key: string) {

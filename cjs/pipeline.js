@@ -35,11 +35,11 @@ class Pipeline {
         return new path_1.PathBuilder(path);
     }
     fetch(forceResolve) {
-        this.files.resolve(forceResolve);
-        this.events.dispatch("resolved");
+        const files = this.files.resolve(forceResolve);
+        this.events.dispatch("resolved", files);
         const paths = this.rules.transform(this.files.entries);
         this.resolver.set(paths);
-        this.events.dispatch("transformed");
+        this.events.dispatch("transformed", paths);
     }
     options(key) {
         return this._options.get(key);

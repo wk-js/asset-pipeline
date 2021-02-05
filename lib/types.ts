@@ -32,8 +32,8 @@ export interface ResolvedPath {
 }
 
 export interface PipelineEvents {
-  "resolved": void
-  "transformed": void
+  "resolved": string[]
+  "transformed": TransformedEntry[]
 }
 
 export type PipelineEvent<K extends keyof PipelineEvents=any> = EmitterEvent<K, PipelineEvents[K]>

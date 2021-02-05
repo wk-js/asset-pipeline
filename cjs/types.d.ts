@@ -25,8 +25,8 @@ export interface ResolvedPath {
     parameters: string;
 }
 export interface PipelineEvents {
-    "resolved": void;
-    "transformed": void;
+    "resolved": string[];
+    "transformed": TransformedEntry[];
 }
 export declare type PipelineEvent<K extends keyof PipelineEvents = any> = EmitterEvent<K, PipelineEvents[K]>;
 export declare type PipelineEventCallback<K extends keyof PipelineEvents = any> = EmitterCallback<K, PipelineEvents[K]>;
