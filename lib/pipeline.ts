@@ -34,7 +34,10 @@ export class Pipeline {
     this.events.dispatch("transformed", paths)
   }
 
-  options(key: string) {
+  options(key: string, value?: any):  any {
+    if (value) {
+      this._options.set(key, value)
+    }
     return this._options.get(key)
   }
 
@@ -45,14 +48,9 @@ export class Pipeline {
 
     this._plugins.add(plugin.name)
 
-    let options: any
-    const res = options = plugin.setup(this)
+    const res = plugin.setup(this)
     if (res && typeof res === "object" && typeof res.then) {
-      options = await res
-    }
-
-    if (options) {
-      this._options.set(plugin.name, options)
+      await res
     }
   }
 }

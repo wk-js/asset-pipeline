@@ -9,10 +9,10 @@ export const ManifestPlugin = <PipelinePlugin>{
 
   setup(pipeline: Pipeline) {
     const manifest = new Manifest(pipeline)
+    pipeline.options("manifest", manifest)
     pipeline.events.on("transformed", () => {
       manifest.save()
     })
-    return manifest
   },
 
 }

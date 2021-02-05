@@ -10,7 +10,7 @@ export interface FSRuleEntry {
 declare module "../../pipeline" {
   interface Pipeline {
     // Declare fs options
-    options(id: "fs"): FileSystem
+    options(id: "fs", value?: FileSystem): FileSystem
   }
 }
 

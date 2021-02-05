@@ -5,6 +5,6 @@ import { FileSystem } from "./file-system";
 export const FsPlugin = <PipelinePlugin>{
   name: "fs",
   setup(pipeline) {
-    return new FileSystem(pipeline)
+    pipeline.options("fs", new FileSystem(pipeline))
   }
 }

@@ -32,13 +32,16 @@ export class Pipeline {
         return new PathBuilder(path);
     }
     fetch(forceResolve) {
-        this.files.resolve(forceResolve);
-        this.events.dispatch("resolved");
+        const files = this.files.resolve(forceResolve);
+        this.events.dispatch("resolved", files);
         const paths = this.rules.transform(this.files.entries);
         this.resolver.set(paths);
-        this.events.dispatch("transformed");
+        this.events.dispatch("transformed", paths);
     }
-    options(key) {
+    options(key, value) {
+        if (value) {
+            this._options.set(key, value);
+        }
         return this._options.get(key);
     }
     plugin(plugin) {
@@ -47,13 +50,9 @@ export class Pipeline {
                 return;
             }
             this._plugins.add(plugin.name);
-            let options;
-            const res = options = plugin.setup(this);
+            const res = plugin.setup(this);
             if (res && typeof res === "object" && typeof res.then) {
-                options = yield res;
-            }
-            if (options) {
-                this._options.set(plugin.name, options);
+                yield res;
             }
         });
     }

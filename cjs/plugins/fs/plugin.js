@@ -6,6 +6,6 @@ const file_system_1 = require("./file-system");
 exports.FsPlugin = {
     name: "fs",
     setup(pipeline) {
-        return new file_system_1.FileSystem(pipeline);
+        pipeline.options("fs", new file_system_1.FileSystem(pipeline));
     }
 };

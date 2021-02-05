@@ -4,7 +4,7 @@ import { Manifest } from "./manifest";
 declare module "../../pipeline" {
   interface Pipeline {
     // Declare manifest options
-    options(id: "manifest"): Manifest
+    options(id: "manifest", value?: Manifest): Manifest
   }
 }
 

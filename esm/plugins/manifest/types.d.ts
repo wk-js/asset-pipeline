@@ -2,7 +2,7 @@ import { TransformedEntry } from "../../types";
 import { Manifest } from "./manifest";
 declare module "../../pipeline" {
     interface Pipeline {
-        options(id: "manifest"): Manifest;
+        options(id: "manifest", value?: Manifest): Manifest;
     }
 }
 export interface ManifestFile {
