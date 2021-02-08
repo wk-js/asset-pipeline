@@ -9,12 +9,6 @@ export class Transformer {
     }
     add(pattern) {
         const t = CreateTransformRule(toWebString(pattern));
-        const clone = t.clone;
-        t.clone = () => {
-            const cloned = clone();
-            this.rules.push(cloned);
-            return cloned;
-        };
         this.rules.push(t);
         return t;
     }
@@ -23,6 +17,10 @@ export class Transformer {
         const index = this.rules.findIndex(item => item.pattern === path);
         if (index > -1)
             this.rules.splice(index, 1);
+    }
+    match(filename) {
+        const _filename = toWebString(filename);
+        return this.rules.some(t => t.match(_filename));
     }
     transform(files) {
         const options = {

@@ -10,15 +10,14 @@ export interface DefaultRule<Options extends Record<string, any>> {
         tag: string;
         priority: number;
     };
-    clone(): this;
     tag(tag: string): this;
     priority(priority: number): this;
     set(override: Partial<this['options']>): this;
     match(filename: string): boolean;
 }
-export interface RuleBuilder<Data, Methods> {
-    options: Data;
-    api?: Methods & ThisType<Methods & DefaultRule<Data>>;
+export interface RuleBuilder<Options, Methods> {
+    options?: () => Options;
+    methods?: Methods & ThisType<Methods & DefaultRule<Options>>;
 }
 export interface TransformedPath {
     path: string;

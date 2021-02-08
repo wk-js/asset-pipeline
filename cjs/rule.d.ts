@@ -1,2 +1,2 @@
 import { RuleBuilder, DefaultRule } from "./types";
-export declare function createRule<Data, Methods>(desc: RuleBuilder<Data, Methods>): (pattern: string) => DefaultRule<Data> & Methods;
+export declare function createRule<Options, Methods>(desc: RuleBuilder<Options, Methods>): (pattern: string) => DefaultRule<Options> & Methods;

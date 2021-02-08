@@ -18,5 +18,6 @@ export declare class Transformer {
         apply(filename: string, options?: Partial<RuleOptions> | undefined): import("./types").TransformedPath;
     };
     delete(pattern: PathOrString): void;
+    match(filename: PathOrString): boolean;
     transform(files: string[]): TransformResult[];
 }

@@ -1,19 +1,20 @@
-import { PathBuilder, toPath } from "./path/path";
+import { PathBuilder, toPath, toWebString } from "./path/path";
 import { URLBuilder } from "./path/url";
 import { normalize } from "./path/utils";
+const OUTSIDE_REG = /^\.\./;
 export class Resolver {
     constructor() {
         this.host = new URLBuilder("/");
         this.output = new PathBuilder("public");
         this._cwd = new PathBuilder(process.cwd());
-        this._paths = [];
-        this._aliases = [];
+        this.paths = [];
+        this.aliases = [];
     }
     set(paths) {
-        this._paths = paths.sort((a, b) => a[1].priority < b[1].priority ? -1 : 1);
+        this.paths = paths.sort((a, b) => a[1].priority < b[1].priority ? -1 : 1);
     }
     alias(path) {
-        this._aliases.push(toPath(path));
+        this.aliases.push(toPath(path));
         return this;
     }
     resolve(path, tag = "default") {
@@ -26,7 +27,7 @@ export class Resolver {
             path = path.split(extra[0])[0];
         }
         const paths = [];
-        for (const [filename, transformed] of this._paths) {
+        for (const [filename, transformed] of this.paths) {
             if (path === filename && transformed.tag === tag) {
                 paths.push({
                     transformed: transformed,
@@ -34,10 +35,10 @@ export class Resolver {
                 });
             }
         }
-        if (paths.length === 0) {
-            for (const alias of this._aliases) {
+        if (paths.length === 0 && !OUTSIDE_REG.test(path)) {
+            for (const alias of this.aliases) {
                 const p = alias.join(path).web();
-                for (const [filename, transformed] of this._paths) {
+                for (const [filename, transformed] of this.paths) {
                     if (p === filename && transformed.tag === tag) {
                         paths.push({
                             transformed: transformed,
@@ -71,9 +72,20 @@ export class Resolver {
         const _path = this._cwd.join(this.host.pathname, this.output, resolved.transformed.path);
         return this._cwd.relative(_path).web();
     }
+    findInputPath(outputPath) {
+        let _outpath = toWebString(outputPath);
+        if (_outpath[0] === "/") {
+            _outpath = _outpath.slice(1);
+        }
+        const transformed = this.paths.find(([input, result]) => (result.path === _outpath));
+        if (!transformed) {
+            throw new Error(`Cannot find input for "${outputPath}"`);
+        }
+        return transformed;
+    }
     filter(predicate) {
         if (!predicate)
-            return this._paths.slice(0);
-        return this._paths.filter(predicate);
+            return this.paths.slice(0);
+        return this.paths.filter(predicate);
     }
 }

@@ -17,8 +17,8 @@ export class Manifest {
         this.file = content;
         this.pipeline.rules.saltKey = this.file.saltKey;
         this.pipeline.files.entries = this.file.entries.map(item => item[0]);
-        this.pipeline.resolver['_paths'] = this.file.entries;
-        this.pipeline.resolver['_aliases'] = this.file.aliases.map(alias => new PathBuilder(alias));
+        this.pipeline.resolver.paths = this.file.entries;
+        this.pipeline.resolver.aliases = this.file.aliases.map(alias => new PathBuilder(alias));
     }
     /**
      * Check if manifest file is created
@@ -32,7 +32,7 @@ export class Manifest {
     save() {
         this.file.saltKey = this.pipeline.rules.saltKey;
         this.file.date = new Date().toISOString();
-        this.file.entries = this.pipeline.resolver['_paths'];
+        this.file.entries = this.pipeline.resolver['paths'];
         if (this.saveOnDisk) {
             writeFileSync(this.path.unix(), JSON.stringify(this.file, null, 2));
         }

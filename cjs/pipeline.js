@@ -41,6 +41,14 @@ class Pipeline {
         this.resolver.set(paths);
         this.events.dispatch("transformed", paths);
     }
+    append(files) {
+        const _files = files.map(path_1.toWebString).filter(f => !this.files.entries.includes(f));
+        this.files.entries.push(..._files);
+        this.events.dispatch("resolved", _files);
+        const paths = this.rules.transform(_files);
+        this.resolver.paths.push(...paths);
+        this.events.dispatch("transformed", paths);
+    }
     options(key, value) {
         if (value) {
             this._options.set(key, value);

@@ -7,11 +7,13 @@ const utils_1 = require("./utils");
 const utils_2 = require("./path/utils");
 const EXT_REG = /^\./;
 exports.CreateTransformRule = rule_1.createRule({
-    options: {
-        tag: "default",
-        cachebreak: true
+    options() {
+        return {
+            tag: "default",
+            cachebreak: true
+        };
     },
-    api: {
+    methods: {
         name(name) {
             this.options.name = name;
             return this;
