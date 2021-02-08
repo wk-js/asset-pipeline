@@ -1,6 +1,6 @@
 {
   "name": "asset-pipeline",
-  "version": "5.0.0-beta.2",
+  "version": "5.0.0-beta.3",
   "description": "Asset pipeline",
   "main": "cjs/index.js",
   "module": "esm/index.js",
