@@ -1,22 +1,24 @@
-import { PathBuilder, PathOrString, toPath } from "./path/path";
+import { PathBuilder, PathOrString, toPath, toWebString } from "./path/path";
 import { URLBuilder } from "./path/url";
 import { normalize } from "./path/utils";
 import { ResolvedPath, TransformResult } from "./types";
+
+const OUTSIDE_REG = /^\.\./
 
 export class Resolver {
   host = new URLBuilder("/")
   output = new PathBuilder("public")
 
   protected _cwd = new PathBuilder(process.cwd())
-  protected _paths: TransformResult[] = []
-  protected _aliases: PathBuilder[] = []
+  paths: TransformResult[] = []
+  aliases: PathBuilder[] = []
 
   set(paths: TransformResult[]) {
-    this._paths = paths.sort((a, b) => a[1].priority < b[1].priority ? -1 : 1)
+    this.paths = paths.sort((a, b) => a[1].priority < b[1].priority ? -1 : 1)
   }
 
   alias(path: PathOrString) {
-    this._aliases.push(toPath(path))
+    this.aliases.push(toPath(path))
     return this
   }
 
@@ -33,7 +35,7 @@ export class Resolver {
 
     const paths: ResolvedPath[] = []
 
-    for (const [filename, transformed] of this._paths) {
+    for (const [filename, transformed] of this.paths) {
       if (path === filename && transformed.tag === tag) {
         paths.push({
           transformed: transformed,
@@ -42,10 +44,10 @@ export class Resolver {
       }
     }
 
-    if (paths.length === 0) {
-      for (const alias of this._aliases) {
+    if (paths.length === 0 && !OUTSIDE_REG.test(path)) {
+      for (const alias of this.aliases) {
         const p = alias.join(path).web()
-        for (const [filename, transformed] of this._paths) {
+        for (const [filename, transformed] of this.paths) {
           if (p === filename && transformed.tag === tag) {
             paths.push({
               transformed: transformed,
@@ -86,9 +88,27 @@ export class Resolver {
     return this._cwd.relative(_path).web()
   }
 
+  findInputPath(outputPath: PathOrString) {
+    let _outpath = toWebString(outputPath)
+
+    if (_outpath[0] === "/") {
+      _outpath = _outpath.slice(1)
+    }
+
+    const transformed = this.paths.find(([input, result]) => (
+      result.path === _outpath
+    ))
+
+    if (!transformed) {
+      throw new Error(`Cannot find input for "${outputPath}"`)
+    }
+
+    return transformed
+  }
+
   filter(predicate?: (value: TransformResult, index: number, array: TransformResult[]) => boolean) {
-    if (!predicate) return this._paths.slice(0)
-    return this._paths.filter(predicate)
+    if (!predicate) return this.paths.slice(0)
+    return this.paths.filter(predicate)
   }
 
 }

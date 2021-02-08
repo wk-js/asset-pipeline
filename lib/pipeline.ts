@@ -1,6 +1,6 @@
 import { FileList } from "./file-list"
 import { Resolver } from "./resolver"
-import { PathBuilder } from "./path/path";
+import { PathBuilder, PathOrString, toWebString } from "./path/path";
 import { Transformer } from "./transformer"
 import { Emitter } from "lol/js/emitter"
 import { PipelineEvents, PipelinePlugin } from "./types"
@@ -31,6 +31,15 @@ export class Pipeline {
     this.events.dispatch("resolved", files)
     const paths = this.rules.transform(this.files.entries)
     this.resolver.set(paths)
+    this.events.dispatch("transformed", paths)
+  }
+
+  append(files: PathOrString[]) {
+    const _files = files.map(toWebString).filter(f => !this.files.entries.includes(f))
+    this.files.entries.push(..._files)
+    this.events.dispatch("resolved", _files)
+    const paths = this.rules.transform(_files)
+    this.resolver.paths.push(...paths)
     this.events.dispatch("transformed", paths)
   }
 
