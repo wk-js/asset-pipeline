@@ -1,15 +1,14 @@
 import minimatch from "minimatch";
 import { RuleBuilder, DefaultRule } from "./types";
 
-export function createRule<Data, Methods>(desc: RuleBuilder<Data, Methods>): (pattern: string) => DefaultRule<Data> & Methods {
+export function createRule<Options, Methods>(desc: RuleBuilder<Options, Methods>): (pattern: string) => DefaultRule<Options> & Methods {
   return (pattern) => {
-    const rule: DefaultRule<any> = {
+    let rule: DefaultRule<any> = {
       pattern,
 
       options: {
         tag: "default",
         priority: 0,
-        ...desc.options
       },
 
       tag(tag: string) {
@@ -22,15 +21,6 @@ export function createRule<Data, Methods>(desc: RuleBuilder<Data, Methods>): (pa
         return this
       },
 
-      clone() {
-        const rr = createRule(desc)(this.pattern)
-        rr.options = {
-          ...rr.options,
-          ...this.options
-        }
-        return rr
-      },
-
       set(override) {
         Object.assign(this.options, override)
         return this
@@ -39,8 +29,20 @@ export function createRule<Data, Methods>(desc: RuleBuilder<Data, Methods>): (pa
       match(filename: string) {
         return minimatch(filename, this.pattern)
       },
+    }
 
-      ...desc.api
+    if (desc.options && typeof desc.options === "function") {
+      rule.options = {
+        ...rule.options,
+        ...desc.options(),
+      }
+    }
+
+    if (desc.methods && typeof desc.methods === "object") {
+      rule = {
+        ...rule,
+        ...desc.methods
+      }
     }
 
     for (const [key, value] of Object.entries(rule)) {
@@ -50,6 +52,6 @@ export function createRule<Data, Methods>(desc: RuleBuilder<Data, Methods>): (pa
       }
     }
 
-    return rule as DefaultRule<Data> & Methods
+    return rule as DefaultRule<Options> & Methods
   }
 }
