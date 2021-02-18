@@ -1,6 +1,6 @@
 const assert = require("assert")
 const { fetch } = require("lol/js/node/fs")
-const { Pipeline, FsPlugin } = require("../cjs")
+const { FsPlugin } = require("../cjs")
 const { LOAD_PATH, DST_PATH, setupWithEntries } = require("./setup")
 
 describe("fs", () => {
@@ -14,7 +14,7 @@ describe("fs", () => {
     await fs.apply()
 
     const files = fetch(p.resolver.output.join("**/*").unix())
-    assert.deepEqual(files, [
+    assert.deepStrictEqual(files, [
       DST_PATH.join("assets/emoji/emoji0.png").web(),
       DST_PATH.join("assets/emoji/emoji1.png").web(),
       DST_PATH.join("assets/emoji/emoji2.png").web(),
@@ -37,7 +37,7 @@ describe("fs", () => {
     await fs.apply()
 
     const files = fetch(p.resolver.output.join("**/*").unix())
-    assert.deepEqual(files, [
+    assert.deepStrictEqual(files, [
       DST_PATH.join("static/emoji/emoji0.png").web(),
       DST_PATH.join("static/emoji/emoji1.png").web(),
       DST_PATH.join("static/emoji/emoji2.png").web(),
