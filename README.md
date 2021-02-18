@@ -31,47 +31,62 @@ pipeline.host.setOrigin("http://mycdn.com")
 pipeline.host.setPathname("public")
 
 // Create a source object a path relative to cwd
-const APP_PATH = pipeline.createPath("app/scripts")
+const APP_PATH = pipeline.createPath("app")
 
-// Typescript
 pipeline.files
+  // Include files to fetch
   .include(APP_PATH.join("scripts/main.ts"))
+  .include(APP_PATH.join("styles/main.styl"))
+  .include(APP_PATH.join("views/**/*.html.ejs"))
+  .include(APP_PATH.join("assets/**/*"))
+
+  // Exclude files with underscores at the begining
+  .exclude(APP_PATH.join("views/**/_*.html.ejs"))
+
+// Typescript rule
 pipeline.rules
-  .add("*.ts")
+  .add(APP_PATH.join("scripts/main.ts"))
   .extension(".js")
   .keepDirectory(false)
 
-// Stylus
-pipeline.files
-  .include(APP_PATH.join("styles/main.styl"))
+// Stylus rule
 pipeline.rules
   .add(APP_PATH.join("styles/main.styl"))
   .extension(".css")
   .keepDirectory(false)
 
-// Views
-pipeline.files
-  .include(APP_PATH.join("views/**/*.html.ejs"))
-  .exclude(APP_PATH.join("views/**/_*.html.ejs"))
+// Views rule
 pipeline.rules
   .add(APP_PATH.join("views/**/*.html.ejs"))
   .extension(".html")
-  .keepDirectory(false)
+  .relative(APP_PATH.join("views"))
   .cachebreak(false)
 
-// Assets
-pipeline.files
-  .include(APP_PATH.join("assets/**/*"))
+// Assets rule
 pipeline.rules
   .add(APP_PATH.join("assets/**/*"))
   .relative(APP_PATH)
 
-// Resolve pattern and path, then update manifest
+// Resolve patterns and transform paths
 pipeline.fetch()
 
+// Add alias
+pipeline.alias("app/scripts")
+pipeline.alias("app/styles")
+pipeline.alias("app/views")
+pipeline.alias("app/assets")
+
 // Logs
-console.log(pipeline.resolver.getPath("main.ts")) // /main.js
-console.log(pipeline.resolver.getURL("main.ts")) // http://mycdn.com/main.js
+console.log(pipeline.resolver.getPath("app/scripts/main.ts")) // /main-b325d4632fa412.js
+console.log(pipeline.resolver.getURL("app/scripts/main.ts")) // http://mycdn.com/main-b325d4632fa412.js
+console.log(pipeline.resolver.getOutputPath("app/scripts/main.ts")) // public/main-b325d4632fa412.js
+
+console.log(pipeline.resolver.getPath("main.ts")) // /main-b325d4632fa412.js
+console.log(pipeline.resolver.getURL("main.ts")) // http://mycdn.com/main-b325d4632fa412.js
+console.log(pipeline.resolver.getOutputPath("main.ts")) // public/main-b325d4632fa412.js
+
+console.log(pipeline.resolver.getPath("app/assets/images/image.jpg")) // /images/image-aedaed23aed453.jpg
+console.log(pipeline.resolver.getPath("images/image.jpg")) // /images/image-aedaed23aed453.jpg
 ```
 
 ## Documentation
