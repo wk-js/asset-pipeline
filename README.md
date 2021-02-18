@@ -2,6 +2,7 @@
 
 Transform your asset path like a boss
 
+- [Features](#features)
 - [Example](#example)
 - [Documentation](#documentation)
   - [Pipeline](#pipeline)
@@ -12,6 +13,16 @@ Transform your asset path like a boss
   - [Plugin - FileSystem](#plugin---filesystem)
   - [Plugin - Manifest](#plugin---manifest)
 - [More examples](#more-examples)
+
+##  Features
+
+* A path/url builder to create your path easily
+* Handle cache-breaking
+* Create multiple outputs
+* Use tag and priority to choose your output path
+* Extensible with plugins
+* Save results into a manifest (with ManifestPlugin)
+* Perform move/copy/symlink (with FsPlugin)
 
 ## Example
 
@@ -197,11 +208,23 @@ pipeline.rules.add("app/scripts/main.ts")
 // Set path
 .path("main.js") // will create public/main-1ae2da2ed1ae231.js
 
+// Set tag
+.tag("default")
+
+// Set tag
+.priority(0)
+
 // Apply transformation
 .apply("app/scripts/main.ts", {
   cachebreak: true,
   saltKey: "saltKey"
 }) // TransformResult
+
+// Add another rule for the same file
+pipeline.rules.add("app/scripts/main.ts")
+  .path("main.esm.js")
+  .tag("esm")
+  .priority(-1)
 ```
 
 ### Resolver
