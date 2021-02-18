@@ -60,6 +60,13 @@ pipeline.rules
   .extension(".js")
   .keepDirectory(false)
 
+// Add another output
+pipeline.rules
+  .add(APP_PATH.join("scripts/main.ts"))
+  .path("main.esm.js")
+  .tag("esm")
+  .priority(-1)
+
 // Stylus rule
 pipeline.rules
   .add(APP_PATH.join("styles/main.styl"))
@@ -89,6 +96,8 @@ pipeline.alias("app/assets")
 
 // Logs
 console.log(pipeline.resolver.getPath("app/scripts/main.ts")) // /main-b325d4632fa412.js
+console.log(pipeline.resolver.getPath("app/scripts/main.ts", "esm")) // /main.esm-f42dac1324a21d.js
+
 console.log(pipeline.resolver.getURL("app/scripts/main.ts")) // http://mycdn.com/main-b325d4632fa412.js
 console.log(pipeline.resolver.getOutputPath("app/scripts/main.ts")) // public/main-b325d4632fa412.js
 
@@ -194,10 +203,10 @@ pipeline.rules.add("app/scripts/main.ts")
 .directory("scripts") // will create public/scripts/bundle.js
 
 // Keep directory
-.directory("scripts") // will create public/scripts/bundle.js
+.keepDirectory("scripts") // will create public/scripts/bundle.js
 
 // Add base directory
-.keepDirectory(false) // will create public/bundle.js
+.baseDirectory(false) // will create public/bundle.js
 
 // Add relative path
 .relative("resources") // will create public/bundle.js
@@ -224,7 +233,7 @@ pipeline.rules.add("app/scripts/main.ts")
 pipeline.rules.add("app/scripts/main.ts")
   .path("main.esm.js")
   .tag("esm")
-  .priority(-1)
+  .priority(-1) // will create public/app/scripts/main.esm.js
 ```
 
 ### Resolver
