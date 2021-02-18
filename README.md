@@ -5,14 +5,12 @@ Handle your assets like a boss
 - [Example](#example)
 - [Documentation](#documentation)
   - [Pipeline](#pipeline)
-  - [Cache](#cache)
-  - [Manifest](#manifest)
+  - [FileList](#filelist)
+  - [Transformer](#transformer)
+  - [Transform Rule](#transform-rule)
   - [Resolver](#resolver)
-  - [Source](#source)
-  - [File pipeline](#file-pipeline)
-  - [Directory pipeline](#directory-pipeline)
-  - [Shadow pipeline](#shadow-pipeline)
-  - [File System](#file-system)
+  - [Plugin - FileSystem](#plugin---filesystem)
+  - [Plugin - Manifest](#plugin---manifest)
 - [More examples](#more-examples)
 
 ## Example
@@ -20,90 +18,60 @@ Handle your assets like a boss
 ```ts
 import { AssetPipeline } from "asset-pipeline";
 
-const saltKey = "anything"
-const pipeline = new AssetPipeline(saltKey)
+const pipeline = new AssetPipeline()
+
+pipeline.rules.saltKey = "saltKey"
+
+pipeline.rules.cacheBreak = true
 
 // Set origin (Rendered: http://mycdn.com/)
-pipeline.output.setOrigin("http://mycdn.com")
+pipeline.host.setOrigin("http://mycdn.com")
 
 // Set pathname (Rendered: http://mycdn.com/public)
-pipeline.output.setPathname("public")
-
-// Save on disk at each change (default: false)
-pipeline.manifest.saveAtChange = false
-
-// Save on disk (default: true)
-pipeline.manifest.saveOnDisk = true
-
-// Read on disk (default: false)
-pipeline.manifest.readOnDisk = false
+pipeline.host.setPathname("public")
 
 // Create a source object a path relative to cwd
-const scripts = pipeline.source.add("app/scripts")
+const APP_PATH = pipeline.createPath("app/scripts")
 
-// Register a single file
-scripts.file.add("main.ts", {
-  // Change the extname at output
-  output: { ext: ".js" },
+// Typescript
+pipeline.files
+  .include(APP_PATH.join("scripts/main.ts"))
+pipeline.rules
+  .add("*.ts")
+  .extension(".js")
+  .keepDirectory(false)
 
-  // Set custom tag for filtering
-  tag: "entry:js",
-})
+// Stylus
+pipeline.files
+  .include(APP_PATH.join("styles/main.styl"))
+pipeline.rules
+  .add(APP_PATH.join("styles/main.styl"))
+  .extension(".css")
+  .keepDirectory(false)
 
-// Create as many source as you want
-const views = pipeline.source.add("app/views")
+// Views
+pipeline.files
+  .include(APP_PATH.join("views/**/*.html.ejs"))
+  .exclude(APP_PATH.join("views/**/_*.html.ejs"))
+pipeline.rules
+  .add(APP_PATH.join("views/**/*.html.ejs"))
+  .extension(".html")
+  .keepDirectory(false)
+  .cachebreak(false)
 
-// Ignore multiple file
-views.file.ignore("**/_*.html.ejs")
-
-// Register multiple file
-views.file.add("**/*.html.ejs", {
-  // Remove .ejs extension
-  output: { ext: "" },
-
-  // Disable caching
-  cache: false,
-
-  // Set custom tag for fitering
-  tag: "entry:html"
-})
-
-const styles = pipeline.source.add("app/styles")
-// Register a pattern
-styles.file.add("**/*.styl", {
-  output: { ext: ".css" },
-  tag: "entry:css"
-})
-
-const app = pipeline.source.add("app")
-// Register a directory
-app.directory.add('assets', {
-  output: 'resources',
-
-  // Apply rules to files or subdirectories, you can only set cache, output and ignore fields
-  fileRules: [
-    {
-      glob: "**/*.jpg",
-      cache: true
-    }
-  ]
-})
-
-// Register a pattern or path for copy
-app.fs.copy("assets/**/*")
+// Assets
+pipeline.files
+  .include(APP_PATH.join("assets/**/*"))
+pipeline.rules
+  .add(APP_PATH.join("assets/**/*"))
+  .relative(APP_PATH)
 
 // Resolve pattern and path, then update manifest
 pipeline.fetch()
 
-// Perform copy/move/symlink
-await pipeline.copy()
-
-console.log(pipeline.getPath("main.ts")) // main.js
-console.log(pipeline.getURL("main.ts")) // http://mycdn.com/main.js
-console.log(pipeline.manifest.getAsset("main.ts")) // IAsset object
-console.log(pipeline.manifest.getAssetWithSource("main.ts")) // IAssetWithSource object
-console.log(pipeline.manifest.findAssetFromOutput("main.js")) // IAsset object
-console.log(pipeline.manifest.findSource("main.ts")) // Source object
+// Logs
+console.log(pipeline.resolver.getPath("main.ts")) // /main.js
+console.log(pipeline.resolver.getURL("main.ts")) // http://mycdn.com/main.js
 ```
 
 ## Documentation
@@ -111,325 +79,261 @@ console.log(pipeline.manifest.findSource("main.ts")) // Source object
 ### Pipeline
 
 ```ts
-// UUID
-pipeline.uuid
-
 // Display logs (Default: false)
-pipeline.verbose
+pipeline.logging = false
 
-// Output path builder (Default: "public")
-pipeline.output
+// Fetch files and apply transformations
+pipeline.fetch(forceResolve?)
 
-// Host url builder (Default: origin="", pathname="/")
-pipeline.host
+// Append files to transform
+pipeline.append(forceResolve?)
 
-// CWD path builder (Default: process.cwd())
-pipeline.cwd
+// Get options from plugins
+pipeline.options("pluginOptions")
 
-// Clone pipeline
-pipeline.clone("hashKey")
+// Register a new plugin
+await pipeline.plugin({
+  name: "myPlugin",
+  setup(pipeline: Pipeline) {
+    // Do something
+  }
+})
 
-// Fetch directories, files, update tree and update manifest
-pipeline.fetch(force)
+// Create a path builder
+const app = pipeline.createPath("app")
+app.join("scripts").os() // app/cripts
 
-// Perform copy/move/symlink
-pipeline.copy()
+// Listen when files and patterns are resolved
+pipeline.events.on("resolved", (paths) => {
+  console.log(paths)
+})
 
-// Logger
-pipeline.log("some logs")
-
-// Get path
-pipeline.getPath("inputPath", { from: "relativePath", cleanup: false })
-
-// Get url
-pipeline.getUrl("inputPath", { from: "relativePath", cleanup: false })
+// Listen when paths ared transformed
+pipeline.events.on("transformed", (results) => {
+  console.log(results)
+})
 ```
 
-### Cache
+### FileList
 
 ```ts
-// Toggle cache
-pipeline.cache.enabled = false
+// Add file path or pattern
+pipeline.files.include("app/scripts/*.ts")
+pipeline.files.include("app/assets/image.jpg")
 
-// Set hash key
-pipeline.cache.saltKey = saltKey
+// Ignore file path or pattern
+pipeline.files.exclude("app/scripts/_*.ts")
 
-// Clone cache object
-pipeline.cache.clone()
+// Add non-existing file path
+pipeline.files.exclude("app/scripts/generated/PAGE.ts")
 
-// Return "anyValue-hash"
-pipeline.cache.hash("anyValue")
-
-// Return "anyValue?v=hashKey"
-pipeline.cache.version("anyValue")
-
-// Generate hash string
-pipeline.cache.generateHash("anyValue")
+// Resolve paths and patterns
+pipeline.files.resolve()
 ```
 
-### Manifest
+### Transformer
 
 ```ts
-// Save on disk at each change (default: false)
-pipeline.manifest.saveAtChange = false
+// Set salt key
+pipeline.saltKey = "saltKey"
 
-// Save on disk (default: true)
-pipeline.manifest.saveOnDisk = true
+// Toggle cachebreak
+pipeline.cachebreak = false
 
-// Read on disk (default: false)
-pipeline.manifest.readOnDisk = false
+// Create a transform rule for a pattern
+pipeline.rules.add("app/scripts/*.ts") // TransformRule
 
-pipeline.manifest.manifestPath
+// Delete a transform rule for a pattern
+pipeline.rules.delete("app/scripts/*.ts")
 
-// Clone manifest
-pipeline.manifest.clone(newManifest)
+// A transform exists for this path or not
+pipeline.rules.match("app/scripts/main.ts")
 
-// Check if manifest file is created
-pipeline.manifest.fileExists()
+// Transform an array of paths
+pipeline.rules.transform(["app/scripts/main.ts"]) // TransformResult[]
+```
 
-// Save manifest file
-pipeline.manifest.saveFile()
+### Transform Rule
 
-// Read manifest file
-pipeline.manifest.readFile()
+```ts
+pipeline.rules.add("app/scripts/main.ts")
 
-// Remove manifest file
-pipeline.manifest.removeFile()
+// Rewrite filemae
+.name("bundle.ts") // will create public/app/scripts/bundle.ts
 
-// Get Asset object from inputPath
-pipeline.manifest.getAsset("inputPath")
+// Set extension
+.extension(".js") // will create public/app/scripts/bundle.js
 
-// Get AssetWithSource object from inputPath
-pipeline.manifest.getAssetWithSource("inputPath")
+// Rewrite directory
+.directory("scripts") // will create public/scripts/bundle.js
 
-// Check asset exists
-pipeline.manifest.hasAsset("inputPath")
+// Keep directory
+.directory("scripts") // will create public/scripts/bundle.js
 
-// Add asset
-pipeline.manifest.addAsset(asset)
+// Add base directory
+.keepDirectory(false) // will create public/bundle.js
 
-// Remove asset
-pipeline.manifest.removeAsset("inputPath")
+// Add relative path
+.relative("resources") // will create public/bundle.js
 
-// Clear manifest
-pipeline.manifest.clearAssets()
+// Add relative path
+.cachebreak(true) // will create public/bundle-1ae2da2ed1ae231.js
 
-// Look for Source object from path
-pipeline.manifest.findSource("inputPath")
+// Set path
+.path("main.js") // will create public/main-1ae2da2ed1ae231.js
 
-// Look for IAsset object from output
-pipeline.manifest.findAssetFromOutput("outputPath")
-
-// Export an array of IAsset[]
-pipeline.manifest.export()
-pipeline.manifest.export("asset")
-
-// Export an object Record<string, IAsset>
-pipeline.manifest.export("asset_key")
-
-// Export an array of IAssetWithSource[]
-pipeline.manifest.export("asset_source")
-
-// Export an object Record<string, IAssetWithSource>
-pipeline.manifest.export("asset_source_key")
-
-// Export an array of IOutput[]
-pipeline.manifest.export("output")
-
-// Export an object Record<string, IOutput>
-pipeline.manifest.export("output_key")
+// Apply transformation
+.apply("app/scripts/main.ts", {
+  cachebreak: true,
+  saltKey: "saltKey"
+}) // TransformResult
 ```
 
 ### Resolver
 
 ```ts
-// Clone resolver
-pipeline.resolver.clone()
 
-// Look for outputPath
-pipeline.resolver.resolve("inputPath")
+// Output path builder (Default: "public")
+pipeline.output.set("public")
 
-// Convert inputPath to outputPath and return its directory tree
-pipeline.resolver.getTree("inputPath")
+// Host url builder (Default: origin="", pathname="/")
+pipeline.host.set("http://mycdn.com/")
 
-// Get path
-pipeline.resolver.getPath("inputPath", { from: "relativePath", cleanup: false })
+// Register alias. Instead of using "app/scripts/main.ts" as input, you can write "main.ts"
+pipeline.resolver.alias("app/scripts")
 
-// Get url
-pipeline.resolver.getUrl("inputPath", { from: "relativePath", cleanup: false })
+// Return an array of outputs. If tag is given, returns outputs matching the tag
+pipeline.resolver.resolve("main.ts") // "/main.js"
+pipeline.resolver.resolve("main.ts", "anyTag") // "/main.js"
+pipeline.resolver.resolve("main.ts", "esm") // "/main.esm.js"
 
-// Refresh output tree
-pipeline.resolver.refreshTree()
+// Get path. If tag is given, return output path matching the tag
+pipeline.resolver.getPath("main.ts") // "/main.js"
+pipeline.resolver.getPath("main.ts", "anyTag") // "/main.js"
+pipeline.resolver.getPath("main.ts", "esm") // "/main.esm.js"
 
-// Preview output tree
-console.log(pipeline.resolver.view())
+// Get URL. If tag is given, return output URL matching the tag
+pipeline.resolver.getUrl("main.ts") // "http://mycdn.com/main.js"
+pipeline.resolver.getUrl("main.ts", "anyTag") // "http://mycdn.com/main.js"
+pipeline.resolver.getUrl("main.ts", "esm") // "http://mycdn.com/main.esm.js"
+
+// Get path. If tag is given, return output path matching the tag
+pipeline.resolver.getOutputPath("main.ts") // "public/main.js"
+pipeline.resolver.getOutputPath("main.ts", "anyTag") // "public/main.js"
+pipeline.resolver.getOutputPath("main.ts", "esm") // "public/main.esm.js"
+
+// Try to find the  original input
+pipeline.resolver.findInputPath("main.js") // TransformResult
+
+// Try to find the  original input
+pipeline.resolver.filter(([input, transformed]) => {
+  return input === "app/scripts/main.ts"
+}) // [TransformResult]
 ```
 
-### Source
+### Plugin - FileSystem
 
 ```ts
-// Clone source
-pipeline.source.clone()
+const { FsPlugin } = require("asset-pipeline")
+pipeline.plugin(FsPlugin)
 
-// Fetch only directories
-pipeline.source.fetch("directory")
+const fs = p.options("fs")
 
-// Fetch only files
-pipeline.source.fetch("file")
+// Number of items by chunk to perform asynchronously
+fs.chunkCount = 15
 
-// Perform copy/move/symlink
-pipeline.source.copy()
+// Register a move
+fs.move("path_or_pattern")
 
-// Add new source
-pipeline.source.add("relative_path")
+// Register a copy
+fs.copy("path_or_pattern")
 
-// Get source from its uuid
-pipeline.source.get("source_uuid")
+// Register a symlink
+fs.symlink("path_or_pattern")
 
-// Check source exists
-pipeline.source.has("source_uuid")
+// Ignore
+fs.ignore("path_or_pattern")
 
-// Remove source
-pipeline.source.remove("source_uuid")
+// Perform copy/move/symlink to updated files only (based on mtime)
+fs.apply(force?) // Force
 
-// Return an array of sources
-pipeline.source.all()
-pipeline.source.all("array")
-
-// Return a Record<uuid, Source>
-pipeline.source.all("object")
-```
-
-### File pipeline
-
-```ts
-const app = pipeline.source.add("./app")
-
-// Clone File object
-app.file.clone()
-
-// Add file path or pattern
-app.file.add("path_or_pattern", {
-  // Remove directory path (optional)
-  keepPath: true,
-
-  // Set base directory (optional)
-  baseDir: "myDir",
-
-  // Ignore matches (optional)
-  ignore: false,
-
-  // Rename output path  (optional) (string | TRenameFunction | TRenameObject)
-  output: { dir: "" },
-
-  // Rename cache path. It inherits output transformation (optional) (string | TRenameFunction | TRenameObject)
-  cache: "#{input.name}-#{input.hash}#{input.ext}",
-
-  // A simple string for fitering (optional)
-  tag: "myTag"
+// Listen when a new file is moved/copied/symlinked
+fs.events.on("newfilecopied", ([from, to]) => {
+  console.log(from, to)
 })
 
-// Ignore file path or pattern
-app.file.ignore("ignore_file")
-
-// Resolve paths and patterns, then without updating manifest
-app.file.fetch()
+// Same event
+pipeline.events.on("newfilecopied", ([from, to]) => {
+  console.log(from, to)
+})
 ```
 
-### Directory pipeline
+
+### Plugin - Manifest
 
 ```ts
-const app = pipeline.source.add("./app")
+const { ManifestPlugin } = require("asset-pipeline")
+pipeline.plugin(ManifestPlugin)
 
-// Clone File object
-app.directory.clone()
+const manifest = p.options("manifest")
 
-// Add directory path or pattern
-app.directory.add("path_or_pattern", {
-  // ... Same options as file.add()
+// Save on disk (default: true)
+manifest.saveOnDisk = true
 
-  // Apply rules to files
-  fileRules: [
-    {
-      // Path or pattern
-      glob: "path_or_pattern",
-
-      // Ignore matches (optional)
-      ignore: false,
-
-      // Rename output path (optional) (string | TRenameFunction | TRenameObject)
-      output: { dir: "" },
-
-      // Rename cache path. It inherits output transformation (optional) (string | TRenameFunction | TRenameObject)
-      cache: "#{input.name}-#{input.hash}#{input.ext}",
-
-      // A simple string for fitering (optional)
-      tag: "myTag"
-    }
+// Override pipeline
+manifest.set({
+  "saltKey": "",
+  "date": "2021-02-04T18:43:26.338Z",
+  "aliases": [
+    "app/scripts"
+  ],
+  "entries": [
+    [
+      "app/assets/image.jpg",
+      {
+        "path": "assets/image.jpg",
+        "tag": "default",
+        "priority": 0
+      }
+    ],
+    [
+      "app/scripts/main.ts",
+      {
+        "path": "main.js",
+        "tag": "default",
+        "priority": 0
+      }
+    ],
+    [
+      "app/scripts/main.ts",
+      {
+        "path": "main.esm.js",
+        "tag": "esm",
+        "priority": 0
+      }
+    ]
   ]
 })
 
-// Ignore directory path or pattern
-app.directory.ignore("ignore_directory")
+// Set manifest path
+manifest.path.set("tmp/manifest.json")
 
-// Resolve paths and patterns, without updating manifest
-app.directory.fetch()
-```
+// Check if manifest is created
+manifest.exists()
 
-### Shadow pipeline
+// Save manifest
+manifest.save()
 
-```ts
-// Add a directory shadow path or pattern (the source directory does exist, but the output it is)
-app.shadow.addFile("shadowFilePath", {
-  // Rename output path (optional) (string | TRenameFunction | TRenameObject)
-  output: { dir: "" },
+// Read manifest and override pipeline
+manifest.read()
 
-  // Rename cache path. It inherits output transformation (optional) (string | TRenameFunction | TRenameObject)
-  cache: "#{input.name}-#{input.hash}#{input.ext}",
-
-  // A simple string for fitering (optional)
-  tag: "myTag"
-})
-
-// Add a directory shadow path or pattern (the source directory does exist, but the output it is)
-app.shadow.addDirectory("shadowDirectoryPath", {
-  // ... Same options as shadow.addFile
-})
-
-// Resolve paths and patterns, without updating manifest
-app.shadow.fetch()
-```
-
-### File System
-
-```ts
-// Number of items by chunk to perform asynchronously
-app.fs.chunkCount = 15
-
-// Clone FileSystem object
-app.fs.clone("path_or_pattern")
-
-// Register a move
-app.fs.move("path_or_pattern")
-
-// Register a copy
-app.fs.copy("path_or_pattern")
-
-// Register a symlink
-app.fs.symlink("path_or_pattern")
-
-// Ignore
-app.fs.ignore("path_or_pattern")
-
-// Perform copy/move/symlink to updated files only (based on mtime)
-app.fs.apply()
+// Remove manifest on disk
+manifest.delete()
 ```
 
 ## More examples
 
-* [Files - Unit tests](./test/files.spec.ts)
-* [Rename - Unit tests](./test/rename.spec.ts)
-* [Directories - Unit tests](./test/directories.spec.ts)
-* [FS - Unit tests](./test/fs.spec.ts)
-* [Manifest - Unit tests](./test/manifest.spec.ts)
-* [Multiple sources - Unit tests](./test/multiple-sources.spec.ts)
+* [Rules - Unit tests](./test/rules.spec.ts)
+* [Resolver - Unit tests](./test/resolver.spec.ts)
+* [Plugin - FileSystem - Unit tests](./test/fs.spec.ts)
+* [Plugin - Manifest - Unit tests](./test/manifest.spec.ts)
