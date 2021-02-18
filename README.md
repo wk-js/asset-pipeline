@@ -1,6 +1,6 @@
 # asset-pipeline <!-- omit in toc -->
 
-Handle your assets like a boss
+Transform your asset path like a boss
 
 - [Example](#example)
 - [Documentation](#documentation)
