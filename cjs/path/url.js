@@ -33,7 +33,11 @@ class URLBuilder {
         return this;
     }
     setPathname(path) {
-        this.pathname.set(path);
+        let p = path_1.toUnixString(path);
+        if (p[0] !== "/") {
+            p = "/" + p;
+        }
+        this.pathname.set(p);
         return this;
     }
     isValidURL() {

@@ -1,4 +1,4 @@
-import { PathBuilder, toWebString } from "./path";
+import { PathBuilder, toUnixString, toWebString } from "./path";
 export class URLBuilder {
     constructor(path, _origin = "") {
         this._origin = _origin;
@@ -30,7 +30,11 @@ export class URLBuilder {
         return this;
     }
     setPathname(path) {
-        this.pathname.set(path);
+        let p = toUnixString(path);
+        if (p[0] !== "/") {
+            p = "/" + p;
+        }
+        this.pathname.set(p);
         return this;
     }
     isValidURL() {

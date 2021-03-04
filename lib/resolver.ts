@@ -84,7 +84,7 @@ export class Resolver {
 
   getOutputPath(path: string, tag?: string) {
     const resolved = this.resolve(path, tag)[0]
-    const _path = this._cwd.join(this.host.pathname, this.output, resolved.transformed.path)
+    const _path = this._cwd.join(this.output, this.host.pathname, resolved.transformed.path)
     return this._cwd.relative(_path).web()
   }
 

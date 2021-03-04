@@ -1,4 +1,4 @@
-import { PathBuilder, PathOrString, toWebString } from "./path";
+import { PathBuilder, PathOrString, toUnixString, toWebString } from "./path";
 
 export type UrlOrString = string | URLBuilder
 
@@ -37,7 +37,11 @@ export class URLBuilder {
   }
 
   setPathname(path: PathOrString) {
-    this.pathname.set(path)
+    let p = toUnixString(path)
+    if (p[0] !== "/") {
+      p = "/" + p
+    }
+    this.pathname.set(p)
     return this
   }
 
